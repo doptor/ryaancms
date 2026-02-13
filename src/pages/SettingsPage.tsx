@@ -7,16 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Save, Globe, Shield, Bell, Palette, Database, Loader2, Brain, Layers } from "lucide-react";
+import { Save, Globe, Shield, Bell, Palette, Database, Loader2, Brain } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSettings } from "@/hooks/useSettings";
 import { Skeleton } from "@/components/ui/skeleton";
-import SchemaSettings from "@/components/settings/SchemaSettings";
+
 import AIIntegrationSettings from "@/components/settings/AIIntegrationSettings";
 
 const settingSections = [
   { id: "general", icon: Globe, label: "General", desc: "Site name, URL, timezone, and language settings.", color: "text-blue-400" },
-  { id: "schema", icon: Layers, label: "Schema", desc: "Design your data models visually or with AI.", color: "text-emerald-400" },
   { id: "ai-integrations", icon: Brain, label: "AI Integrations", desc: "Manage AI platform connections and models.", color: "text-pink-400" },
   { id: "security", icon: Shield, label: "Security", desc: "SSO, MFA, API keys, and role-based access control.", color: "text-teal-400" },
   { id: "notifications", icon: Bell, label: "Notifications", desc: "Email, webhook, and in-app notification preferences.", color: "text-amber-400" },
@@ -315,7 +314,7 @@ export default function SettingsPage() {
     );
   }
 
-  const isStandaloneTab = activeSection === "schema" || activeSection === "ai-integrations";
+  const isStandaloneTab = activeSection === "ai-integrations";
 
   return (
     <DashboardLayout>
@@ -348,9 +347,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Active section content */}
-        {activeSection === "schema" ? (
-          <SchemaSettings />
-        ) : activeSection === "ai-integrations" ? (
+        {activeSection === "ai-integrations" ? (
           <AIIntegrationSettings />
         ) : (
           <Card>
