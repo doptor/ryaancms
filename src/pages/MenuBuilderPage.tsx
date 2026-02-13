@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Plus, Trash2, Edit2, GripVertical, ChevronDown, ChevronRight, ExternalLink, Puzzle, FileText, Link2, ToggleLeft, ToggleRight, Menu as MenuIcon, Search, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import IconPicker from "@/components/IconPicker";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -253,6 +253,49 @@ export default function MenuBuilderPage() {
     fetchAll();
   }
 
+  // DRAG AND DROP
+  const dragIndexRef = useRef<number | null>(null);
+
+  async function handleGroupDrop(dropIndex: number) {
+    const dragIndex = dragIndexRef.current;
+    if (dragIndex === null || dragIndex === dropIndex) return;
+    const reordered = [...filteredGroups];
+    const [moved] = reordered.splice(dragIndex, 1);
+    reordered.splice(dropIndex, 0, moved);
+    // Optimistic update
+    const updatedGroups = reordered.map((g, i) => ({ ...g, sort_order: i }));
+    setGroups(prev => {
+      const ids = updatedGroups.map(g => g.id);
+      const untouched = prev.filter(g => !ids.includes(g.id));
+      return [...updatedGroups, ...untouched].sort((a, b) => a.sort_order - b.sort_order);
+    });
+    // Persist
+    await Promise.all(updatedGroups.map((g, i) =>
+      supabase.from("menu_groups").update({ sort_order: i }).eq("id", g.id)
+    ));
+    toast({ title: "Group order updated" });
+  }
+
+  async function handleItemDrop(dropIndex: number) {
+    const dragIndex = dragIndexRef.current;
+    if (dragIndex === null || dragIndex === dropIndex) return;
+    const reordered = [...filteredItems];
+    const [moved] = reordered.splice(dragIndex, 1);
+    reordered.splice(dropIndex, 0, moved);
+    // Optimistic update
+    const updatedItems = reordered.map((item, i) => ({ ...item, sort_order: i }));
+    setItems(prev => {
+      const ids = updatedItems.map(it => it.id);
+      const untouched = prev.filter(it => !ids.includes(it.id));
+      return [...updatedItems, ...untouched].sort((a, b) => a.sort_order - b.sort_order);
+    });
+    // Persist
+    await Promise.all(updatedItems.map((item, i) =>
+      supabase.from("menu_items").update({ sort_order: i }).eq("id", item.id)
+    ));
+    toast({ title: "Item order updated" });
+  }
+
   const getGroupName = (groupId: string) => groups.find(g => g.id === groupId)?.name || "—";
   const getParentLabel = (parentId: string | null) => {
     if (!parentId) return "—";
@@ -307,6 +350,7 @@ export default function MenuBuilderPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-10"></TableHead>
                       <TableHead>Name</TableHead>
                       <TableHead className="hidden sm:table-cell">Slug</TableHead>
                       <TableHead>Position</TableHead>
@@ -319,12 +363,22 @@ export default function MenuBuilderPage() {
                   <TableBody>
                     {pagedGroups.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                           {groupSearch ? "No groups match your search." : "No menu groups yet."}
                         </TableCell>
                       </TableRow>
-                    ) : pagedGroups.map(group => (
-                      <TableRow key={group.id} className={!group.is_active ? "opacity-60" : ""}>
+                    ) : pagedGroups.map((group, idx) => (
+                      <TableRow
+                        key={group.id}
+                        className={!group.is_active ? "opacity-60" : ""}
+                        draggable
+                        onDragStart={() => { dragIndexRef.current = idx; }}
+                        onDragOver={e => e.preventDefault()}
+                        onDrop={() => handleGroupDrop(idx)}
+                      >
+                        <TableCell className="w-10 cursor-grab">
+                          <GripVertical className="w-4 h-4 text-muted-foreground" />
+                        </TableCell>
                         <TableCell className="font-medium">{group.name}</TableCell>
                         <TableCell className="hidden sm:table-cell text-muted-foreground text-xs font-mono">{group.slug}</TableCell>
                         <TableCell>
@@ -383,6 +437,7 @@ export default function MenuBuilderPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-10"></TableHead>
                       <TableHead>Label</TableHead>
                       <TableHead>Group</TableHead>
                       <TableHead className="hidden sm:table-cell">Position</TableHead>
@@ -397,12 +452,22 @@ export default function MenuBuilderPage() {
                   <TableBody>
                     {pagedItems.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                           {itemSearch ? "No items match your search." : "No menu items yet."}
                         </TableCell>
                       </TableRow>
-                    ) : pagedItems.map(item => (
-                      <TableRow key={item.id} className={!item.is_active ? "opacity-60" : ""}>
+                    ) : pagedItems.map((item, idx) => (
+                      <TableRow
+                        key={item.id}
+                        className={!item.is_active ? "opacity-60" : ""}
+                        draggable
+                        onDragStart={() => { dragIndexRef.current = idx; }}
+                        onDragOver={e => e.preventDefault()}
+                        onDrop={() => handleItemDrop(idx)}
+                      >
+                        <TableCell className="w-10 cursor-grab">
+                          <GripVertical className="w-4 h-4 text-muted-foreground" />
+                        </TableCell>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
                             {item.parent_id && <span className="text-muted-foreground text-xs">↳</span>}
@@ -425,6 +490,7 @@ export default function MenuBuilderPage() {
                         <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
                           {getParentLabel(item.parent_id)}
                         </TableCell>
+                        <TableCell className="text-center text-sm text-muted-foreground">{item.sort_order}</TableCell>
                         <TableCell>
                           <button onClick={() => toggleItem(item.id, item.is_active)}>
                             {item.is_active
