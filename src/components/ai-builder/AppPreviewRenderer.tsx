@@ -11,7 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import {
-  Sparkles, Search, Bell, User, Menu, ChevronRight,
+  Sparkles, Search, Bell, User, Menu, ChevronRight, Send,
   BarChart3, TrendingUp, TrendingDown, DollarSign, Users,
   ShoppingCart, Eye, ArrowUpRight, Lock, Mail, Github,
   Check, X, Star, Upload, Image, Calendar, GripVertical,
@@ -259,18 +259,18 @@ function ComponentRenderer({ component, config }: { component: ComponentConfig; 
   switch (component.type) {
     case "hero": return <HeroPreview props={props} config={config} />;
     case "navbar": return <NavbarPreview props={props} config={config} />;
-    case "footer": return <FooterPreview props={props} />;
-    case "stats_row": return <StatsRowPreview props={props} />;
+    case "footer": return <FooterPreview props={props} config={config} />;
+    case "stats_row": return <StatsRowPreview props={props} config={config} />;
     case "crud_table": return <CrudTablePreview props={props} />;
     case "chart": return <ChartPreview props={props} />;
-    case "card_grid": return <CardGridPreview props={props} />;
+    case "card_grid": return <CardGridPreview props={props} config={config} />;
     case "auth_form": return <AuthFormPreview props={props} />;
     case "pricing_table": return <PricingTablePreview props={props} />;
-    case "form": return <FormPreview props={props} />;
+    case "form": return <FormPreview props={props} config={config} />;
     case "search_bar": return <SearchBarPreview props={props} />;
     case "kanban_board": return <KanbanPreview props={props} />;
     case "calendar": return <CalendarPreview props={props} />;
-    case "media_gallery": return <MediaGalleryPreview props={props} />;
+    case "media_gallery": return <MediaGalleryPreview props={props} config={config} />;
     case "notification_center": return <NotificationPreview props={props} />;
     case "timeline": return <TimelinePreview props={props} />;
     case "file_upload": return <FileUploadPreview props={props} />;
@@ -333,12 +333,71 @@ function NavbarPreview({ props, config }: { props: Record<string, any>; config: 
 
 function HeroPreview({ props, config }: { props: Record<string, any>; config: AppConfig }) {
   const alignment = props.alignment || "center";
+  const isPortfolio = /portfolio|personal|resume|cv|freelanc/i.test(config.project_type + " " + (config.description || "") + " " + (config.title || ""));
+  
+  if (isPortfolio) {
+    return (
+      <div className="relative px-6 py-24 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-background to-accent/5" />
+        <div className="absolute top-10 right-1/4 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-accent/8 rounded-full blur-3xl" />
+        <div className="relative max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-10">
+          {/* Avatar */}
+          <div className="relative">
+            <div className="w-40 h-40 rounded-full bg-gradient-primary p-1 shadow-primary-lg">
+              <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
+                <User className="w-16 h-16 text-primary/40" />
+              </div>
+            </div>
+            <div className="absolute -bottom-1 -right-1 w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-lg">
+              <Check className="w-5 h-5 text-primary-foreground" />
+            </div>
+          </div>
+          {/* Content */}
+          <div className="flex-1 text-center md:text-left space-y-4">
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-primary">
+                {props.badge_text || "Hello, I'm"}
+              </p>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground leading-tight tracking-tight">
+                {props.headline || "John Doe"}
+              </h1>
+            </div>
+            <p className="text-lg text-muted-foreground max-w-lg leading-relaxed">
+              {props.subtitle || "Full-Stack Developer & UI Designer crafting beautiful digital experiences."}
+            </p>
+            <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+              {["React", "TypeScript", "Node.js", "Figma"].map(tag => (
+                <Badge key={tag} variant="secondary" className="text-xs px-3 py-1">{tag}</Badge>
+              ))}
+            </div>
+            <div className="flex gap-3 justify-center md:justify-start pt-2">
+              <Button size="lg" className="text-sm gap-2 shadow-primary-lg">
+                <Mail className="w-4 h-4" /> Contact Me
+              </Button>
+              <Button variant="outline" size="lg" className="text-sm gap-2">
+                <ArrowUpRight className="w-4 h-4" /> View Work
+              </Button>
+            </div>
+            {/* Social links */}
+            <div className="flex gap-3 justify-center md:justify-start pt-1">
+              {[Github, Globe, Mail].map((Icon, i) => (
+                <div key={i} className="w-9 h-9 rounded-lg border border-border bg-card flex items-center justify-center hover:bg-accent cursor-pointer transition-colors">
+                  <Icon className="w-4 h-4 text-muted-foreground" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={cn(
       "relative px-6 py-20 overflow-hidden",
       alignment === "center" ? "text-center" : "text-left"
     )}>
-      {/* Background decoration */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/10" />
       <div className="absolute top-20 left-1/4 w-72 h-72 bg-primary/5 rounded-full blur-3xl" />
       <div className="absolute bottom-10 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
@@ -354,14 +413,13 @@ function HeroPreview({ props, config }: { props: Record<string, any>; config: Ap
           {props.subtitle || config.description || "The modern platform for building applications faster than ever before."}
         </p>
         <div className={cn("flex gap-3 pt-2", alignment === "center" ? "justify-center" : "")}>
-          <Button variant="hero" size="lg" className="text-sm gap-2 shadow-primary-lg">
+          <Button size="lg" className="text-sm gap-2 shadow-primary-lg">
             {props.cta_text || "Get Started"} <ArrowUpRight className="w-4 h-4" />
           </Button>
-          <Button variant="hero-outline" size="lg" className="text-sm gap-2">
+          <Button variant="outline" size="lg" className="text-sm gap-2">
             <Play className="w-4 h-4" /> Watch Demo
           </Button>
         </div>
-        {/* Social proof */}
         <div className="flex items-center justify-center gap-6 pt-4">
           <div className="flex -space-x-2">
             {[...Array(4)].map((_, i) => (
@@ -384,7 +442,33 @@ function HeroPreview({ props, config }: { props: Record<string, any>; config: Ap
   );
 }
 
-function StatsRowPreview({ props }: { props: Record<string, any> }) {
+function StatsRowPreview({ props, config }: { props: Record<string, any>; config: AppConfig }) {
+  const isPortfolio = /portfolio|personal|resume|cv|freelanc/i.test(config.project_type + " " + (config.description || "") + " " + (config.title || ""));
+  
+  if (isPortfolio) {
+    const skills = [
+      { label: "Years Experience", value: "5+", icon: Clock },
+      { label: "Projects Completed", value: "50+", icon: Package },
+      { label: "Happy Clients", value: "30+", icon: Heart },
+      { label: "Technologies", value: "12+", icon: Code },
+    ];
+    return (
+      <div className="px-6 py-10">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {skills.map((m) => (
+            <div key={m.label} className="rounded-2xl border border-border bg-card p-5 text-center space-y-2 hover:shadow-md hover:border-primary/20 transition-all">
+              <div className="w-12 h-12 mx-auto rounded-xl bg-primary/10 flex items-center justify-center">
+                <m.icon className="w-5 h-5 text-primary" />
+              </div>
+              <div className="text-2xl font-extrabold text-foreground tracking-tight">{m.value}</div>
+              <div className="text-xs text-muted-foreground font-medium">{m.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   const defaultMetrics = [
     { label: "Total Revenue", value: "$45,231", change: "+20.1%", up: true, icon: DollarSign, color: "text-primary" },
     { label: "Active Users", value: "2,350", change: "+18.2%", up: true, icon: Users, color: "text-primary" },
@@ -560,8 +644,58 @@ function ChartPreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function CardGridPreview({ props }: { props: Record<string, any> }) {
+function CardGridPreview({ props, config }: { props: Record<string, any>; config: AppConfig }) {
   const cols = props.columns || 3;
+  const isPortfolio = /portfolio|personal|resume|cv|freelanc/i.test(config.project_type + " " + (config.description || "") + " " + (config.title || ""));
+
+  if (isPortfolio) {
+    const projects = [
+      { title: "E-Commerce Platform", desc: "Full-stack online store with payments, inventory, and admin dashboard.", tags: ["React", "Node.js", "Stripe"], icon: ShoppingCart },
+      { title: "Analytics Dashboard", desc: "Real-time data visualization platform with interactive charts and filters.", tags: ["TypeScript", "D3.js", "PostgreSQL"], icon: BarChart3 },
+      { title: "Social Media App", desc: "Community platform with posts, messaging, and user profiles.", tags: ["React Native", "Firebase", "Redux"], icon: Users },
+      { title: "AI Content Generator", desc: "Machine learning powered tool for automated content creation.", tags: ["Python", "OpenAI", "FastAPI"], icon: Sparkles },
+      { title: "Task Management", desc: "Kanban-style project management with team collaboration features.", tags: ["Vue.js", "GraphQL", "MongoDB"], icon: LayoutGrid },
+      { title: "Portfolio Website", desc: "Responsive personal portfolio with blog, gallery, and contact form.", tags: ["Next.js", "Tailwind", "MDX"], icon: Globe },
+    ].slice(0, Math.min(cols * 2, 6));
+
+    return (
+      <div className="px-6 py-10">
+        <div className="text-center mb-8 space-y-2">
+          <Badge variant="secondary" className="text-xs px-3 py-1">My Work</Badge>
+          <h2 className="text-2xl font-extrabold text-foreground tracking-tight">Featured Projects</h2>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto">A selection of my recent work across different technologies and industries.</p>
+        </div>
+        <div className={cn("grid gap-5", `grid-cols-1 sm:grid-cols-2 lg:grid-cols-${Math.min(cols, 3)}`)}>
+          {projects.map((project, i) => {
+            const Icon = project.icon;
+            return (
+              <div key={i} className="group rounded-2xl border border-border bg-card overflow-hidden hover:shadow-lg hover:border-primary/20 transition-all duration-300 cursor-pointer">
+                <div className="h-40 bg-gradient-to-br from-primary/10 via-accent/5 to-primary/5 flex items-center justify-center relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/15 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  <Icon className="w-12 h-12 text-primary/20 group-hover:text-primary/40 group-hover:scale-110 transition-all duration-500" />
+                  <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="w-8 h-8 rounded-lg bg-card/90 border border-border flex items-center justify-center">
+                      <ExternalLink className="w-3.5 h-3.5 text-foreground" />
+                    </div>
+                  </div>
+                </div>
+                <div className="p-5 space-y-3">
+                  <h4 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{project.title}</h4>
+                  <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{project.desc}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {project.tags.map(tag => (
+                      <Badge key={tag} variant="outline" className="text-[10px] font-normal">{tag}</Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   const cards = [
     { title: "Getting Started", desc: "Quick setup guide to launch your first project in minutes.", icon: Zap },
     { title: "API Reference", desc: "Complete API documentation with code examples and guides.", icon: Code },
@@ -714,7 +848,74 @@ function PricingTablePreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function FormPreview({ props }: { props: Record<string, any> }) {
+function FormPreview({ props, config }: { props: Record<string, any>; config: AppConfig }) {
+  const isPortfolio = /portfolio|personal|resume|cv|freelanc|contact/i.test(config.project_type + " " + (config.description || "") + " " + (props.collection || ""));
+
+  if (isPortfolio) {
+    return (
+      <div className="px-6 py-16">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-8 space-y-2">
+            <Badge variant="secondary" className="text-xs px-3 py-1">Contact</Badge>
+            <h2 className="text-2xl font-extrabold text-foreground tracking-tight">Get In Touch</h2>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto">Have a project in mind? Let's work together to bring your ideas to life.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
+            {/* Contact info */}
+            <div className="md:col-span-2 space-y-5">
+              {[
+                { icon: Mail, label: "Email", value: "hello@johndoe.com" },
+                { icon: MapPin, label: "Location", value: "San Francisco, CA" },
+                { icon: Globe, label: "Website", value: "johndoe.com" },
+              ].map(item => (
+                <div key={item.label} className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <item.icon className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">{item.label}</p>
+                    <p className="text-sm text-foreground font-medium">{item.value}</p>
+                  </div>
+                </div>
+              ))}
+              <div className="flex gap-2 pt-2">
+                {[Github, Globe, Mail].map((Icon, i) => (
+                  <div key={i} className="w-10 h-10 rounded-xl border border-border bg-card flex items-center justify-center hover:bg-accent cursor-pointer transition-colors">
+                    <Icon className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Contact form */}
+            <div className="md:col-span-3 rounded-2xl border border-border bg-card p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-foreground">Name</label>
+                  <Input placeholder="John Doe" className="h-10 text-xs" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-foreground">Email</label>
+                  <Input placeholder="you@example.com" className="h-10 text-xs" />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-foreground">Subject</label>
+                <Input placeholder="Project inquiry" className="h-10 text-xs" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-foreground">Message</label>
+                <textarea placeholder="Tell me about your project..." rows={4} className="w-full resize-none px-3 py-2.5 rounded-xl border border-input bg-background text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+              </div>
+              <Button className="w-full h-10 text-xs gap-2 shadow-primary-lg">
+                <Send className="w-3.5 h-3.5" /> Send Message
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-xl border border-border bg-card p-5 max-w-md">
       <h3 className="text-sm font-bold text-foreground mb-1">{props.collection ? `Add ${props.collection}` : "Create New"}</h3>
@@ -836,8 +1037,10 @@ function CalendarPreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function MediaGalleryPreview({ props }: { props: Record<string, any> }) {
+function MediaGalleryPreview({ props, config }: { props: Record<string, any>; config: AppConfig }) {
   const cols = props.columns || 3;
+  const isPortfolio = /portfolio|personal|resume|cv|freelanc/i.test(config.project_type + " " + (config.description || "") + " " + (config.title || ""));
+
   const gradients = [
     "from-primary/20 to-accent/10",
     "from-accent/20 to-primary/10",
@@ -846,6 +1049,45 @@ function MediaGalleryPreview({ props }: { props: Record<string, any> }) {
     "from-primary/15 to-accent/15",
     "from-accent/15 to-primary/15",
   ];
+
+  if (isPortfolio) {
+    const skills = [
+      { name: "React / Next.js", level: 95, category: "Frontend" },
+      { name: "TypeScript", level: 90, category: "Language" },
+      { name: "Node.js", level: 85, category: "Backend" },
+      { name: "Python", level: 80, category: "Language" },
+      { name: "PostgreSQL", level: 85, category: "Database" },
+      { name: "Figma / UI Design", level: 75, category: "Design" },
+      { name: "Docker / DevOps", level: 70, category: "Infra" },
+      { name: "GraphQL", level: 80, category: "API" },
+    ];
+
+    return (
+      <div className="px-6 py-12">
+        <div className="text-center mb-8 space-y-2">
+          <Badge variant="secondary" className="text-xs px-3 py-1">Skills</Badge>
+          <h2 className="text-2xl font-extrabold text-foreground tracking-tight">Skills & Technologies</h2>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto">Technologies I work with and my proficiency level in each.</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
+          {skills.map((skill) => (
+            <div key={skill.name} className="rounded-xl border border-border bg-card p-4 space-y-2 hover:border-primary/20 transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-foreground">{skill.name}</span>
+                <Badge variant="outline" className="text-[10px]">{skill.category}</Badge>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
+                  <div className="h-full rounded-full bg-primary transition-all duration-700" style={{ width: `${skill.level}%` }} />
+                </div>
+                <span className="text-[10px] font-bold text-primary w-8 text-right">{skill.level}%</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-xl border border-border bg-card p-5">
@@ -1244,7 +1486,38 @@ function ApiDocsPreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function FooterPreview({ props }: { props: Record<string, any> }) {
+function FooterPreview({ props, config }: { props: Record<string, any>; config?: AppConfig }) {
+  const isPortfolio = config && /portfolio|personal|resume|cv|freelanc/i.test(config.project_type + " " + (config.description || "") + " " + (config.title || ""));
+
+  if (isPortfolio) {
+    return (
+      <div className="px-6 py-10 border-t border-border bg-card mt-auto">
+        <div className="max-w-2xl mx-auto text-center space-y-4">
+          <div className="flex items-center justify-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center shadow-sm">
+              <User className="w-4 h-4 text-primary-foreground" />
+            </div>
+            <span className="font-bold text-sm text-foreground">John Doe</span>
+          </div>
+          <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+            Crafting digital experiences with passion. Let's build something amazing together.
+          </p>
+          <div className="flex items-center justify-center gap-3">
+            {[Github, Globe, Mail].map((Icon, i) => (
+              <div key={i} className="w-9 h-9 rounded-lg border border-border bg-card flex items-center justify-center hover:bg-accent cursor-pointer transition-colors">
+                <Icon className="w-4 h-4 text-muted-foreground" />
+              </div>
+            ))}
+          </div>
+          <Separator />
+          <p className="text-[11px] text-muted-foreground">
+            © 2024 John Doe. All rights reserved. Built with ❤️
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="px-6 py-10 border-t border-border bg-card mt-auto">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 mb-8">
