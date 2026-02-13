@@ -103,12 +103,12 @@ export default function MenuBuilderPage() {
   // Group dialog
   const [groupDialogOpen, setGroupDialogOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<MenuGroup | null>(null);
-  const [groupForm, setGroupForm] = useState({ name: "", slug: "", position: "header", target: "frontend" });
+  const [groupForm, setGroupForm] = useState({ name: "", slug: "", position: "header", target: "frontend", sort_order: 0 });
 
   // Item dialog
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
-  const [itemForm, setItemForm] = useState({ label: "", link_type: "custom", url: "", plugin_slug: "", icon: "", open_in_new_tab: false, group_id: "", parent_id: "", position: "header" });
+  const [itemForm, setItemForm] = useState({ label: "", link_type: "custom", url: "", plugin_slug: "", icon: "", open_in_new_tab: false, group_id: "", parent_id: "", position: "header", sort_order: 0 });
 
   useEffect(() => {
     if (user) fetchAll();
@@ -162,10 +162,10 @@ export default function MenuBuilderPage() {
   function openGroupDialog(group?: MenuGroup) {
     if (group) {
       setEditingGroup(group);
-      setGroupForm({ name: group.name, slug: group.slug, position: group.position, target: group.target });
+      setGroupForm({ name: group.name, slug: group.slug, position: group.position, target: group.target, sort_order: group.sort_order });
     } else {
       setEditingGroup(null);
-      setGroupForm({ name: "", slug: "", position: "header", target: "frontend" });
+      setGroupForm({ name: "", slug: "", position: "header", target: "frontend", sort_order: groups.length });
     }
     setGroupDialogOpen(true);
   }
@@ -174,11 +174,11 @@ export default function MenuBuilderPage() {
     if (!user || !groupForm.name) return;
     const slug = groupForm.slug || groupForm.name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
     if (editingGroup) {
-      const { error } = await supabase.from("menu_groups").update({ name: groupForm.name, slug, position: groupForm.position, target: groupForm.target }).eq("id", editingGroup.id);
+      const { error } = await supabase.from("menu_groups").update({ name: groupForm.name, slug, position: groupForm.position, target: groupForm.target, sort_order: groupForm.sort_order }).eq("id", editingGroup.id);
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
       toast({ title: "Group updated" });
     } else {
-      const { error } = await supabase.from("menu_groups").insert({ user_id: user.id, name: groupForm.name, slug, position: groupForm.position, target: groupForm.target, sort_order: groups.length });
+      const { error } = await supabase.from("menu_groups").insert({ user_id: user.id, name: groupForm.name, slug, position: groupForm.position, target: groupForm.target, sort_order: groupForm.sort_order });
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
       toast({ title: "Group created" });
     }
@@ -203,10 +203,10 @@ export default function MenuBuilderPage() {
   function openItemDialog(item?: MenuItem) {
     if (item) {
       setEditingItem(item);
-      setItemForm({ label: item.label, link_type: item.link_type, url: item.url || "", plugin_slug: item.plugin_slug || "", icon: item.icon || "", open_in_new_tab: item.open_in_new_tab, group_id: item.group_id, parent_id: item.parent_id || "", position: item.position || "header" });
+      setItemForm({ label: item.label, link_type: item.link_type, url: item.url || "", plugin_slug: item.plugin_slug || "", icon: item.icon || "", open_in_new_tab: item.open_in_new_tab, group_id: item.group_id, parent_id: item.parent_id || "", position: item.position || "header", sort_order: item.sort_order });
     } else {
       setEditingItem(null);
-      setItemForm({ label: "", link_type: "custom", url: "", plugin_slug: "", icon: "", open_in_new_tab: false, group_id: groups[0]?.id || "", parent_id: "", position: "header" });
+      setItemForm({ label: "", link_type: "custom", url: "", plugin_slug: "", icon: "", open_in_new_tab: false, group_id: groups[0]?.id || "", parent_id: "", position: "header", sort_order: items.length });
     }
     setItemDialogOpen(true);
   }
@@ -224,13 +224,13 @@ export default function MenuBuilderPage() {
       icon: itemForm.icon || null,
       open_in_new_tab: itemForm.open_in_new_tab,
       position: itemForm.position,
+      sort_order: itemForm.sort_order,
     };
     if (editingItem) {
       const { error } = await supabase.from("menu_items").update(data).eq("id", editingItem.id);
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
       toast({ title: "Menu item updated" });
     } else {
-      data.sort_order = items.filter(i => i.group_id === itemForm.group_id).length;
       const { error } = await supabase.from("menu_items").insert(data);
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
       toast({ title: "Menu item created" });
@@ -311,6 +311,7 @@ export default function MenuBuilderPage() {
                       <TableHead className="hidden sm:table-cell">Slug</TableHead>
                       <TableHead>Position</TableHead>
                       <TableHead className="hidden md:table-cell">Target</TableHead>
+                      <TableHead className="w-20">Order</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -318,7 +319,7 @@ export default function MenuBuilderPage() {
                   <TableBody>
                     {pagedGroups.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                           {groupSearch ? "No groups match your search." : "No menu groups yet."}
                         </TableCell>
                       </TableRow>
@@ -332,6 +333,7 @@ export default function MenuBuilderPage() {
                         <TableCell className="hidden md:table-cell">
                           <Badge variant="outline" className="text-xs">{TARGETS.find(t => t.value === group.target)?.label}</Badge>
                         </TableCell>
+                        <TableCell className="text-center text-sm text-muted-foreground">{group.sort_order}</TableCell>
                         <TableCell>
                           <button onClick={() => toggleGroup(group.id, group.is_active)} title={group.is_active ? "Active" : "Inactive"}>
                             {group.is_active
@@ -387,6 +389,7 @@ export default function MenuBuilderPage() {
                       <TableHead className="hidden sm:table-cell">Type</TableHead>
                       <TableHead className="hidden md:table-cell">URL / Plugin</TableHead>
                       <TableHead className="hidden lg:table-cell">Parent</TableHead>
+                      <TableHead className="w-20">Order</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -394,7 +397,7 @@ export default function MenuBuilderPage() {
                   <TableBody>
                     {pagedItems.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                           {itemSearch ? "No items match your search." : "No menu items yet."}
                         </TableCell>
                       </TableRow>
@@ -485,6 +488,10 @@ export default function MenuBuilderPage() {
                   </Select>
                 </div>
               </div>
+              <div>
+                <Label>Sort Order</Label>
+                <Input type="number" min={0} value={groupForm.sort_order} onChange={e => setGroupForm(f => ({ ...f, sort_order: parseInt(e.target.value) || 0 }))} placeholder="0" />
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setGroupDialogOpen(false)}>Cancel</Button>
@@ -562,6 +569,11 @@ export default function MenuBuilderPage() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div>
+                <Label>Sort Order</Label>
+                <Input type="number" min={0} value={itemForm.sort_order} onChange={e => setItemForm(f => ({ ...f, sort_order: parseInt(e.target.value) || 0 }))} placeholder="0" />
               </div>
 
               <div className="flex items-center justify-between">
