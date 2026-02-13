@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Plus, Trash2, Edit2, GripVertical, ChevronDown, ChevronRight, ExternalLink, Puzzle, FileText, Link2, ToggleLeft, ToggleRight, Menu as MenuIcon, Search, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import IconPicker from "@/components/IconPicker";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -530,7 +531,7 @@ export default function MenuBuilderPage() {
 
               <div>
                 <Label>Icon (optional)</Label>
-                <Input value={itemForm.icon} onChange={e => setItemForm(f => ({ ...f, icon: e.target.value }))} placeholder="e.g. Home, Settings, Star" />
+                <IconPicker value={itemForm.icon} onChange={v => setItemForm(f => ({ ...f, icon: v }))} />
               </div>
 
               <div>
