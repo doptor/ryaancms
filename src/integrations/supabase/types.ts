@@ -233,6 +233,89 @@ export type Database = {
         }
         Relationships: []
       }
+      project_memory: {
+        Row: {
+          agent_log: Json | null
+          api_list: Json | null
+          created_at: string
+          current_step: number | null
+          db_schema: Json | null
+          error: string | null
+          folder_structure: Json | null
+          generated_files: Json | null
+          id: string
+          modules: Json | null
+          page_layouts: Json | null
+          project_id: string
+          quality_score: Json | null
+          requirements: Json | null
+          status: string | null
+          suggestions: Json | null
+          task_plan: Json | null
+          total_steps: number | null
+          ui_components: Json | null
+          updated_at: string
+          user_id: string
+          workflow: Json | null
+        }
+        Insert: {
+          agent_log?: Json | null
+          api_list?: Json | null
+          created_at?: string
+          current_step?: number | null
+          db_schema?: Json | null
+          error?: string | null
+          folder_structure?: Json | null
+          generated_files?: Json | null
+          id?: string
+          modules?: Json | null
+          page_layouts?: Json | null
+          project_id: string
+          quality_score?: Json | null
+          requirements?: Json | null
+          status?: string | null
+          suggestions?: Json | null
+          task_plan?: Json | null
+          total_steps?: number | null
+          ui_components?: Json | null
+          updated_at?: string
+          user_id: string
+          workflow?: Json | null
+        }
+        Update: {
+          agent_log?: Json | null
+          api_list?: Json | null
+          created_at?: string
+          current_step?: number | null
+          db_schema?: Json | null
+          error?: string | null
+          folder_structure?: Json | null
+          generated_files?: Json | null
+          id?: string
+          modules?: Json | null
+          page_layouts?: Json | null
+          project_id?: string
+          quality_score?: Json | null
+          requirements?: Json | null
+          status?: string | null
+          suggestions?: Json | null
+          task_plan?: Json | null
+          total_steps?: number | null
+          ui_components?: Json | null
+          updated_at?: string
+          user_id?: string
+          workflow?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_memory_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           created_at: string

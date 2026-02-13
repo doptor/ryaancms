@@ -24,9 +24,6 @@ import {
   AIPipelineOrchestrator,
   PipelineStage,
   PipelineState,
-  AppConfig,
-  ValidationResult,
-  GeneratedSchema,
 } from "@/lib/engine";
 import ReactMarkdown from "react-markdown";
 import { AppPreviewRenderer } from "@/components/ai-builder/AppPreviewRenderer";
@@ -45,23 +42,30 @@ type ProgressStep = {
 const STAGE_MAP: Record<PipelineStage, number> = {
   idle: -1,
   understanding: 0,
-  generating: 1,
-  building_components: 2,
-  generating_database: 3,
-  validating_security: 4,
-  finalizing: 5,
-  complete: 6,
+  planning: 1,
+  architecting: 2,
+  designing: 3,
+  reviewing: 4,
+  generating: 5,
+  building_components: 5,
+  generating_database: 6,
+  validating_security: 7,
+  finalizing: 8,
+  complete: 9,
   error: -1,
 };
 
 const ENGINE_LABELS = [
-  "Engine 1: Understanding requirements",
-  "Engine 1: Generating app config (AI)",
-  "Engine 2: Building component layout",
-  "Engine 3: Generating database schema",
-  "Engine 4: Security validation",
-  "Engine 5: Finalizing configuration",
-  "✓ Pipeline complete",
+  "🤖 Agent 1: Requirement Analyst",
+  "📋 Agent 2: Task Planner",
+  "🏗 Agent 3: System Architect",
+  "🎨 Agent 4: UI/UX Designer",
+  "🔍 Agent 5: Quality Reviewer",
+  "⚙️ Building components",
+  "🗄 Generating database schema",
+  "🔐 Security validation",
+  "📦 Finalizing configuration",
+  "✅ Pipeline complete",
 ];
 
 const suggestions = [
@@ -97,6 +101,7 @@ export default function AIBuilderPage() {
   const [selectedComponent, setSelectedComponent] = useState<{ pageIndex: number; componentIndex: number } | null>(null);
   const [generatedFiles, setGeneratedFiles] = useState<GeneratedFile[]>([]);
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState<{ text: string; prompt: string }[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const hasProcessedIncoming = useRef(false);
   const orchestrator = useMemo(() => new AIPipelineOrchestrator(), []);
@@ -160,12 +165,18 @@ export default function AIBuilderPage() {
         const v = result.validation;
         const schema = result.schema;
 
-        // Track build analytics
+        // Set AI suggestions
+        if (result.suggestions?.length) {
+          setAiSuggestions(result.suggestions);
+        }
+
+        // Track build analytics + save project memory
         try {
-          const { data: { user: currentUser } } = await (await import("@/integrations/supabase/client")).supabase.auth.getUser();
+          const { data: { user: currentUser } } = await supabase.auth.getUser();
           if (currentUser) {
             const allComponents = config.pages.flatMap((p) => p.components.map((c) => c.type));
-            await (await import("@/integrations/supabase/client")).supabase.from("build_analytics").insert({
+            // Save analytics
+            await supabase.from("build_analytics").insert({
               user_id: currentUser.id,
               prompt: text,
               project_title: config.title || "Untitled",
@@ -173,50 +184,91 @@ export default function AIBuilderPage() {
               component_count: allComponents.length,
               page_count: config.pages.length,
               collection_count: config.collections.length,
-              security_score: v?.score || 0,
+              security_score: v?.score || (result.qualityScore?.overall_score || 0),
               status: "success",
               duration_ms: duration,
             });
+
+            // Save project + memory
+            const { data: project } = await supabase.from("projects").insert({
+              user_id: currentUser.id,
+              prompt: text,
+              title: config.title || "Untitled",
+              status: "generated",
+            }).select("id").single();
+
+            if (project) {
+              await supabase.from("project_memory").insert({
+                user_id: currentUser.id,
+                project_id: project.id,
+                requirements: result.requirements || [],
+                modules: config.modules || [],
+                db_schema: config.collections || [],
+                api_list: result.apiEndpoints || [],
+                ui_components: allComponents || [],
+                page_layouts: config.pages || [],
+                task_plan: result.taskPlan || [],
+                total_steps: result.taskPlan?.length || 0,
+                current_step: result.taskPlan?.length || 0,
+                quality_score: result.qualityScore || {},
+                suggestions: result.suggestions || [],
+                agent_log: result.agentLog || [],
+                status: "complete",
+              } as any);
+            }
           }
         } catch {}
 
         const summary = [
           `## ✅ ${config.title}`,
           `**Type:** ${config.project_type} · **Modules:** ${config.modules.join(", ")}`,
+          `*Built by 5 AI Agents: Requirement Analyst → Task Planner → System Architect → UI/UX Designer → Quality Reviewer*`,
           "",
+          ...(result.taskPlan?.length ? [
+            `### 📋 Task Plan (${result.taskPlan.length} steps)`,
+            ...result.taskPlan.map((t: any) => `${t.step}. **${t.name}** — ${t.description} *(${t.complexity})*`),
+            "",
+          ] : []),
           `### 📄 Pages (${config.pages.length})`,
           ...config.pages.map((p) => `- **${p.name}** \`${p.route}\` — ${p.components.length} components (${p.layout})`),
           "",
           `### 🗄 Database (${config.collections.length} collections)`,
           ...config.collections.map((c) => `- **${c.name}** — ${c.fields.length} fields${c.rls ? " 🔒" : ""}${c.tenant_isolated ? " 🏢" : ""}`),
           "",
+          ...(result.apiEndpoints?.length ? [
+            `### 🔌 API Endpoints (${result.apiEndpoints.length})`,
+            ...result.apiEndpoints.slice(0, 8).map((e: any) => `- \`${e.method} ${e.path}\` — ${e.description}`),
+            result.apiEndpoints.length > 8 ? `- ...and ${result.apiEndpoints.length - 8} more` : "",
+            "",
+          ] : []),
           ...(config.roles?.length ? [
             `### 👥 Roles`,
             ...config.roles.map((r) => `- **${r.name}**: ${r.permissions.join(", ")}`),
             "",
           ] : []),
+          ...(result.qualityScore?.overall_score ? [
+            `### 🏆 Quality Score: ${result.qualityScore.overall_score}/100`,
+            `UI: ${result.qualityScore.ui_completeness || 0} · Backend: ${result.qualityScore.backend_completeness || 0} · Security: ${result.qualityScore.security || 0}`,
+            `**Verdict:** ${result.qualityVerdict}`,
+            "",
+          ] : []),
           ...(v ? [
-            `### 🔐 Security Score: ${v.score}/100`,
+            `### 🔐 Security Validation: ${v.score}/100`,
             v.errors.length ? `- ❌ ${v.errors.length} errors` : "",
             v.warnings.length ? `- ⚠️ ${v.warnings.length} warnings` : "",
-            v.info.length ? `- ℹ️ ${v.info.length} info` : "",
             "",
           ] : []),
-          ...(schema?.warnings.length ? [
-            `### ⚠️ Schema Warnings`,
-            ...schema.warnings.map((w) => `- ${w}`),
-            "",
-          ] : []),
-          "Configuration ready! Check **Preview**, **Config**, and **SQL** tabs. Click **Publish** when satisfied.",
+          "Configuration ready! Check **Preview**, **Config**, **SQL**, and **Code** tabs.",
+          result.suggestions?.length ? "\n💡 **Click a suggestion below** to enhance your project:" : "",
         ].filter(Boolean).join("\n");
 
         setMessages((prev) => [...prev, { role: "ai", content: summary }]);
       } else if (result.error) {
         // Track failed build
         try {
-          const { data: { user: currentUser } } = await (await import("@/integrations/supabase/client")).supabase.auth.getUser();
+          const { data: { user: currentUser } } = await supabase.auth.getUser();
           if (currentUser) {
-            await (await import("@/integrations/supabase/client")).supabase.from("build_analytics").insert({
+            await supabase.from("build_analytics").insert({
               user_id: currentUser.id,
               prompt: text,
               status: "error",
@@ -642,6 +694,27 @@ export default function AIBuilderPage() {
                   </div>
                 </button>
               ))}
+            </div>
+          )}
+          {/* AI-generated follow-up suggestions */}
+          {aiSuggestions.length > 0 && !isBuilding && (
+            <div className="mt-4 space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">💡 Suggestions to enhance your project</p>
+              <div className="grid grid-cols-1 gap-1.5">
+                {aiSuggestions.map((s, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      setAiSuggestions([]);
+                      sendMessage(s.prompt);
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card text-left hover:border-primary/30 hover:bg-accent/50 transition-all text-xs"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <span className="text-foreground">{s.text}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
           <div ref={chatEndRef} />
