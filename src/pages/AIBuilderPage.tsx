@@ -10,6 +10,7 @@ import {
   Table, Lock, LayoutGrid, Search, Bell,
   Calendar, Columns, Clock, MapPin, Download,
   Shield, AlertTriangle, Info, Image, Upload, FileCode2,
+  TrendingUp, Link2, X,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useLocation } from "react-router-dom";
@@ -30,6 +31,7 @@ import { AppPreviewRenderer } from "@/components/ai-builder/AppPreviewRenderer";
 import { DeployPanel } from "@/components/ai-builder/DeployPanel";
 import { PropEditorSidebar } from "@/components/ai-builder/PropEditorSidebar";
 import { CodePanel, GeneratedFile } from "@/components/ai-builder/CodePanel";
+import { QualityScorePanel } from "@/components/ai-builder/QualityScorePanel";
 import { supabase } from "@/integrations/supabase/client";
 
 type Message = { role: "user" | "ai"; content: string };
@@ -102,8 +104,12 @@ export default function AIBuilderPage() {
   const [generatedFiles, setGeneratedFiles] = useState<GeneratedFile[]>([]);
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<{ text: string; prompt: string }[]>([]);
+  const [isAutoImproving, setIsAutoImproving] = useState(false);
+  const [screenshotUrl, setScreenshotUrl] = useState("");
+  const [showUrlInput, setShowUrlInput] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const hasProcessedIncoming = useRef(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const orchestrator = useMemo(() => new AIPipelineOrchestrator(), []);
 
   useEffect(() => {
@@ -385,15 +391,37 @@ export default function AIBuilderPage() {
     }
   };
 
+  const handleAutoImprove = async () => {
+    if (!pipelineState?.config) return;
+    setIsAutoImproving(true);
+    const improvements = pipelineState.qualityImprovements || [];
+    const improvementPrompt = `Improve the current project "${pipelineState.config.title}" based on these quality issues:\n${improvements.join("\n")}\n\nFix all issues and re-generate an improved version.`;
+    await sendMessage(improvementPrompt);
+    setIsAutoImproving(false);
+  };
+
+  const handleScreenshotUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // For now, we mention the filename in the prompt - actual image analysis requires vision API
+    const prompt = `Replicate the UI layout from the uploaded screenshot "${file.name}". Create a similar design with matching structure, spacing, and component layout. Use modern React components.`;
+    sendMessage(prompt);
+  };
+
+  const handleUrlReplicate = () => {
+    if (!screenshotUrl.trim()) return;
+    const prompt = `Replicate the UI layout from this website: ${screenshotUrl}. Analyze the page structure and create a similar design with matching layout, navigation, hero section, content sections, and footer. Use modern React components with Tailwind CSS.`;
+    sendMessage(prompt);
+    setScreenshotUrl("");
+    setShowUrlInput(false);
+  };
+
   const StatusIcon = ({ status }: { status: ProgressStep["status"] }) => {
     if (status === "done") return <CheckCircle2 className="w-3.5 h-3.5 text-primary" />;
     if (status === "in_progress") return <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />;
     if (status === "error") return <AlertCircle className="w-3.5 h-3.5 text-destructive" />;
     return <Circle className="w-3.5 h-3.5 text-muted-foreground/40" />;
   };
-
-
-
   // === Preview Tab ===
   const renderPreview = () => {
     const config = pipelineState?.config;
@@ -722,13 +750,46 @@ export default function AIBuilderPage() {
       </ScrollArea>
 
       <div className="border-t border-border p-3 bg-card shrink-0">
+        {/* URL input for replication */}
+        {showUrlInput && (
+          <div className="flex items-center gap-2 mb-2">
+            <input
+              value={screenshotUrl}
+              onChange={(e) => setScreenshotUrl(e.target.value)}
+              placeholder="Paste website URL to replicate..."
+              className="flex-1 px-3 py-1.5 rounded-lg border border-input bg-background text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              onKeyDown={(e) => e.key === "Enter" && handleUrlReplicate()}
+            />
+            <Button size="sm" variant="outline" onClick={handleUrlReplicate} className="h-7 text-xs gap-1">
+              <Sparkles className="w-3 h-3" /> Replicate
+            </Button>
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setShowUrlInput(false)}>
+              <X className="w-3 h-3" />
+            </Button>
+          </div>
+        )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleScreenshotUpload}
+          className="hidden"
+        />
         <div className="flex items-end gap-2">
           <div className="flex gap-1">
-            <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground">
-              <Paperclip className="w-4 h-4" />
+            <Button
+              variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground"
+              onClick={() => fileInputRef.current?.click()}
+              title="Upload screenshot to replicate"
+            >
+              <Image className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground">
-              <Mic className="w-4 h-4" />
+            <Button
+              variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground"
+              onClick={() => setShowUrlInput(!showUrlInput)}
+              title="Paste URL to replicate"
+            >
+              <Link2 className="w-4 h-4" />
             </Button>
           </div>
           <textarea
@@ -819,6 +880,9 @@ export default function AIBuilderPage() {
                         <TabsTrigger value="security" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 gap-1.5">
                           <Shield className="w-3.5 h-3.5" /> Security
                         </TabsTrigger>
+                        <TabsTrigger value="quality" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 gap-1.5">
+                          <TrendingUp className="w-3.5 h-3.5" /> Quality
+                        </TabsTrigger>
                         <TabsTrigger value="deploy" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 gap-1.5">
                           <Rocket className="w-3.5 h-3.5" /> Deploy
                         </TabsTrigger>
@@ -884,6 +948,13 @@ export default function AIBuilderPage() {
                         )}
                       </ScrollArea>
                     )}
+                    {activeTab === "quality" && (
+                      <QualityScorePanel
+                        pipelineState={pipelineState}
+                        onAutoImprove={handleAutoImprove}
+                        isImproving={isAutoImproving}
+                      />
+                    )}
                     {activeTab === "deploy" && (
                       <DeployPanel
                         config={pipelineState?.config || null}
@@ -923,6 +994,9 @@ export default function AIBuilderPage() {
                   <TabsTrigger value="sql" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
                     <Database className="w-3.5 h-3.5" /> SQL
                   </TabsTrigger>
+                  <TabsTrigger value="quality" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
+                    <TrendingUp className="w-3.5 h-3.5" /> Quality
+                  </TabsTrigger>
                   <TabsTrigger value="deploy" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
                     <Rocket className="w-3.5 h-3.5" /> Deploy
                   </TabsTrigger>
@@ -937,6 +1011,13 @@ export default function AIBuilderPage() {
               {activeTab === "preview" && renderPreview()}
               {activeTab === "config" && renderConfig()}
               {activeTab === "sql" && renderSQL()}
+              {activeTab === "quality" && (
+                <QualityScorePanel
+                  pipelineState={pipelineState}
+                  onAutoImprove={handleAutoImprove}
+                  isImproving={isAutoImproving}
+                />
+              )}
               {activeTab === "deploy" && (
                 <DeployPanel
                   config={pipelineState?.config || null}
