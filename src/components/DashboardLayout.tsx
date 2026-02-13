@@ -199,12 +199,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             {/* Bottom zone - footer menu items */}
             <div
-              className="shrink-0"
+              className="shrink-0 min-h-[48px] flex items-end"
               onMouseEnter={() => setBottomZoneHovered(true)}
               onMouseLeave={() => setBottomZoneHovered(false)}
             >
               {bottomZoneHovered && footerItems.length > 0 && (
-                <div className="p-2 border-t border-border space-y-0.5 animate-in fade-in-0 duration-200">
+                <div className="p-2 border-t border-border space-y-0.5 animate-in fade-in-0 duration-200 w-full">
                   {footerItems.map((item, i) => renderItem(item, false, headerItems.length + i))}
                 </div>
               )}
