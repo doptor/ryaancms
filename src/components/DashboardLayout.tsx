@@ -1,14 +1,12 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Database, Sparkles, LayoutDashboard, Store, Settings, Zap, ChevronLeft, Download, Brain, LogOut, Menu, X } from "lucide-react";
+import { Sparkles, LayoutDashboard, Store, Settings, Zap, ChevronLeft, Download, LogOut, Menu, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
 const sidebarItems = [
   { label: "Overview", icon: LayoutDashboard, path: "/dashboard", color: "text-blue-400" },
-  { label: "Schema Architect", icon: Database, path: "/dashboard/schema", color: "text-emerald-400" },
   { label: "AI Builder", icon: Sparkles, path: "/dashboard/ai", color: "text-violet-400" },
-  { label: "AI Integrations", icon: Brain, path: "/dashboard/ai-integrations", color: "text-pink-400" },
   { label: "Marketplace", icon: Store, path: "/dashboard/marketplace", color: "text-amber-400" },
   { label: "Installer", icon: Download, path: "/dashboard/installer", color: "text-cyan-400" },
   { label: "Settings", icon: Settings, path: "/dashboard/settings", color: "text-orange-400" },
