@@ -1,64 +1,180 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Database, Users, Puzzle, Globe, TrendingUp, Clock } from "lucide-react";
-
-const stats = [
-  { label: "Collections", value: "12", icon: Database, change: "+2 this week" },
-  { label: "Active Users", value: "1,847", icon: Users, change: "+12% growth" },
-  { label: "Plugins", value: "8", icon: Puzzle, change: "All healthy" },
-  { label: "API Calls", value: "284K", icon: Globe, change: "< 45ms avg" },
-];
-
-const recentActivity = [
-  { action: "Schema updated", target: "Products collection", time: "2 min ago" },
-  { action: "Plugin installed", target: "SEO Pro v2.1", time: "15 min ago" },
-  { action: "Content published", target: "Blog: AI in 2026", time: "1 hour ago" },
-  { action: "Template applied", target: "E-Commerce Layout", time: "3 hours ago" },
-  { action: "User created", target: "team@example.com", time: "5 hours ago" },
-];
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Send, Plus, Pencil, Trash2, Clock } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 export default function DashboardOverview() {
+  const { user } = useAuth();
+  const [prompt, setPrompt] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editPrompt, setEditPrompt] = useState("");
+  const queryClient = useQueryClient();
+
+  const displayName = user?.email?.split("@")[0] || "User";
+
+  const { data: projects = [] } = useQuery({
+    queryKey: ["projects"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("projects")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const createProject = useMutation({
+    mutationFn: async (promptText: string) => {
+      const { error } = await supabase.from("projects").insert({
+        user_id: user!.id,
+        prompt: promptText,
+        title: promptText.slice(0, 60),
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      setPrompt("");
+      toast({ title: "Project saved!" });
+    },
+    onError: () => toast({ title: "Failed to save", variant: "destructive" }),
+  });
+
+  const updateProject = useMutation({
+    mutationFn: async ({ id, prompt: p }: { id: string; prompt: string }) => {
+      const { error } = await supabase
+        .from("projects")
+        .update({ prompt: p, title: p.slice(0, 60) })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      setEditingId(null);
+      toast({ title: "Project updated!" });
+    },
+  });
+
+  const deleteProject = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("projects").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      toast({ title: "Project deleted" });
+    },
+  });
+
+  const handleSubmit = () => {
+    if (!prompt.trim()) return;
+    createProject.mutate(prompt.trim());
+  };
+
   return (
     <DashboardLayout>
-      <div className="p-4 sm:p-6 lg:p-8 max-w-6xl">
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-1">Dashboard</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground">Welcome back. Here's what's happening with your CMS.</p>
-        </div>
+      <div className="flex flex-col items-center justify-center min-h-screen relative overflow-hidden">
+        {/* Gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-primary/20 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-primary/30 via-primary/10 to-transparent pointer-events-none" />
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
-          {stats.map((s) => (
-            <div key={s.label} className="rounded-xl border border-border bg-card p-3 sm:p-5 hover:border-primary/30 transition-colors">
-              <div className="flex items-center justify-between mb-2 sm:mb-3">
-                <span className="text-xs sm:text-sm text-muted-foreground truncate">{s.label}</span>
-                <s.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground shrink-0" />
-              </div>
-              <div className="text-lg sm:text-2xl font-bold text-foreground mb-0.5 sm:mb-1">{s.value}</div>
-              <div className="flex items-center gap-1 text-[10px] sm:text-xs text-primary">
-                <TrendingUp className="w-3 h-3 shrink-0" />
-                <span className="truncate">{s.change}</span>
-              </div>
+        {/* Main content */}
+        <div className="relative z-10 w-full max-w-2xl px-4 flex flex-col items-center gap-6">
+          {/* Greeting */}
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground text-center">
+            Ready to build, {displayName}?
+          </h1>
+
+          {/* Prompt input */}
+          <div className="w-full rounded-2xl border border-border bg-card shadow-lg">
+            <textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Describe your project..."
+              rows={2}
+              className="w-full bg-transparent px-4 pt-4 pb-2 text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSubmit();
+                }
+              }}
+            />
+            <div className="flex items-center justify-between px-4 pb-3">
+              <Plus className="w-5 h-5 text-muted-foreground" />
+              <button
+                onClick={handleSubmit}
+                disabled={!prompt.trim() || createProject.isPending}
+                className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground disabled:opacity-40 hover:opacity-90 transition-opacity"
+              >
+                <Send className="w-4 h-4" />
+              </button>
             </div>
-          ))}
-        </div>
+          </div>
 
-        {/* Recent Activity */}
-        <div className="rounded-xl border border-border bg-card">
-          <div className="flex items-center gap-2 px-4 sm:px-5 py-3 sm:py-4 border-b border-border">
-            <Clock className="w-4 h-4 text-muted-foreground" />
-            <h2 className="text-xs sm:text-sm font-semibold text-foreground">Recent Activity</h2>
-          </div>
-          <div className="divide-y divide-border">
-            {recentActivity.map((a, i) => (
-              <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-5 py-2.5 sm:py-3.5 hover:bg-accent/50 transition-colors gap-0.5 sm:gap-1">
-                <div className="min-w-0">
-                  <span className="text-xs sm:text-sm text-foreground font-medium">{a.action}</span>
-                  <span className="text-xs sm:text-sm text-muted-foreground ml-1 sm:ml-2 break-all">{a.target}</span>
+          {/* Saved projects */}
+          {projects.length > 0 && (
+            <div className="w-full mt-4 space-y-2">
+              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
+                Saved Projects
+              </h2>
+              {projects.map((p) => (
+                <div
+                  key={p.id}
+                  className="rounded-xl border border-border bg-card px-4 py-3 flex items-start gap-3 group hover:border-primary/30 transition-colors"
+                >
+                  <Clock className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    {editingId === p.id ? (
+                      <div className="flex gap-2">
+                        <input
+                          value={editPrompt}
+                          onChange={(e) => setEditPrompt(e.target.value)}
+                          className="flex-1 bg-transparent border border-border rounded-lg px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              updateProject.mutate({ id: p.id, prompt: editPrompt });
+                            }
+                            if (e.key === "Escape") setEditingId(null);
+                          }}
+                          autoFocus
+                        />
+                      </div>
+                    ) : (
+                      <p className="text-sm text-foreground truncate">{p.prompt}</p>
+                    )}
+                    <span className="text-[10px] text-muted-foreground">
+                      {new Date(p.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                    <button
+                      onClick={() => {
+                        setEditingId(p.id);
+                        setEditPrompt(p.prompt);
+                      }}
+                      className="p-1 text-muted-foreground hover:text-foreground"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => deleteProject.mutate(p.id)}
+                      className="p-1 text-muted-foreground hover:text-destructive"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
-                <span className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">{a.time}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>
