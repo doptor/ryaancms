@@ -739,7 +739,20 @@ export default function AIBuilderPage() {
               </Badge>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost" size="sm"
+              onClick={() => {
+                if (pipelineState?.config) {
+                  localStorage.setItem("ai-builder-preview-config", JSON.stringify(pipelineState.config));
+                  window.open("/preview", "_blank");
+                }
+              }}
+              className="gap-1 h-7 text-xs text-muted-foreground hover:text-foreground"
+              title="Open preview in new tab"
+            >
+              <ExternalLink className="w-3 h-3" /> New Tab
+            </Button>
             <Button variant="ghost" size="sm" onClick={handleExportJSON} className="gap-1 h-7 text-xs text-muted-foreground hover:text-foreground">
               <Download className="w-3 h-3" /> JSON
             </Button>
