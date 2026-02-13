@@ -40,6 +40,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [sidebarHovered, setSidebarHovered] = useState(false);
+  const [topZoneHovered, setTopZoneHovered] = useState(false);
+  const [bottomZoneHovered, setBottomZoneHovered] = useState(false);
   const [headerItems, setHeaderItems] = useState<DynamicMenuItem[]>([]);
   const [footerItems, setFooterItems] = useState<DynamicMenuItem[]>([]);
   const [displayName, setDisplayName] = useState<string>("");
@@ -166,29 +168,50 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       
       <aside
         onMouseEnter={() => setSidebarHovered(true)}
-        onMouseLeave={() => setSidebarHovered(false)}
+        onMouseLeave={() => { setSidebarHovered(false); setTopZoneHovered(false); setBottomZoneHovered(false); }}
         className={cn(
           "hidden md:flex flex-col border-r border-border bg-card transition-all duration-300 ease-in-out overflow-hidden",
-          sidebarHovered ? "w-60" : "w-2 hover:w-2 cursor-pointer"
+          sidebarHovered ? "w-60" : "w-2 cursor-pointer"
         )}
       >
         {sidebarHovered && (
           <>
-            <div className="flex items-center gap-2 px-4 h-14 border-b border-border">
+            {/* Header / Logo */}
+            <div className="flex items-center gap-2 px-4 h-14 border-b border-border shrink-0">
               <div className="w-7 h-7 rounded-lg bg-gradient-primary flex items-center justify-center shrink-0">
                 <Zap className="w-3.5 h-3.5 text-primary-foreground" />
               </div>
               <span className="font-bold text-foreground whitespace-nowrap">RyaanCMS</span>
             </div>
-            <nav className="flex-1 p-2 space-y-0.5">
-              {headerItems.map((item, i) => renderItem(item, false, i))}
-            </nav>
-            {footerItems.length > 0 && (
-              <div className="p-2 border-t border-border space-y-0.5">
-                {footerItems.map((item, i) => renderItem(item, false, headerItems.length + i))}
-              </div>
-            )}
-            <div className="p-2 border-t border-border">
+
+            {/* Top zone - header menu items */}
+            <div
+              className="flex-1 min-h-0"
+              onMouseEnter={() => setTopZoneHovered(true)}
+              onMouseLeave={() => setTopZoneHovered(false)}
+            >
+              {topZoneHovered && headerItems.length > 0 && (
+                <nav className="p-2 space-y-0.5 animate-in fade-in-0 duration-200">
+                  {headerItems.map((item, i) => renderItem(item, false, i))}
+                </nav>
+              )}
+            </div>
+
+            {/* Bottom zone - footer menu items */}
+            <div
+              className="shrink-0"
+              onMouseEnter={() => setBottomZoneHovered(true)}
+              onMouseLeave={() => setBottomZoneHovered(false)}
+            >
+              {bottomZoneHovered && footerItems.length > 0 && (
+                <div className="p-2 border-t border-border space-y-0.5 animate-in fade-in-0 duration-200">
+                  {footerItems.map((item, i) => renderItem(item, false, headerItems.length + i))}
+                </div>
+              )}
+            </div>
+
+            {/* User section */}
+            <div className="p-2 border-t border-border shrink-0">
               <div className="flex items-center gap-2 px-3 py-1.5">
                 <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
                   {avatarUrl ? (
