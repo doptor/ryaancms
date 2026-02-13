@@ -63,7 +63,7 @@ function SearchableSelect({
 
   return (
     <div className="space-y-2">
-      <Label>{label}</Label>
+      {label && <Label>{label}</Label>}
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between font-normal">
@@ -73,7 +73,7 @@ function SearchableSelect({
         </PopoverTrigger>
         <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-50 bg-popover" align="start">
           <Command>
-            <CommandInput placeholder={`Search ${label.toLowerCase()}...`} />
+            <CommandInput placeholder={`Search ${(label || placeholder).toLowerCase()}...`} />
             <CommandList>
               <CommandEmpty>No results found.</CommandEmpty>
               <CommandGroup className="max-h-60 overflow-y-auto">
@@ -194,8 +194,6 @@ function NotificationSettings({ values, onChange }: SectionProps) {
 }
 
 function AppearanceSettings({ values, onChange }: SectionProps) {
-  const [fontOpen, setFontOpen] = useState<string | null>(null);
-
   const FONT_OPTIONS = [
     "Inter", "JetBrains Mono", "Georgia", "Playfair Display", "Merriweather",
     "Roboto", "Open Sans", "Lato", "Montserrat", "Poppins", "Raleway",
@@ -212,48 +210,26 @@ function AppearanceSettings({ values, onChange }: SectionProps) {
         <Switch checked={!!values.darkMode} onCheckedChange={(v) => onChange("darkMode", v)} />
       </div>
 
-      {/* Branding Colors */}
       <div>
         <h3 className="text-sm font-semibold text-foreground mb-3">Branding Colors</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Primary Color</Label>
             <div className="flex items-center gap-3">
-              <Input
-                type="color"
-                value={values.primaryColor || "#6366f1"}
-                onChange={(e) => onChange("primaryColor", e.target.value)}
-                className="w-12 h-10 p-1 cursor-pointer"
-              />
-              <Input
-                value={values.primaryColor || "#6366f1"}
-                onChange={(e) => onChange("primaryColor", e.target.value)}
-                className="flex-1 font-mono text-sm"
-                placeholder="#6366f1"
-              />
+              <Input type="color" value={values.primaryColor || "#6366f1"} onChange={(e) => onChange("primaryColor", e.target.value)} className="w-12 h-10 p-1 cursor-pointer" />
+              <Input value={values.primaryColor || "#6366f1"} onChange={(e) => onChange("primaryColor", e.target.value)} className="flex-1 font-mono text-sm" placeholder="#6366f1" />
             </div>
             <p className="text-xs text-muted-foreground">Buttons, links, active states</p>
           </div>
           <div className="space-y-2">
             <Label>Accent Color</Label>
             <div className="flex items-center gap-3">
-              <Input
-                type="color"
-                value={values.accentColor || "#8b5cf6"}
-                onChange={(e) => onChange("accentColor", e.target.value)}
-                className="w-12 h-10 p-1 cursor-pointer"
-              />
-              <Input
-                value={values.accentColor || "#8b5cf6"}
-                onChange={(e) => onChange("accentColor", e.target.value)}
-                className="flex-1 font-mono text-sm"
-                placeholder="#8b5cf6"
-              />
+              <Input type="color" value={values.accentColor || "#8b5cf6"} onChange={(e) => onChange("accentColor", e.target.value)} className="w-12 h-10 p-1 cursor-pointer" />
+              <Input value={values.accentColor || "#8b5cf6"} onChange={(e) => onChange("accentColor", e.target.value)} className="flex-1 font-mono text-sm" placeholder="#8b5cf6" />
             </div>
             <p className="text-xs text-muted-foreground">Gradients, highlights, badges</p>
           </div>
         </div>
-        {/* Color preview */}
         <div className="mt-3 flex gap-2 items-center">
           <div className="h-8 w-16 rounded-md" style={{ background: values.primaryColor || "#6366f1" }} />
           <div className="h-8 flex-1 rounded-md" style={{ background: `linear-gradient(135deg, ${values.primaryColor || "#6366f1"}, ${values.accentColor || "#8b5cf6"})` }} />
@@ -261,40 +237,22 @@ function AppearanceSettings({ values, onChange }: SectionProps) {
         </div>
       </div>
 
-      {/* Fonts */}
       <div>
         <h3 className="text-sm font-semibold text-foreground mb-3">Typography</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Heading Font</Label>
-            <SearchableSelect
-              label=""
-              value={values.headingFont || "Inter"}
-              onValueChange={(v) => onChange("headingFont", v)}
-              options={FONT_OPTIONS}
-              placeholder="Select heading font..."
-            />
-            <p className="text-xs text-muted-foreground" style={{ fontFamily: values.headingFont || "Inter" }}>
-              Preview: The quick brown fox
-            </p>
+            <SearchableSelect label="" value={values.headingFont || "Inter"} onValueChange={(v) => onChange("headingFont", v)} options={FONT_OPTIONS} placeholder="Select heading font..." />
+            <p className="text-xs text-muted-foreground" style={{ fontFamily: values.headingFont || "Inter" }}>Preview: The quick brown fox</p>
           </div>
           <div className="space-y-2">
             <Label>Body Font</Label>
-            <SearchableSelect
-              label=""
-              value={values.bodyFont || "Inter"}
-              onValueChange={(v) => onChange("bodyFont", v)}
-              options={FONT_OPTIONS}
-              placeholder="Select body font..."
-            />
-            <p className="text-xs text-muted-foreground" style={{ fontFamily: values.bodyFont || "Inter" }}>
-              Preview: The quick brown fox
-            </p>
+            <SearchableSelect label="" value={values.bodyFont || "Inter"} onValueChange={(v) => onChange("bodyFont", v)} options={FONT_OPTIONS} placeholder="Select body font..." />
+            <p className="text-xs text-muted-foreground" style={{ fontFamily: values.bodyFont || "Inter" }}>Preview: The quick brown fox</p>
           </div>
         </div>
       </div>
 
-      {/* Custom CSS */}
       <div className="space-y-2">
         <Label>Custom CSS</Label>
         <Input value={values.customCss || ""} onChange={(e) => onChange("customCss", e.target.value)} placeholder="e.g. body { letter-spacing: 0.02em; }" />
@@ -336,9 +294,10 @@ const sectionComponentMap: Record<string, React.FC<SectionProps>> = {
 
 export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState<string>("general");
-  const { settings, updateSection, saveAll, loading, saving } = useSettings();
+  const { settings, updateSection, saveSection, loading, saving } = useSettings();
 
   const ActiveComponent = sectionComponentMap[activeSection];
+  const activeLabel = settingSections.find((s) => s.id === activeSection)?.label || activeSection;
 
   const handleFieldChange = (key: string, value: any) => {
     updateSection(activeSection, { [key]: value });
@@ -347,7 +306,7 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="p-6 lg:p-8 max-w-4xl space-y-4">
+        <div className="p-6 lg:p-8 space-y-4">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-40 w-full" />
@@ -360,22 +319,14 @@ export default function SettingsPage() {
 
   return (
     <DashboardLayout>
-      <div className={cn("p-4 sm:p-6 lg:p-8", isStandaloneTab ? "max-w-6xl" : "max-w-4xl")}>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 mb-5 sm:mb-6">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-1">Settings</h1>
-            <p className="text-xs sm:text-sm text-muted-foreground">Configure your RyaanCMS instance.</p>
-          </div>
-          {!isStandaloneTab && (
-            <Button variant="default" size="sm" onClick={saveAll} disabled={saving} className="w-full sm:w-auto">
-              {saving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
-              {saving ? "Saving..." : "Save Changes"}
-            </Button>
-          )}
+      <div className="p-4 sm:p-6 lg:p-8">
+        <div className="mb-5 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-1">Settings</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">Configure your RyaanCMS instance.</p>
         </div>
 
-        {/* Colorful tab bar - scrollable on mobile */}
-        <div className="flex gap-1 mb-5 sm:mb-6 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none">
+        {/* Colorful tab bar - scrollable on mobile, wrapping on desktop */}
+        <div className="flex gap-1 mb-5 sm:mb-6 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none flex-wrap">
           {settingSections.map((s) => {
             const active = activeSection === s.id;
             return (
@@ -410,6 +361,19 @@ export default function SettingsPage() {
                   onChange={handleFieldChange}
                 />
               )}
+              {/* Per-tab save button */}
+              <div className="mt-6 pt-4 border-t border-border flex justify-end">
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => saveSection(activeSection)}
+                  disabled={saving}
+                  className="w-full sm:w-auto"
+                >
+                  {saving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
+                  {saving ? "Saving..." : `Save ${activeLabel}`}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
