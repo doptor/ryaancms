@@ -281,6 +281,56 @@ export default function AIBuilderPage() {
             v.warnings.length ? `- ⚠️ ${v.warnings.length} warnings` : "",
             "",
           ] : []),
+          // Enterprise data sections
+          ...(result.defaultAdminCredentials ? [
+            `### 🔑 Default Admin Credentials`,
+            `- **Email:** \`${result.defaultAdminCredentials.email}\``,
+            `- **Password:** \`${result.defaultAdminCredentials.password}\``,
+            "",
+          ] : []),
+          ...(result.documentationPlan?.length ? [
+            `### 📝 Documentation Plan`,
+            ...result.documentationPlan.map((d: string) => `- 📄 ${d}`),
+            "",
+          ] : []),
+          ...(() => {
+            const docKeys = Object.keys(result.documentationChecklist || {});
+            if (!docKeys.length) return [];
+            return [
+              `### ✅ Documentation Checklist`,
+              ...docKeys.map((k: string) => `- ${(result.documentationChecklist as Record<string, boolean>)[k] ? "✅" : "⬜"} ${k}`),
+              "",
+            ];
+          })(),
+          ...(() => {
+            const secKeys = Object.keys(result.securityChecklist || {});
+            if (!secKeys.length) return [];
+            return [
+              `### 🛡️ Security Checklist`,
+              ...secKeys.map((k: string) => `- ${(result.securityChecklist as Record<string, boolean>)[k] ? "✅" : "⬜"} ${k}`),
+              "",
+            ];
+          })(),
+          ...(result.installerSteps?.length ? [
+            `### 📦 Installer Steps`,
+            ...result.installerSteps.map((s: string, i: number) => `${i + 1}. ${s}`),
+            "",
+          ] : []),
+          ...(result.errorFixMemory?.length ? [
+            `### 🧠 Error Fix Memory (${result.errorFixMemory.length} fixes)`,
+            ...result.errorFixMemory.slice(0, 5).map((e: any) => `- **${e.error || e.signature || "Error"}** → *${e.fix || e.fix_applied || "Fixed"}*`),
+            "",
+          ] : []),
+          ...(result.pluginHooks?.length ? [
+            `### 🔌 Plugin Hooks`,
+            ...result.pluginHooks.map((h: string) => `- \`${h}\``),
+            "",
+          ] : []),
+          ...(result.reusableComponents?.length ? [
+            `### ♻️ Reusable Components`,
+            ...result.reusableComponents.map((c: string) => `- ${c}`),
+            "",
+          ] : []),
           "Configuration ready! Check **Preview**, **Config**, **SQL**, **Quality**, and **Code** tabs.",
           result.suggestions?.length ? "\n💡 **Click a suggestion below** to enhance your project:" : "",
         ].filter(Boolean).join("\n");

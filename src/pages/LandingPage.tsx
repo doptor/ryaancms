@@ -1,4 +1,4 @@
-import { Zap, Database, Puzzle, Sparkles, Globe, Shield, ArrowRight, Menu, X, Github } from "lucide-react";
+import { Zap, Database, Puzzle, Sparkles, Globe, Shield, ArrowRight, Menu, X, Github, Bot, RefreshCw, Eye, ShoppingBag, Brain, Layers, Code, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -9,9 +9,9 @@ import VaultDemo from "@/components/landing/VaultDemo";
 const navLinks = [
   { label: "Features", href: "#features" },
   { label: "Architecture", href: "#architecture" },
+  { label: "AI Agents", href: "#agents" },
   { label: "Marketplace", href: "#marketplace" },
   { label: "Docs", href: "/docs", isRoute: true },
-  { label: "Open Source", href: "#opensource" },
 ];
 
 const features = [
@@ -47,24 +47,39 @@ const features = [
   },
 ];
 
-const archLayers = [
+const agents = [
+  { num: 1, name: "Requirement Analyst", icon: Brain, desc: "Converts user prompt into complete FRS/SRS with smart questions" },
+  { num: 2, name: "Product Manager", icon: Layers, desc: "Defines modules, user stories, roles & workflows" },
+  { num: 3, name: "Task Planner", icon: CheckCircle2, desc: "Creates structured task plan with dependencies" },
+  { num: 4, name: "System Architect", icon: Code, desc: "Designs folder structure, API patterns & reusable components" },
+  { num: 5, name: "Database Agent", icon: Database, desc: "Generates MySQL/Prisma schema, migrations & seed data" },
+  { num: 6, name: "Backend Agent", icon: Globe, desc: "Builds Express server, routes, controllers & RBAC" },
+  { num: 7, name: "UI/UX Designer", icon: Eye, desc: "Creates page layouts, forms, tables & responsive design" },
+  { num: 8, name: "Testing Agent", icon: Shield, desc: "Generates test scenarios & validates main flows" },
+  { num: 9, name: "Debugger Agent", icon: RefreshCw, desc: "Auto-detects & fixes build errors with retry loop" },
+  { num: 10, name: "Quality Reviewer", icon: Bot, desc: "Scores UI, Backend, Security & Performance (target 90+)" },
+];
+
+const highlights = [
   {
-    name: "The Mirror",
-    subtitle: "Visual + Realtime UI",
-    description: "Drag-and-drop builder, live preview across devices, collaborative editing with multi-cursor support.",
-    color: "from-primary to-primary/60",
+    icon: Brain,
+    title: "Master System Prompt",
+    description: "Enterprise-grade system prompt governs all 10 agents — enforcing production-ready code, security protocols, and consistent architecture across every build.",
   },
   {
-    name: "The Pulse",
-    subtitle: "API + Distribution",
-    description: "Auto-generated REST & GraphQL, edge caching, webhooks, and serverless functions.",
-    color: "from-accent-foreground to-primary",
+    icon: RefreshCw,
+    title: "Autonomous Build Loop",
+    description: "PLAN → GENERATE → RUN → FAIL? → FIX → RETRY → SUCCESS. Auto-retry up to 5 times with intelligent error-fix memory that learns from past failures.",
   },
   {
-    name: "The Vault",
-    subtitle: "Versioned Data Engine",
-    description: "Atomic content modeling, time machine versioning, schema migrations with rollback.",
-    color: "from-primary/60 to-accent-foreground/60",
+    icon: ShoppingBag,
+    title: "Plugin Marketplace",
+    description: "Install payments, SMS, WhatsApp, email marketing plugins with one click. Plugin-ready architecture with hooks and middleware stack built-in.",
+  },
+  {
+    icon: Eye,
+    title: "Live Sandboxed Preview",
+    description: "See your generated app running in a real sandboxed iframe with hot-reload, console output, and responsive viewport switching — before downloading.",
   },
 ];
 
@@ -143,7 +158,7 @@ export default function LandingPage() {
           <div className="max-w-3xl mx-auto text-center animate-slide-up">
             <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-xs sm:text-sm font-medium mb-4 sm:mb-6">
               <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              Free & Open Source — AI-Native CMS
+              10-Agent AI Pipeline — Autonomous App Builder
             </div>
             <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight mb-4 sm:mb-6">
               The CMS Where
@@ -151,7 +166,7 @@ export default function LandingPage() {
               <span className="text-gradient">Others Failed</span>
             </h1>
             <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-6 sm:mb-8 px-2">
-              AI + CMS + Marketplace + Revenue Engine. Not just a website builder — a complete platform for the next generation of the web.
+              AI + CMS + Marketplace + Revenue Engine. 10 autonomous agents build production-ready apps from a single prompt.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
               <Link to="/dashboard" className="w-full sm:w-auto">
@@ -225,6 +240,82 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* 10-Agent Architecture */}
+      <section id="agents" className="py-12 sm:py-20">
+        <div className="container px-4 sm:px-6">
+          <div className="text-center mb-8 sm:mb-14">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-xs font-medium mb-4">
+              <Bot className="w-3.5 h-3.5" /> Powered by Master System Prompt
+            </div>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 text-foreground">10-Agent Autonomous Pipeline</h2>
+            <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto">
+              Each agent is a specialist. Together they build complete, production-ready apps with zero human intervention.
+            </p>
+          </div>
+          <div className="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            {agents.map((a) => (
+              <div key={a.num} className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 hover:border-primary/30 hover:shadow-glow transition-all duration-300">
+                <div className="w-9 h-9 rounded-lg bg-gradient-primary flex items-center justify-center shrink-0 text-primary-foreground text-sm font-bold">
+                  {a.num}
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <a.icon className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <h4 className="text-sm font-semibold text-foreground truncate">{a.name}</h4>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{a.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Autonomous Loop Visual */}
+          <div className="mt-10 sm:mt-14 max-w-3xl mx-auto">
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 sm:p-6">
+              <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                <RefreshCw className="w-4 h-4 text-primary" /> Autonomous Build Loop
+              </h3>
+              <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
+                {["PLAN", "GENERATE", "RUN", "FAIL?", "FIX", "RETRY", "SUCCESS"].map((step, i) => (
+                  <div key={step} className="flex items-center gap-2">
+                    <span className={`px-3 py-1.5 rounded-md font-medium ${step === "SUCCESS" ? "bg-primary text-primary-foreground" : step === "FAIL?" ? "bg-destructive/10 text-destructive" : "bg-accent text-accent-foreground"}`}>
+                      {step}
+                    </span>
+                    {i < 6 && <ArrowRight className="w-3 h-3 text-muted-foreground" />}
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground mt-3">
+                Auto-retry up to 5 times with error-fix memory. Stops only when backend runs, frontend builds, auth works, and UI loads without errors.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Highlights — Master Prompt, Autonomous Loop, Marketplace, Live Preview */}
+      <section className="py-12 sm:py-20 bg-gradient-surface">
+        <div className="container px-4 sm:px-6">
+          <div className="text-center mb-8 sm:mb-14">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 text-foreground">Why RyaanCMS is Different</h2>
+            <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">
+              Not just another website builder — an autonomous engineering platform.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 max-w-4xl mx-auto">
+            {highlights.map((h) => (
+              <div key={h.title} className="group rounded-xl border border-border bg-card p-5 sm:p-6 hover:shadow-glow hover:border-primary/30 transition-all duration-300">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-gradient-primary transition-all duration-300">
+                  <h.icon className="w-5 h-5 text-primary group-hover:text-primary-foreground transition-colors" />
+                </div>
+                <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">{h.title}</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{h.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Architecture — Interactive Demos */}
       <section id="architecture" className="py-12 sm:py-20">
         <div className="container px-4 sm:px-6">
@@ -233,7 +324,6 @@ export default function LandingPage() {
             <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">Three powerful layers working in harmony. Try them live.</p>
           </div>
           <div className="max-w-5xl mx-auto space-y-12 sm:space-y-16">
-            {/* The Mirror */}
             <div>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground text-sm font-bold">1</div>
@@ -244,8 +334,6 @@ export default function LandingPage() {
               </div>
               <MirrorDemo />
             </div>
-
-            {/* The Pulse */}
             <div>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-accent-foreground to-primary flex items-center justify-center text-primary-foreground text-sm font-bold">2</div>
@@ -256,8 +344,6 @@ export default function LandingPage() {
               </div>
               <PulseDemo />
             </div>
-
-            {/* The Vault */}
             <div>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/60 to-accent-foreground/60 flex items-center justify-center text-primary-foreground text-sm font-bold">3</div>
@@ -276,9 +362,9 @@ export default function LandingPage() {
       <section id="marketplace" className="py-12 sm:py-20 bg-gradient-surface">
         <div className="container px-4 sm:px-6">
           <div className="text-center mb-8 sm:mb-14">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 text-foreground">Marketplace Ecosystem</h2>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 text-foreground">Plugin Marketplace</h2>
             <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">
-              Plugins, templates, and services — install with one click.
+              Payments, SMS, WhatsApp, email marketing — install with one click. Plugin-ready architecture built-in.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto">
@@ -286,6 +372,9 @@ export default function LandingPage() {
               { title: "SEO Pro Plugin", type: "Plugin", installs: "12.4k", tag: "Popular" },
               { title: "E-Commerce Template", type: "Template", installs: "8.2k", tag: "Featured" },
               { title: "AI Content Writer", type: "Plugin", installs: "15.1k", tag: "AI" },
+              { title: "WhatsApp Integration", type: "Plugin", installs: "6.8k", tag: "Communication" },
+              { title: "Payment Gateway", type: "Plugin", installs: "10.3k", tag: "Finance" },
+              { title: "Email Marketing", type: "Plugin", installs: "9.1k", tag: "Marketing" },
             ].map((item) => (
               <div key={item.title} className="rounded-xl border border-border bg-card p-4 sm:p-5 hover:shadow-glow hover:border-primary/30 transition-all duration-300">
                 <div className="flex items-center justify-between mb-2 sm:mb-3">
