@@ -11,6 +11,12 @@ function getIcon(name: string | null): React.ComponentType<any> {
   return icon || CircleDot;
 }
 
+const ICON_COLORS = [
+  "text-blue-400", "text-violet-400", "text-amber-400", "text-cyan-400",
+  "text-emerald-400", "text-orange-400", "text-pink-400", "text-rose-400",
+  "text-indigo-400", "text-teal-400",
+];
+
 interface DynamicMenuItem {
   id: string;
   label: string;
@@ -74,10 +80,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     fetchMenus();
   }, [user]);
 
-  const renderItem = (item: DynamicMenuItem, isMobile: boolean) => {
+  const renderItem = (item: DynamicMenuItem, isMobile: boolean, index: number) => {
     const active = location.pathname === item.url;
     const IconComp = getIcon(item.icon);
-    const color = "text-muted-foreground";
+    const color = ICON_COLORS[index % ICON_COLORS.length];
     const iconSize = isMobile ? "w-5 h-5" : "w-4 h-4";
 
     return (
@@ -121,11 +127,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
           <div className="absolute top-14 left-0 right-0 bottom-0 bg-card border-t border-border overflow-y-auto flex flex-col">
             <nav className="p-3 space-y-0.5 flex-1">
-              {headerItems.map(item => renderItem(item, true))}
+              {headerItems.map((item, i) => renderItem(item, true, i))}
             </nav>
             {footerItems.length > 0 && (
               <div className="p-3 border-t border-border space-y-0.5">
-                {footerItems.map(item => renderItem(item, true))}
+                {footerItems.map((item, i) => renderItem(item, true, headerItems.length + i))}
               </div>
             )}
             <div className="p-3 border-t border-border space-y-0.5">
@@ -160,11 +166,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {!collapsed && <span className="font-bold text-foreground whitespace-nowrap">RyaanCMS</span>}
         </div>
         <nav className="flex-1 p-2 space-y-0.5">
-          {headerItems.map(item => renderItem(item, false))}
+          {headerItems.map((item, i) => renderItem(item, false, i))}
         </nav>
         {footerItems.length > 0 && (
           <div className="p-2 border-t border-border space-y-0.5">
-            {footerItems.map(item => renderItem(item, false))}
+            {footerItems.map((item, i) => renderItem(item, false, headerItems.length + i))}
           </div>
         )}
         <div className="p-2 border-t border-border space-y-0.5">
