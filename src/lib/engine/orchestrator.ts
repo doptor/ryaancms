@@ -45,6 +45,18 @@ export interface PipelineState {
   qualityImprovements: string[];
   qualityVerdict: string;
   agentLog: AgentResult[];
+  // Phase 4: 10-agent extended data
+  workflows: any[];
+  businessRules: any[];
+  permissionMatrix: any[];
+  folderStructure: Record<string, any>;
+  testScenarios: any[];
+  seedData: any[];
+  bugs: any[];
+  autoFixes: any[];
+  riskScore: number;
+  webhooks: any[];
+  edgeFunctions: any[];
 }
 
 export interface PipelineEvent {
@@ -71,6 +83,17 @@ const INITIAL_STATE: PipelineState = {
   qualityImprovements: [],
   qualityVerdict: "",
   agentLog: [],
+  workflows: [],
+  businessRules: [],
+  permissionMatrix: [],
+  folderStructure: {},
+  testScenarios: [],
+  seedData: [],
+  bugs: [],
+  autoFixes: [],
+  riskScore: 0,
+  webhooks: [],
+  edgeFunctions: [],
 };
 
 export class AIPipelineOrchestrator {
@@ -185,9 +208,14 @@ export class AIPipelineOrchestrator {
   private handleStreamEvent(event: string, data: any) {
     const AGENT_STAGE_MAP: Record<string, PipelineStage> = {
       "Requirement Analyst": "understanding",
+      "Product Manager": "understanding",
       "Task Planner": "planning",
       "System Architect": "architecting",
+      "Database Agent": "architecting",
+      "Backend Agent": "generating",
       "UI/UX Designer": "designing",
+      "Testing Agent": "generating",
+      "Debugger Agent": "reviewing",
       "Quality Reviewer": "reviewing",
     };
 
@@ -232,6 +260,18 @@ export class AIPipelineOrchestrator {
           this.state.qualityIssues = c.quality_issues || [];
           this.state.qualityImprovements = c.quality_improvements || [];
           this.state.qualityVerdict = c.quality_verdict || "";
+          // Phase 4: 10-agent extended data
+          this.state.workflows = c.workflows || [];
+          this.state.businessRules = c.business_rules || [];
+          this.state.permissionMatrix = c.permission_matrix || [];
+          this.state.folderStructure = c.folder_structure || {};
+          this.state.testScenarios = c.test_scenarios || [];
+          this.state.seedData = c.seed_data || [];
+          this.state.bugs = c.bugs || [];
+          this.state.autoFixes = c.auto_fixes || [];
+          this.state.riskScore = c.risk_score || 0;
+          this.state.webhooks = c.webhooks || [];
+          this.state.edgeFunctions = c.edge_functions || [];
           this.emit("finalizing", "Assembling final configuration...");
         } else {
           this.state.error = data.error || "Pipeline failed";

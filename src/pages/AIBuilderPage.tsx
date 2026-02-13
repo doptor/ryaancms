@@ -44,25 +44,30 @@ type ProgressStep = {
 const STAGE_MAP: Record<PipelineStage, number> = {
   idle: -1,
   understanding: 0,
-  planning: 1,
-  architecting: 2,
-  designing: 3,
-  reviewing: 4,
+  planning: 2,
+  architecting: 3,
+  designing: 6,
+  reviewing: 8,
   generating: 5,
-  building_components: 5,
-  generating_database: 6,
-  validating_security: 7,
-  finalizing: 8,
-  complete: 9,
+  building_components: 10,
+  generating_database: 11,
+  validating_security: 12,
+  finalizing: 13,
+  complete: 14,
   error: -1,
 };
 
 const ENGINE_LABELS = [
   "🤖 Agent 1: Requirement Analyst",
-  "📋 Agent 2: Task Planner",
-  "🏗 Agent 3: System Architect",
-  "🎨 Agent 4: UI/UX Designer",
-  "🔍 Agent 5: Quality Reviewer",
+  "📊 Agent 2: Product Manager",
+  "📋 Agent 3: Task Planner",
+  "🏗 Agent 4: System Architect",
+  "🗄 Agent 5: Database Agent",
+  "⚡ Agent 6: Backend Agent",
+  "🎨 Agent 7: UI/UX Designer",
+  "🧪 Agent 8: Testing Agent",
+  "🐛 Agent 9: Debugger Agent",
+  "🔍 Agent 10: Quality Reviewer",
   "⚙️ Building components",
   "🗄 Generating database schema",
   "🔐 Security validation",
@@ -228,7 +233,7 @@ export default function AIBuilderPage() {
         const summary = [
           `## ✅ ${config.title}`,
           `**Type:** ${config.project_type} · **Modules:** ${config.modules.join(", ")}`,
-          `*Built by 5 AI Agents: Requirement Analyst → Task Planner → System Architect → UI/UX Designer → Quality Reviewer*`,
+          `*Built by 10 AI Agents: Requirement Analyst → Product Manager → Task Planner → System Architect → Database → Backend → UI/UX → Testing → Debugger → Quality Reviewer*`,
           "",
           ...(result.taskPlan?.length ? [
             `### 📋 Task Plan (${result.taskPlan.length} steps)`,
@@ -247,6 +252,17 @@ export default function AIBuilderPage() {
             result.apiEndpoints.length > 8 ? `- ...and ${result.apiEndpoints.length - 8} more` : "",
             "",
           ] : []),
+          ...(result.testScenarios?.length ? [
+            `### 🧪 Test Scenarios (${result.testScenarios.length})`,
+            ...result.testScenarios.slice(0, 5).map((t: any) => `- **${t.name}** *(${t.type})* — ${t.module}`),
+            result.testScenarios.length > 5 ? `- ...and ${result.testScenarios.length - 5} more` : "",
+            "",
+          ] : []),
+          ...(result.bugs?.length ? [
+            `### 🐛 Bugs Found & Fixed (${result.bugs.length})`,
+            ...result.bugs.slice(0, 5).map((b: any) => `- **[${b.severity}]** ${b.description} → *${b.fix}*`),
+            "",
+          ] : []),
           ...(config.roles?.length ? [
             `### 👥 Roles`,
             ...config.roles.map((r) => `- **${r.name}**: ${r.permissions.join(", ")}`),
@@ -254,8 +270,8 @@ export default function AIBuilderPage() {
           ] : []),
           ...(result.qualityScore?.overall_score ? [
             `### 🏆 Quality Score: ${result.qualityScore.overall_score}/100`,
-            `UI: ${result.qualityScore.ui_completeness || 0} · Backend: ${result.qualityScore.backend_completeness || 0} · Security: ${result.qualityScore.security || 0}`,
-            `**Verdict:** ${result.qualityVerdict}`,
+            `UI: ${result.qualityScore.ui_completeness || 0} · Backend: ${result.qualityScore.backend_completeness || 0} · Security: ${result.qualityScore.security || 0} · Tests: ${result.qualityScore.test_coverage || 0}`,
+            `**Verdict:** ${result.qualityVerdict}${result.riskScore ? ` · Risk Score: ${result.riskScore}` : ""}`,
             "",
           ] : []),
           ...(v ? [
@@ -264,7 +280,7 @@ export default function AIBuilderPage() {
             v.warnings.length ? `- ⚠️ ${v.warnings.length} warnings` : "",
             "",
           ] : []),
-          "Configuration ready! Check **Preview**, **Config**, **SQL**, and **Code** tabs.",
+          "Configuration ready! Check **Preview**, **Config**, **SQL**, **Quality**, and **Code** tabs.",
           result.suggestions?.length ? "\n💡 **Click a suggestion below** to enhance your project:" : "",
         ].filter(Boolean).join("\n");
 
