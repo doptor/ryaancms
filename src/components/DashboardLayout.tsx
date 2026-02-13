@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Zap, LogOut, Menu, X, CircleDot, icons } from "lucide-react";
+import { Zap, LogOut, Menu, X, CircleDot, icons, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,6 +42,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [headerItems, setHeaderItems] = useState<DynamicMenuItem[]>([]);
   const [footerItems, setFooterItems] = useState<DynamicMenuItem[]>([]);
   const [displayName, setDisplayName] = useState<string>("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   const collapsed = !hovered;
 
@@ -79,8 +80,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       })));
     }
     async function fetchProfile() {
-      const { data } = await supabase.from("profiles").select("display_name").eq("user_id", user!.id).single();
+      const { data } = await supabase.from("profiles").select("display_name, avatar_url").eq("user_id", user!.id).single();
       if (data?.display_name) setDisplayName(data.display_name);
+      if (data?.avatar_url) setAvatarUrl(data.avatar_url);
     }
     fetchMenus();
     fetchProfile();
@@ -141,11 +143,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
             )}
             <div className="p-3 border-t border-border">
-              <div className="flex items-center justify-between px-4 py-2">
-                <span className="text-sm font-medium text-foreground truncate">{displayName || user?.email}</span>
+              <div className="flex items-center gap-3 px-4 py-2">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-4 h-4 text-primary" />
+                  )}
+                </div>
+                <span className="text-sm font-medium text-foreground truncate flex-1">{displayName || user?.email}</span>
                 <button
                   onClick={() => { signOut(); setMobileOpen(false); }}
-                  className="text-muted-foreground hover:text-destructive transition-colors"
+                  className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
                   title="Sign Out"
                 >
                   <LogOut className="w-4 h-4" />
@@ -181,6 +190,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
         <div className="p-2 border-t border-border">
           <div className="flex items-center gap-2 px-3 py-1.5">
+            <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <User className="w-3.5 h-3.5 text-primary" />
+              )}
+            </div>
             {!collapsed && (
               <span className="text-sm font-medium text-foreground truncate flex-1">
                 {displayName || user?.email}
