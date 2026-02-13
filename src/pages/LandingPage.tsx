@@ -2,6 +2,9 @@ import { Zap, Database, Puzzle, Sparkles, Globe, Shield, ArrowRight, Menu, X, Gi
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import MirrorDemo from "@/components/landing/MirrorDemo";
+import PulseDemo from "@/components/landing/PulseDemo";
+import VaultDemo from "@/components/landing/VaultDemo";
 
 const navLinks = [
   { label: "Features", href: "#features" },
@@ -222,35 +225,49 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Architecture */}
+      {/* Architecture — Interactive Demos */}
       <section id="architecture" className="py-12 sm:py-20">
         <div className="container px-4 sm:px-6">
           <div className="text-center mb-8 sm:mb-14">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 text-foreground">Tri-Core Architecture</h2>
-            <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">Three powerful layers working in harmony.</p>
+            <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">Three powerful layers working in harmony. Try them live.</p>
           </div>
-          <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6">
-            {archLayers.map((layer, i) => (
-              <div key={layer.name} className="relative">
-                <div className="rounded-xl border border-border bg-card p-4 sm:p-6 hover:border-primary/30 transition-all duration-300">
-                  <div className="flex items-center gap-3 sm:gap-4 mb-2 sm:mb-3">
-                    <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br ${layer.color} flex items-center justify-center text-primary-foreground text-sm font-bold shrink-0`}>
-                      {i + 1}
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="text-base sm:text-lg font-semibold text-foreground">{layer.name}</h3>
-                      <span className="text-[10px] sm:text-xs text-primary font-mono">{layer.subtitle}</span>
-                    </div>
-                  </div>
-                  <p className="text-xs sm:text-sm text-muted-foreground">{layer.description}</p>
+          <div className="max-w-5xl mx-auto space-y-12 sm:space-y-16">
+            {/* The Mirror */}
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground text-sm font-bold">1</div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">The Mirror</h3>
+                  <span className="text-xs text-primary font-mono">Visual + Realtime UI</span>
                 </div>
-                {i < archLayers.length - 1 && (
-                  <div className="flex justify-center py-1 sm:py-2">
-                    <div className="w-px h-4 sm:h-6 bg-border" />
-                  </div>
-                )}
               </div>
-            ))}
+              <MirrorDemo />
+            </div>
+
+            {/* The Pulse */}
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-accent-foreground to-primary flex items-center justify-center text-primary-foreground text-sm font-bold">2</div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">The Pulse</h3>
+                  <span className="text-xs text-primary font-mono">API + Distribution</span>
+                </div>
+              </div>
+              <PulseDemo />
+            </div>
+
+            {/* The Vault */}
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/60 to-accent-foreground/60 flex items-center justify-center text-primary-foreground text-sm font-bold">3</div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">The Vault</h3>
+                  <span className="text-xs text-primary font-mono">Versioned Data Engine</span>
+                </div>
+              </div>
+              <VaultDemo />
+            </div>
           </div>
         </div>
       </section>
