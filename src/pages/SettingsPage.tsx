@@ -1,5 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,7 +19,79 @@ const settingSections = [
   { id: "database", icon: Database, label: "Database", desc: "Backup, restore, migration settings, and export.", color: "text-cyan-400" },
 ];
 
+const ALL_LANGUAGES = [
+  "Afrikaans","Albanian","Amharic","Arabic","Armenian","Azerbaijani","Basque","Belarusian","Bengali","Bosnian",
+  "Bulgarian","Burmese","Catalan","Chinese (Simplified)","Chinese (Traditional)","Croatian","Czech","Danish",
+  "Dutch","English","Estonian","Filipino","Finnish","French","Galician","Georgian","German","Greek","Gujarati",
+  "Haitian Creole","Hausa","Hebrew","Hindi","Hungarian","Icelandic","Igbo","Indonesian","Irish","Italian",
+  "Japanese","Javanese","Kannada","Kazakh","Khmer","Korean","Kurdish","Kyrgyz","Lao","Latvian","Lithuanian",
+  "Luxembourgish","Macedonian","Malay","Malayalam","Maltese","Maori","Marathi","Mongolian","Nepali","Norwegian",
+  "Odia","Pashto","Persian","Polish","Portuguese","Punjabi","Romanian","Russian","Samoan","Serbian","Sesotho",
+  "Shona","Sindhi","Sinhala","Slovak","Slovenian","Somali","Spanish","Sundanese","Swahili","Swedish","Tajik",
+  "Tamil","Tatar","Telugu","Thai","Turkish","Turkmen","Ukrainian","Urdu","Uzbek","Vietnamese","Welsh","Xhosa",
+  "Yiddish","Yoruba","Zulu",
+];
+
+function SearchableSelect({
+  label,
+  value,
+  onChange,
+  options,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+  placeholder: string;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between font-normal">
+            {value || placeholder}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-50 bg-popover" align="start">
+          <Command>
+            <CommandInput placeholder={`Search ${label.toLowerCase()}...`} />
+            <CommandList>
+              <CommandEmpty>No results found.</CommandEmpty>
+              <CommandGroup className="max-h-60 overflow-y-auto">
+                {options.map((opt) => (
+                  <CommandItem
+                    key={opt}
+                    value={opt}
+                    onSelect={() => {
+                      onChange(opt);
+                      setOpen(false);
+                    }}
+                  >
+                    <Check className={cn("mr-2 h-4 w-4", value === opt ? "opacity-100" : "opacity-0")} />
+                    {opt}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
 function GeneralSettings() {
+  const timezones = useMemo(() => (Intl as any).supportedValuesOf("timeZone") as string[], []);
+  const detectedTz = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone, []);
+
+  const [timezone, setTimezone] = useState(detectedTz);
+  const [language, setLanguage] = useState("English");
+
   return (
     <div className="space-y-4">
       <div className="space-y-2">
@@ -27,14 +102,20 @@ function GeneralSettings() {
         <Label htmlFor="siteUrl">Site URL</Label>
         <Input id="siteUrl" placeholder="https://example.com" />
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="timezone">Timezone</Label>
-        <Input id="timezone" placeholder="UTC" defaultValue="UTC" />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="language">Language</Label>
-        <Input id="language" placeholder="English" defaultValue="English" />
-      </div>
+      <SearchableSelect
+        label="Timezone"
+        value={timezone}
+        onChange={setTimezone}
+        options={timezones}
+        placeholder="Select timezone..."
+      />
+      <SearchableSelect
+        label="Language"
+        value={language}
+        onChange={setLanguage}
+        options={ALL_LANGUAGES}
+        placeholder="Select language..."
+      />
     </div>
   );
 }
