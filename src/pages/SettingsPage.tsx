@@ -360,22 +360,22 @@ export default function SettingsPage() {
 
   return (
     <DashboardLayout>
-      <div className={cn("p-6 lg:p-8", isStandaloneTab ? "max-w-6xl" : "max-w-4xl")}>
-        <div className="flex items-center justify-between mb-6">
+      <div className={cn("p-4 sm:p-6 lg:p-8", isStandaloneTab ? "max-w-6xl" : "max-w-4xl")}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 mb-5 sm:mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-foreground mb-1">Settings</h1>
-            <p className="text-sm text-muted-foreground">Configure your RyaanCMS instance.</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-1">Settings</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">Configure your RyaanCMS instance.</p>
           </div>
           {!isStandaloneTab && (
-            <Button variant="default" size="sm" onClick={saveAll} disabled={saving}>
+            <Button variant="default" size="sm" onClick={saveAll} disabled={saving} className="w-full sm:w-auto">
               {saving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
               {saving ? "Saving..." : "Save Changes"}
             </Button>
           )}
         </div>
 
-        {/* Colorful tab bar */}
-        <div className="flex gap-1 mb-6 overflow-x-auto pb-1">
+        {/* Colorful tab bar - scrollable on mobile */}
+        <div className="flex gap-1 mb-5 sm:mb-6 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-none">
           {settingSections.map((s) => {
             const active = activeSection === s.id;
             return (
@@ -383,13 +383,13 @@ export default function SettingsPage() {
                 key={s.id}
                 onClick={() => setActiveSection(s.id)}
                 className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200",
+                  "flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-all duration-200 shrink-0",
                   active
                     ? "bg-primary/10 text-primary border border-primary/30 shadow-sm"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground border border-transparent"
                 )}
               >
-                <s.icon className={cn("w-4 h-4", active ? "text-primary" : s.color)} />
+                <s.icon className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", active ? "text-primary" : s.color)} />
                 {s.label}
               </button>
             );
@@ -403,7 +403,7 @@ export default function SettingsPage() {
           <AIIntegrationSettings />
         ) : (
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-4 sm:pt-6 px-4 sm:px-6">
               {ActiveComponent && (
                 <ActiveComponent
                   values={settings[activeSection] || {}}
