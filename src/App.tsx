@@ -14,6 +14,7 @@ import MarketplacePage from "./pages/MarketplacePage";
 import InstallerPage from "./pages/InstallerPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
+import DocumentationPage from "./pages/DocumentationPage";
 
 const queryClient = new QueryClient();
 
@@ -28,11 +29,11 @@ const App = () => (
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/auth" element={<AuthPage />} />
+              <Route path="/docs" element={<DocumentationPage />} />
               <Route path="/dashboard" element={<ProtectedRoute><DashboardOverview /></ProtectedRoute>} />
               <Route path="/dashboard/ai" element={<ProtectedRoute><AIBuilderPage /></ProtectedRoute>} />
               <Route path="/dashboard/marketplace" element={<ProtectedRoute><MarketplacePage /></ProtectedRoute>} />
               <Route path="/dashboard/installer" element={<ProtectedRoute><InstallerPage /></ProtectedRoute>} />
-              
               <Route path="/dashboard/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
