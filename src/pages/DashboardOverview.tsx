@@ -50,10 +50,10 @@ export default function DashboardOverview() {
           </div>
           <div className="divide-y divide-border">
             {recentActivity.map((a, i) => (
-              <div key={i} className="flex items-center justify-between px-5 py-3.5 hover:bg-accent/50 transition-colors">
-                <div>
+              <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between px-5 py-3.5 hover:bg-accent/50 transition-colors gap-1">
+                <div className="min-w-0">
                   <span className="text-sm text-foreground font-medium">{a.action}</span>
-                  <span className="text-sm text-muted-foreground ml-2">{a.target}</span>
+                  <span className="text-sm text-muted-foreground ml-2 break-all">{a.target}</span>
                 </div>
                 <span className="text-xs text-muted-foreground whitespace-nowrap">{a.time}</span>
               </div>
