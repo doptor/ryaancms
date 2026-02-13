@@ -3,13 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Sparkles, Send, Database, FileText, Image, Wand2,
+  Sparkles, Send, Database, FileText, CreditCard,
   Paperclip, Mic, Code, Palette, BarChart3, CheckCircle2,
   Circle, Loader2, ExternalLink, Rocket, AlertCircle,
-  Table, Lock, CreditCard, LayoutGrid, Search, Bell,
-  Calendar, Columns, Clock, MapPin,
+  Table, Lock, LayoutGrid, Search, Bell,
+  Calendar, Columns, Clock, MapPin, Download,
+  Shield, AlertTriangle, Info, Image,
 } from "lucide-react";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
@@ -18,35 +19,52 @@ import {
   ResizableHandle,
 } from "@/components/ui/resizable";
 import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { AppConfig, validateAppConfig, componentRegistry } from "@/lib/component-registry";
+import {
+  AIPipelineOrchestrator,
+  PipelineStage,
+  PipelineState,
+  AppConfig,
+  ValidationResult,
+  GeneratedSchema,
+} from "@/lib/engine";
 import ReactMarkdown from "react-markdown";
 
-type Message = { role: "user" | "ai"; content: string; config?: AppConfig };
+type Message = { role: "user" | "ai"; content: string };
 
 type ProgressStep = {
   label: string;
   status: "done" | "in_progress" | "pending" | "error";
 };
 
-const ENGINE_STEPS: Omit<ProgressStep, "status">[] = [
-  { label: "Understanding requirements" },
-  { label: "Generating app structure" },
-  { label: "Building component layout" },
-  { label: "Creating database schema" },
-  { label: "Applying security rules" },
-  { label: "Validating configuration" },
-  { label: "Ready to preview" },
+const STAGE_MAP: Record<PipelineStage, number> = {
+  idle: -1,
+  understanding: 0,
+  generating: 1,
+  building_components: 2,
+  generating_database: 3,
+  validating_security: 4,
+  finalizing: 5,
+  complete: 6,
+  error: -1,
+};
+
+const ENGINE_LABELS = [
+  "Engine 1: Understanding requirements",
+  "Engine 1: Generating app config (AI)",
+  "Engine 2: Building component layout",
+  "Engine 3: Generating database schema",
+  "Engine 4: Security validation",
+  "Engine 5: Finalizing configuration",
+  "✓ Pipeline complete",
 ];
 
 const suggestions = [
-  { icon: Database, label: "SaaS Dashboard", prompt: "Build a SaaS analytics dashboard with user auth, subscription management, and real-time charts" },
-  { icon: FileText, label: "Blog Platform", prompt: "Create a blog platform with posts, categories, comments, and an admin panel" },
-  { icon: CreditCard, label: "E-commerce Store", prompt: "Build an e-commerce store with products, cart, checkout, and order management" },
-  { icon: Columns, label: "Project Manager", prompt: "Create a project management tool with kanban boards, tasks, and team collaboration" },
+  { icon: Database, label: "SaaS Dashboard", prompt: "Build a SaaS analytics dashboard with user auth, subscription tiers, real-time charts, and admin panel" },
+  { icon: FileText, label: "Blog Platform", prompt: "Create a blog platform with posts, categories, comments, media gallery, and SEO optimization" },
+  { icon: CreditCard, label: "E-commerce Store", prompt: "Build an e-commerce store with products, cart, checkout, orders, and inventory management" },
+  { icon: Columns, label: "Project Manager", prompt: "Create a project management tool with kanban boards, tasks, team roles, and calendar view" },
 ];
 
-// Icon map for component types
 const componentIcons: Record<string, any> = {
   hero: Sparkles, navbar: LayoutGrid, footer: BarChart3, sidebar: LayoutGrid,
   crud_table: Table, form: FileText, chart: BarChart3, card_grid: LayoutGrid,
@@ -54,6 +72,8 @@ const componentIcons: Record<string, any> = {
   media_gallery: Image, search_bar: Search, notification_center: Bell,
   rich_text_editor: FileText, file_upload: Image, calendar: Calendar,
   kanban_board: Columns, timeline: Clock, map: MapPin,
+  role_manager: Shield, payment_page: CreditCard, dashboard_layout: LayoutGrid,
+  data_import: Image, settings_panel: BarChart3, api_docs: Code,
 };
 
 export default function AIBuilderPage() {
@@ -61,15 +81,15 @@ export default function AIBuilderPage() {
   const incomingPrompt = (location.state as any)?.prompt || "";
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([
-    { role: "ai", content: "Hello! I'm the **RyaanCMS AI Builder**. Describe your application and I'll generate a complete structured configuration — pages, components, database schema, roles, and more.\n\nWhat would you like to build?" },
+    { role: "ai", content: "Welcome to **RyaanCMS AI Builder** — the structured application generation engine.\n\nDescribe what you want to build and I'll generate:\n- 📄 Page layouts with components\n- 🗄 Database schema with RLS\n- 🔐 Security validation\n- 👥 Roles & permissions\n\n**All output is structured JSON — no raw code generation.**" },
   ]);
   const [progress, setProgress] = useState<ProgressStep[]>([]);
-  const [buildComplete, setBuildComplete] = useState(false);
   const [isBuilding, setIsBuilding] = useState(false);
   const [activeTab, setActiveTab] = useState("preview");
-  const [currentConfig, setCurrentConfig] = useState<AppConfig | null>(null);
+  const [pipelineState, setPipelineState] = useState<PipelineState | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const hasProcessedIncoming = useRef(false);
+  const orchestrator = useMemo(() => new AIPipelineOrchestrator(), []);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -82,128 +102,132 @@ export default function AIBuilderPage() {
     }
   }, [incomingPrompt]);
 
-  const updateStep = useCallback((stepIndex: number, status: ProgressStep["status"]) => {
-    setProgress((prev) =>
-      prev.map((s, j) => ({
-        ...s,
-        status: j < stepIndex ? "done" : j === stepIndex ? status : "pending",
-      }))
-    );
-  }, []);
-
   const sendMessage = async (text: string) => {
     if (!text.trim() || isBuilding) return;
-    
+
     setInput("");
     setMessages((prev) => [...prev, { role: "user", content: text }]);
     setIsBuilding(true);
-    setBuildComplete(false);
-    setCurrentConfig(null);
+    setPipelineState(null);
 
-    // Initialize progress steps
-    const steps = ENGINE_STEPS.map((s) => ({ ...s, status: "pending" as const }));
+    // Initialize progress
+    const steps: ProgressStep[] = ENGINE_LABELS.map((label) => ({ label, status: "pending" }));
     setProgress(steps);
 
-    try {
-      // Step 0: Understanding requirements
-      updateStep(0, "in_progress");
-      await new Promise((r) => setTimeout(r, 400));
-      updateStep(0, "done");
-
-      // Step 1: Generating structure (actual AI call)
-      updateStep(1, "in_progress");
-
-      const { data, error } = await supabase.functions.invoke("ai-builder", {
-        body: { prompt: text },
-      });
-
-      if (error) throw new Error(error.message || "AI Builder request failed");
-      if (!data?.success || !data?.config) {
-        throw new Error(data?.error || "Failed to generate configuration");
-      }
-
-      const config: AppConfig = data.config;
-      updateStep(1, "done");
-
-      // Step 2: Building component layout
-      updateStep(2, "in_progress");
-      await new Promise((r) => setTimeout(r, 600));
-      updateStep(2, "done");
-
-      // Step 3: Creating database schema
-      updateStep(3, "in_progress");
-      await new Promise((r) => setTimeout(r, 500));
-      updateStep(3, "done");
-
-      // Step 4: Security rules
-      updateStep(4, "in_progress");
-      await new Promise((r) => setTimeout(r, 400));
-      updateStep(4, "done");
-
-      // Step 5: Validation (Engine 4)
-      updateStep(5, "in_progress");
-      const validation = validateAppConfig(config);
-      await new Promise((r) => setTimeout(r, 300));
-
-      if (!validation.valid) {
-        console.warn("Config validation warnings:", validation.errors);
-      }
-      updateStep(5, "done");
-
-      // Step 6: Ready
-      updateStep(6, "in_progress");
-      await new Promise((r) => setTimeout(r, 200));
-      setProgress((prev) => prev.map((s) => ({ ...s, status: "done" as const })));
-
-      setCurrentConfig(config);
-      setBuildComplete(true);
-
-      // Build AI response summary
-      const summary = `## ✅ ${config.title}
-
-**Type:** ${config.project_type} · **Modules:** ${config.modules.join(", ")}
-
-### 📄 Pages (${config.pages.length})
-${config.pages.map((p) => `- **${p.name}** \`${p.route}\` — ${p.components.length} components`).join("\n")}
-
-### 🗄 Database (${config.collections.length} collections)
-${config.collections.map((c) => `- **${c.name}** — ${c.fields.length} fields${c.rls ? " 🔒 RLS" : ""}`).join("\n")}
-
-${config.roles?.length ? `### 👥 Roles\n${config.roles.map((r) => `- **${r.name}**: ${r.permissions.join(", ")}`).join("\n")}` : ""}
-
-${config.features?.length ? `### ⚡ Features\n${config.features.map((f) => `- ${f}`).join("\n")}` : ""}
-
-Your configuration is ready! Click **Publish** to deploy, or continue chatting to refine.`;
-
-      setMessages((prev) => [...prev, { role: "ai", content: summary, config }]);
-    } catch (err: any) {
-      console.error("AI Builder error:", err);
-      const errorMsg = err?.message || "Something went wrong";
-      
-      setProgress((prev) => {
-        const currentStep = prev.findIndex((s) => s.status === "in_progress");
-        if (currentStep >= 0) {
-          return prev.map((s, j) => ({
+    // Listen to pipeline events
+    const unsub = orchestrator.on((event) => {
+      const stepIndex = STAGE_MAP[event.stage];
+      if (stepIndex >= 0) {
+        setProgress((prev) =>
+          prev.map((s, i) => ({
             ...s,
-            status: j < currentStep ? ("done" as const) : j === currentStep ? ("error" as const) : ("pending" as const),
+            status: i < stepIndex ? "done" : i === stepIndex ? "in_progress" : s.status === "done" ? "done" : "pending",
+          }))
+        );
+      }
+      if (event.stage === "complete") {
+        setProgress((prev) => prev.map((s) => ({ ...s, status: "done" })));
+      }
+      if (event.stage === "error") {
+        setProgress((prev) => {
+          const current = prev.findIndex((s) => s.status === "in_progress");
+          return prev.map((s, i) => ({
+            ...s,
+            status: i < current ? "done" : i === current ? "error" : "pending",
           }));
-        }
-        return prev;
-      });
+        });
+      }
+    });
 
+    try {
+      const result = await orchestrator.execute(text);
+      setPipelineState(result);
+
+      if (result.stage === "complete" && result.config) {
+        const config = result.config;
+        const v = result.validation;
+        const schema = result.schema;
+
+        const summary = [
+          `## ✅ ${config.title}`,
+          `**Type:** ${config.project_type} · **Modules:** ${config.modules.join(", ")}`,
+          "",
+          `### 📄 Pages (${config.pages.length})`,
+          ...config.pages.map((p) => `- **${p.name}** \`${p.route}\` — ${p.components.length} components (${p.layout})`),
+          "",
+          `### 🗄 Database (${config.collections.length} collections)`,
+          ...config.collections.map((c) => `- **${c.name}** — ${c.fields.length} fields${c.rls ? " 🔒" : ""}${c.tenant_isolated ? " 🏢" : ""}`),
+          "",
+          ...(config.roles?.length ? [
+            `### 👥 Roles`,
+            ...config.roles.map((r) => `- **${r.name}**: ${r.permissions.join(", ")}`),
+            "",
+          ] : []),
+          ...(v ? [
+            `### 🔐 Security Score: ${v.score}/100`,
+            v.errors.length ? `- ❌ ${v.errors.length} errors` : "",
+            v.warnings.length ? `- ⚠️ ${v.warnings.length} warnings` : "",
+            v.info.length ? `- ℹ️ ${v.info.length} info` : "",
+            "",
+          ] : []),
+          ...(schema?.warnings.length ? [
+            `### ⚠️ Schema Warnings`,
+            ...schema.warnings.map((w) => `- ${w}`),
+            "",
+          ] : []),
+          "Configuration ready! Check **Preview**, **Config**, and **SQL** tabs. Click **Publish** when satisfied.",
+        ].filter(Boolean).join("\n");
+
+        setMessages((prev) => [...prev, { role: "ai", content: summary }]);
+      } else if (result.error) {
+        setMessages((prev) => [
+          ...prev,
+          { role: "ai", content: `❌ **Pipeline failed:** ${result.error}\n\nPlease refine your prompt and try again.` },
+        ]);
+        toast({ title: "Build failed", description: result.error, variant: "destructive" });
+      }
+    } catch (err: any) {
       setMessages((prev) => [
         ...prev,
-        { role: "ai", content: `❌ **Build failed:** ${errorMsg}\n\nPlease try again or rephrase your request.` },
+        { role: "ai", content: `❌ **Error:** ${err.message}` },
       ]);
-      toast({ title: "Build failed", description: errorMsg, variant: "destructive" });
     } finally {
+      unsub();
       setIsBuilding(false);
     }
   };
 
   const handlePublish = () => {
-    toast({ title: "🚀 Published!", description: "Your project configuration has been saved." });
+    toast({ title: "🚀 Published!", description: "Configuration saved successfully." });
   };
+
+  const handleExportJSON = () => {
+    const json = orchestrator.exportConfig();
+    if (!json) return;
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${pipelineState?.config?.title || "project"}-config.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "Exported", description: "Configuration JSON downloaded." });
+  };
+
+  const handleExportSQL = () => {
+    const sql = orchestrator.exportSQL();
+    if (!sql) return;
+    const blob = new Blob([sql], { type: "text/sql" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${pipelineState?.config?.title || "project"}-schema.sql`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "Exported", description: "SQL schema downloaded." });
+  };
+
+  const buildComplete = pipelineState?.stage === "complete";
 
   const StatusIcon = ({ status }: { status: ProgressStep["status"] }) => {
     if (status === "done") return <CheckCircle2 className="w-3.5 h-3.5 text-primary" />;
@@ -212,98 +236,242 @@ Your configuration is ready! Click **Publish** to deploy, or continue chatting t
     return <Circle className="w-3.5 h-3.5 text-muted-foreground/40" />;
   };
 
-  // Render config preview
-  const renderConfigPreview = () => {
-    if (!currentConfig) return null;
-    return (
-      <div className="p-4 space-y-6 text-sm">
-        {/* Header */}
-        <div className="space-y-1">
-          <h2 className="text-lg font-bold text-foreground">{currentConfig.title}</h2>
-          <p className="text-muted-foreground">{currentConfig.description}</p>
-          <div className="flex gap-2 flex-wrap mt-2">
-            <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">{currentConfig.project_type}</span>
-            {currentConfig.modules.map((m) => (
-              <span key={m} className="px-2 py-0.5 rounded-full bg-accent text-accent-foreground text-xs">{m}</span>
-            ))}
+  // === Preview Tab ===
+  const renderPreview = () => {
+    const config = pipelineState?.config;
+    if (!config) {
+      if (isBuilding) {
+        return (
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center space-y-3">
+              <Loader2 className="w-10 h-10 text-primary mx-auto animate-spin" />
+              <p className="text-sm font-medium text-foreground">Running AI pipeline...</p>
+              <p className="text-xs text-muted-foreground">
+                {progress.find((s) => s.status === "in_progress")?.label || "Processing..."}
+              </p>
+            </div>
+          </div>
+        );
+      }
+      return (
+        <div className="h-full flex items-center justify-center p-6">
+          <div className="text-center space-y-3">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Sparkles className="w-7 h-7 text-primary" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground">AI Builder Engine</h3>
+            <p className="text-sm text-muted-foreground max-w-sm">
+              Describe your app to generate structured config through the 5-engine pipeline.
+            </p>
           </div>
         </div>
+      );
+    }
 
-        {/* Pages */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-            <ExternalLink className="w-4 h-4 text-primary" /> Pages ({currentConfig.pages.length})
-          </h3>
-          {currentConfig.pages.map((page) => (
-            <div key={page.route} className="rounded-lg border border-border p-3 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-foreground">{page.name}</span>
-                <code className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{page.route}</code>
-              </div>
-              <div className="flex gap-1.5 flex-wrap">
-                {page.components.map((comp, i) => {
-                  const Icon = componentIcons[comp.type] || Sparkles;
-                  return (
-                    <span key={i} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-accent text-xs text-accent-foreground">
-                      <Icon className="w-3 h-3" /> {comp.type}
-                    </span>
-                  );
-                })}
-              </div>
+    const validation = pipelineState?.validation;
+
+    return (
+      <ScrollArea className="h-full">
+        <div className="p-4 space-y-6 text-sm">
+          {/* Header */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-foreground">{config.title}</h2>
+              {validation && (
+                <span className={cn(
+                  "px-2.5 py-1 rounded-full text-xs font-medium",
+                  validation.score >= 80 ? "bg-primary/10 text-primary" :
+                  validation.score >= 50 ? "bg-yellow-500/10 text-yellow-600" :
+                  "bg-destructive/10 text-destructive"
+                )}>
+                  🔐 {validation.score}/100
+                </span>
+              )}
             </div>
-          ))}
-        </div>
+            <p className="text-muted-foreground">{config.description}</p>
+            <div className="flex gap-2 flex-wrap">
+              <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">{config.project_type}</span>
+              {config.multi_tenant && <span className="px-2 py-0.5 rounded-full bg-accent text-accent-foreground text-xs">🏢 Multi-tenant</span>}
+              {config.modules.map((m) => (
+                <span key={m} className="px-2 py-0.5 rounded-full bg-accent text-accent-foreground text-xs">{m}</span>
+              ))}
+            </div>
+          </div>
 
-        {/* Collections */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-            <Database className="w-4 h-4 text-primary" /> Database ({currentConfig.collections.length})
-          </h3>
-          {currentConfig.collections.map((col) => (
-            <div key={col.name} className="rounded-lg border border-border p-3 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-foreground">{col.name}</span>
-                {col.rls && <span className="text-xs text-primary flex items-center gap-1"><Lock className="w-3 h-3" /> RLS</span>}
-              </div>
-              <div className="grid grid-cols-2 gap-1">
-                {col.fields.map((f) => (
-                  <div key={f.name} className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <span className="font-mono text-foreground">{f.name}</span>
-                    <span className="text-muted-foreground/60">{f.type}</span>
-                    {f.required && <span className="text-destructive">*</span>}
+          {/* Security Issues */}
+          {validation && (validation.errors.length > 0 || validation.warnings.length > 0) && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Shield className="w-4 h-4 text-primary" /> Security Report
+              </h3>
+              {validation.errors.map((e, i) => (
+                <div key={`e${i}`} className="flex items-start gap-2 p-2 rounded-lg bg-destructive/5 border border-destructive/20">
+                  <AlertCircle className="w-3.5 h-3.5 text-destructive mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs text-foreground">{e.message}</p>
+                    {e.fix && <p className="text-xs text-muted-foreground mt-0.5">Fix: {e.fix}</p>}
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
+              {validation.warnings.map((w, i) => (
+                <div key={`w${i}`} className="flex items-start gap-2 p-2 rounded-lg bg-yellow-500/5 border border-yellow-500/20">
+                  <AlertTriangle className="w-3.5 h-3.5 text-yellow-600 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs text-foreground">{w.message}</p>
+                    {w.fix && <p className="text-xs text-muted-foreground mt-0.5">Fix: {w.fix}</p>}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          )}
 
-        {/* Roles */}
-        {currentConfig.roles && currentConfig.roles.length > 0 && (
+          {/* Pages */}
           <div className="space-y-3">
             <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              <Lock className="w-4 h-4 text-primary" /> Roles
+              <ExternalLink className="w-4 h-4 text-primary" /> Pages ({config.pages.length})
             </h3>
-            {currentConfig.roles.map((role) => (
-              <div key={role.name} className="rounded-lg border border-border p-3">
-                <span className="font-medium text-foreground">{role.name}</span>
-                <div className="flex gap-1.5 flex-wrap mt-1.5">
-                  {role.permissions.map((p) => (
-                    <span key={p} className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{p}</span>
+            {config.pages.map((page) => (
+              <div key={page.route} className="rounded-lg border border-border p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-foreground">{page.name}</span>
+                    {page.requires_auth && <Lock className="w-3 h-3 text-muted-foreground" />}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <code className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{page.route}</code>
+                    <span className="text-xs text-muted-foreground">{page.layout}</span>
+                  </div>
+                </div>
+                <div className="flex gap-1.5 flex-wrap">
+                  {page.components.map((comp, i) => {
+                    const Icon = componentIcons[comp.type] || Sparkles;
+                    return (
+                      <span key={i} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-accent text-xs text-accent-foreground">
+                        <Icon className="w-3 h-3" /> {comp.type.replace(/_/g, " ")}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Collections */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <Database className="w-4 h-4 text-primary" /> Database ({config.collections.length})
+            </h3>
+            {config.collections.map((col) => (
+              <div key={col.name} className="rounded-lg border border-border p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-foreground">{col.name}</span>
+                  <div className="flex items-center gap-2">
+                    {col.rls && <span className="text-xs text-primary flex items-center gap-1"><Lock className="w-3 h-3" /> RLS</span>}
+                    {col.tenant_isolated && <span className="text-xs text-muted-foreground">🏢</span>}
+                    {col.soft_delete && <span className="text-xs text-muted-foreground">♻️</span>}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-1">
+                  {col.fields.map((f) => (
+                    <div key={f.name} className="text-xs flex items-center gap-1.5">
+                      <span className="font-mono text-foreground">{f.name}</span>
+                      <span className="text-muted-foreground/60">{f.type}</span>
+                      {f.required && <span className="text-destructive">*</span>}
+                      {f.unique && <span className="text-primary text-[10px]">U</span>}
+                    </div>
                   ))}
                 </div>
               </div>
             ))}
           </div>
-        )}
-      </div>
+
+          {/* Roles */}
+          {config.roles && config.roles.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Shield className="w-4 h-4 text-primary" /> Roles ({config.roles.length})
+              </h3>
+              {config.roles.map((role) => (
+                <div key={role.name} className="rounded-lg border border-border p-3">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-foreground">{role.name}</span>
+                    {role.is_default && <span className="text-xs text-muted-foreground">(default)</span>}
+                  </div>
+                  <div className="flex gap-1.5 flex-wrap mt-1.5">
+                    {role.permissions.map((p) => (
+                      <span key={p} className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{p}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Export buttons */}
+          <div className="flex gap-2 pt-2 border-t border-border">
+            <Button variant="outline" size="sm" onClick={handleExportJSON} className="gap-1.5">
+              <Download className="w-3.5 h-3.5" /> Export JSON
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExportSQL} className="gap-1.5">
+              <Download className="w-3.5 h-3.5" /> Export SQL
+            </Button>
+          </div>
+        </div>
+      </ScrollArea>
     );
   };
 
-  // Chat panel content (shared between mobile/desktop)
+  // === Config Tab (raw JSON) ===
+  const renderConfig = () => {
+    if (!pipelineState?.config) {
+      return (
+        <div className="h-full flex items-center justify-center p-6">
+          <div className="text-center space-y-3">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Code className="w-7 h-7 text-primary" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground">Structured Config</h3>
+            <p className="text-sm text-muted-foreground max-w-sm">Build something to see the JSON configuration output.</p>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <ScrollArea className="h-full">
+        <pre className="p-4 text-xs font-mono text-foreground whitespace-pre-wrap break-all">
+          {JSON.stringify(pipelineState.config, null, 2)}
+        </pre>
+      </ScrollArea>
+    );
+  };
+
+  // === SQL Tab ===
+  const renderSQL = () => {
+    if (!pipelineState?.schema) {
+      return (
+        <div className="h-full flex items-center justify-center p-6">
+          <div className="text-center space-y-3">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Database className="w-7 h-7 text-primary" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground">Database SQL</h3>
+            <p className="text-sm text-muted-foreground max-w-sm">Generated migration SQL will appear here.</p>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <ScrollArea className="h-full">
+        <pre className="p-4 text-xs font-mono text-foreground whitespace-pre-wrap break-all">
+          {pipelineState.schema.sql}
+        </pre>
+      </ScrollArea>
+    );
+  };
+
+  // === Chat Panel ===
   const renderChat = () => (
     <div className="flex flex-col h-full">
-      {/* Progress tracker */}
       {progress.length > 0 && (
         <div className="border-b border-border p-3 space-y-1.5 bg-card shrink-0">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Engine Pipeline</p>
@@ -322,7 +490,6 @@ Your configuration is ready! Click **Publish** to deploy, or continue chatting t
         </div>
       )}
 
-      {/* Messages */}
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-3">
           {messages.map((msg, i) => (
@@ -340,8 +507,6 @@ Your configuration is ready! Click **Publish** to deploy, or continue chatting t
               </div>
             </div>
           ))}
-
-          {/* Suggestions on first load */}
           {messages.length === 1 && !isBuilding && (
             <div className="grid grid-cols-1 gap-2 mt-4">
               {suggestions.map((s) => (
@@ -363,14 +528,13 @@ Your configuration is ready! Click **Publish** to deploy, or continue chatting t
         </div>
       </ScrollArea>
 
-      {/* Input */}
       <div className="border-t border-border p-3 bg-card shrink-0">
         <div className="flex items-end gap-2">
           <div className="flex gap-1">
-            <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" title="Attach file">
+            <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground">
               <Paperclip className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" title="Voice input">
+            <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground">
               <Mic className="w-4 h-4" />
             </Button>
           </div>
@@ -383,7 +547,7 @@ Your configuration is ready! Click **Publish** to deploy, or continue chatting t
                 sendMessage(input);
               }
             }}
-            placeholder={isBuilding ? "Building..." : "Describe your application..."}
+            placeholder={isBuilding ? "Pipeline running..." : "Describe your application..."}
             rows={1}
             disabled={isBuilding}
             className="flex-1 resize-none px-3 py-2 rounded-lg border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring min-h-[36px] max-h-[120px] disabled:opacity-50"
@@ -396,70 +560,6 @@ Your configuration is ready! Click **Publish** to deploy, or continue chatting t
     </div>
   );
 
-  // Preview panel content
-  const renderPreviewContent = () => {
-    if (currentConfig) {
-      return (
-        <ScrollArea className="h-full">
-          {renderConfigPreview()}
-        </ScrollArea>
-      );
-    }
-
-    if (isBuilding) {
-      return (
-        <div className="h-full flex items-center justify-center">
-          <div className="text-center space-y-3">
-            <Loader2 className="w-10 h-10 text-primary mx-auto animate-spin" />
-            <p className="text-sm font-medium text-foreground">Building your application...</p>
-            <p className="text-xs text-muted-foreground">
-              {progress.find((s) => s.status === "in_progress")?.label || "Processing..."}
-            </p>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="h-full flex items-center justify-center p-6">
-        <div className="text-center space-y-3">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
-            <Sparkles className="w-7 h-7 text-primary" />
-          </div>
-          <h3 className="text-lg font-semibold text-foreground">AI Builder</h3>
-          <p className="text-sm text-muted-foreground max-w-sm">
-            Describe your application and the AI engine will generate a complete structured configuration.
-          </p>
-        </div>
-      </div>
-    );
-  };
-
-  // Code tab - show raw JSON config
-  const renderCodeContent = () => {
-    if (!currentConfig) {
-      return (
-        <div className="h-full flex items-center justify-center p-6">
-          <div className="text-center space-y-3">
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
-              <Code className="w-7 h-7 text-primary" />
-            </div>
-            <h3 className="text-lg font-semibold text-foreground">Configuration</h3>
-            <p className="text-sm text-muted-foreground max-w-sm">Build something to see the structured JSON configuration.</p>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <ScrollArea className="h-full">
-        <pre className="p-4 text-xs font-mono text-foreground whitespace-pre-wrap">
-          {JSON.stringify(currentConfig, null, 2)}
-        </pre>
-      </ScrollArea>
-    );
-  };
-
   return (
     <DashboardLayout>
       <div className="flex flex-col h-[calc(100vh-3.5rem)] md:h-screen">
@@ -470,7 +570,7 @@ Your configuration is ready! Click **Publish** to deploy, or continue chatting t
             <span className="text-sm font-semibold text-foreground">AI Builder</span>
             {isBuilding && (
               <span className="flex items-center gap-1.5 text-xs text-primary">
-                <Loader2 className="w-3 h-3 animate-spin" /> Building...
+                <Loader2 className="w-3 h-3 animate-spin" /> Pipeline running...
               </span>
             )}
             {buildComplete && !isBuilding && (
@@ -478,15 +578,27 @@ Your configuration is ready! Click **Publish** to deploy, or continue chatting t
                 <CheckCircle2 className="w-3 h-3" /> Complete
               </span>
             )}
+            {pipelineState?.validation && buildComplete && (
+              <span className={cn(
+                "text-xs px-2 py-0.5 rounded-full",
+                pipelineState.validation.score >= 80 ? "bg-primary/10 text-primary" :
+                pipelineState.validation.score >= 50 ? "bg-yellow-500/10 text-yellow-600" :
+                "bg-destructive/10 text-destructive"
+              )}>
+                🔐 {pipelineState.validation.score}
+              </span>
+            )}
           </div>
-          <Button
-            size="sm"
-            onClick={handlePublish}
-            disabled={!buildComplete}
-            className="gap-1.5"
-          >
-            <Rocket className="w-3.5 h-3.5" /> Publish
-          </Button>
+          <div className="flex items-center gap-2">
+            {buildComplete && (
+              <Button variant="outline" size="sm" onClick={handleExportJSON} className="gap-1.5 hidden sm:flex">
+                <Download className="w-3.5 h-3.5" /> Export
+              </Button>
+            )}
+            <Button size="sm" onClick={handlePublish} disabled={!buildComplete} className="gap-1.5">
+              <Rocket className="w-3.5 h-3.5" /> Publish
+            </Button>
+          </div>
         </div>
 
         <div className="flex-1 min-h-0">
@@ -494,9 +606,7 @@ Your configuration is ready! Click **Publish** to deploy, or continue chatting t
           <div className="hidden md:block h-full">
             <ResizablePanelGroup direction="horizontal">
               <ResizablePanel defaultSize={35} minSize={25} maxSize={50}>
-                <div className="h-full border-r border-border">
-                  {renderChat()}
-                </div>
+                <div className="h-full border-r border-border">{renderChat()}</div>
               </ResizablePanel>
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={65} minSize={40}>
@@ -507,42 +617,72 @@ Your configuration is ready! Click **Publish** to deploy, or continue chatting t
                         <TabsTrigger value="preview" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 gap-1.5">
                           <ExternalLink className="w-3.5 h-3.5" /> Preview
                         </TabsTrigger>
-                        <TabsTrigger value="code" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 gap-1.5">
+                        <TabsTrigger value="config" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 gap-1.5">
                           <Code className="w-3.5 h-3.5" /> Config
                         </TabsTrigger>
-                        <TabsTrigger value="design" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 gap-1.5">
-                          <Palette className="w-3.5 h-3.5" /> Design
+                        <TabsTrigger value="sql" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 gap-1.5">
+                          <Database className="w-3.5 h-3.5" /> SQL
                         </TabsTrigger>
-                        <TabsTrigger value="analysis" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 gap-1.5">
-                          <BarChart3 className="w-3.5 h-3.5" /> Analysis
+                        <TabsTrigger value="security" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 gap-1.5">
+                          <Shield className="w-3.5 h-3.5" /> Security
                         </TabsTrigger>
                       </TabsList>
                     </Tabs>
                   </div>
                   <div className="flex-1 min-h-0">
-                    {activeTab === "preview" && renderPreviewContent()}
-                    {activeTab === "code" && renderCodeContent()}
-                    {activeTab === "design" && (
-                      <div className="h-full flex items-center justify-center bg-muted/30 p-6">
-                        <div className="text-center space-y-3">
-                          <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
-                            <Palette className="w-7 h-7 text-primary" />
+                    {activeTab === "preview" && renderPreview()}
+                    {activeTab === "config" && renderConfig()}
+                    {activeTab === "sql" && renderSQL()}
+                    {activeTab === "security" && (
+                      <ScrollArea className="h-full">
+                        {pipelineState?.validation ? (
+                          <div className="p-4 space-y-4">
+                            <div className="flex items-center gap-3">
+                              <div className={cn(
+                                "w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-bold",
+                                pipelineState.validation.score >= 80 ? "bg-primary/10 text-primary" :
+                                pipelineState.validation.score >= 50 ? "bg-yellow-500/10 text-yellow-600" :
+                                "bg-destructive/10 text-destructive"
+                              )}>
+                                {pipelineState.validation.score}
+                              </div>
+                              <div>
+                                <h3 className="font-semibold text-foreground">Security Score</h3>
+                                <p className="text-xs text-muted-foreground">
+                                  {pipelineState.validation.errors.length} errors · {pipelineState.validation.warnings.length} warnings · {pipelineState.validation.info.length} info
+                                </p>
+                              </div>
+                            </div>
+                            {[...pipelineState.validation.errors, ...pipelineState.validation.warnings, ...pipelineState.validation.info].map((issue, i) => (
+                              <div key={i} className={cn(
+                                "flex items-start gap-2 p-3 rounded-lg border",
+                                issue.severity === "error" ? "bg-destructive/5 border-destructive/20" :
+                                issue.severity === "warning" ? "bg-yellow-500/5 border-yellow-500/20" :
+                                "bg-muted/50 border-border"
+                              )}>
+                                {issue.severity === "error" ? <AlertCircle className="w-4 h-4 text-destructive mt-0.5 shrink-0" /> :
+                                 issue.severity === "warning" ? <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5 shrink-0" /> :
+                                 <Info className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />}
+                                <div>
+                                  <p className="text-sm text-foreground">{issue.message}</p>
+                                  {issue.category && <p className="text-xs text-muted-foreground mt-0.5">Category: {issue.category}</p>}
+                                  {issue.fix && <p className="text-xs text-primary mt-1">💡 {issue.fix}</p>}
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                          <h3 className="text-lg font-semibold text-foreground">Design Editor</h3>
-                          <p className="text-sm text-muted-foreground max-w-sm">Visual style customization coming soon.</p>
-                        </div>
-                      </div>
-                    )}
-                    {activeTab === "analysis" && (
-                      <div className="h-full flex items-center justify-center bg-muted/30 p-6">
-                        <div className="text-center space-y-3">
-                          <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
-                            <BarChart3 className="w-7 h-7 text-primary" />
+                        ) : (
+                          <div className="h-full flex items-center justify-center p-6">
+                            <div className="text-center space-y-3">
+                              <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
+                                <Shield className="w-7 h-7 text-primary" />
+                              </div>
+                              <h3 className="text-lg font-semibold text-foreground">Security Report</h3>
+                              <p className="text-sm text-muted-foreground max-w-sm">Build something to see the security validation report.</p>
+                            </div>
                           </div>
-                          <h3 className="text-lg font-semibold text-foreground">Analysis</h3>
-                          <p className="text-sm text-muted-foreground max-w-sm">Performance & SEO analysis coming soon.</p>
-                        </div>
-                      </div>
+                        )}
+                      </ScrollArea>
                     )}
                   </div>
                 </div>
@@ -561,21 +701,20 @@ Your configuration is ready! Click **Publish** to deploy, or continue chatting t
                   <TabsTrigger value="preview" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
                     <ExternalLink className="w-3.5 h-3.5" /> Preview
                   </TabsTrigger>
-                  <TabsTrigger value="code" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
+                  <TabsTrigger value="config" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
                     <Code className="w-3.5 h-3.5" /> Config
+                  </TabsTrigger>
+                  <TabsTrigger value="sql" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
+                    <Database className="w-3.5 h-3.5" /> SQL
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
             <div className="flex-1 min-h-0 overflow-hidden">
               {activeTab === "chat" && renderChat()}
-              {activeTab === "preview" && renderPreviewContent()}
-              {activeTab === "code" && renderCodeContent()}
-              {activeTab !== "chat" && activeTab !== "preview" && activeTab !== "code" && (
-                <div className="h-full flex items-center justify-center p-6">
-                  <p className="text-sm text-muted-foreground">Coming soon.</p>
-                </div>
-              )}
+              {activeTab === "preview" && renderPreview()}
+              {activeTab === "config" && renderConfig()}
+              {activeTab === "sql" && renderSQL()}
             </div>
           </div>
         </div>
