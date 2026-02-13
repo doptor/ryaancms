@@ -15,7 +15,9 @@ import {
 } from "@/components/ui/pagination";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
-import { Plus, Pencil, Trash2, Search, CheckCircle2, XCircle, ExternalLink, Info, Copy, Check } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, CheckCircle2, XCircle, ExternalLink, Info, Copy, Check, Plug, Loader2, Wifi, WifiOff } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
@@ -311,6 +313,61 @@ export default function AIIntegrationSettings() {
   const [form, setForm] = useState(emptyForm());
   const [editId, setEditId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [testingConnection, setTestingConnection] = useState(false);
+  const [connectionResult, setConnectionResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [testingItemId, setTestingItemId] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const testConnection = async (provider: string, apiEndpoint: string, apiKey: string, model: string, itemId?: string) => {
+    if (itemId) {
+      setTestingItemId(itemId);
+    } else {
+      setTestingConnection(true);
+    }
+    setConnectionResult(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("test-ai-connection", {
+        body: { provider, apiEndpoint, apiKey, model },
+      });
+
+      if (error) throw error;
+
+      const result = {
+        success: data.success,
+        message: data.success ? "Connected successfully!" : (data.error || "Connection failed"),
+      };
+      
+      setConnectionResult(result);
+
+      if (itemId) {
+        setItems((prev) =>
+          prev.map((i) =>
+            i.id === itemId
+              ? { ...i, status: data.success ? "active" : "error" }
+              : i
+          )
+        );
+      }
+
+      toast({
+        title: data.success ? "✅ Connection Successful" : "❌ Connection Failed",
+        description: result.message,
+        variant: data.success ? "default" : "destructive",
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Connection test failed";
+      setConnectionResult({ success: false, message: msg });
+      toast({
+        title: "❌ Connection Failed",
+        description: msg,
+        variant: "destructive",
+      });
+    } finally {
+      setTestingConnection(false);
+      setTestingItemId(null);
+    }
+  };
 
   const filtered = items.filter((i) => {
     const matchSearch = i.name.toLowerCase().includes(search.toLowerCase()) || i.model.toLowerCase().includes(search.toLowerCase());
@@ -323,8 +380,8 @@ export default function AIIntegrationSettings() {
   const safePage = Math.min(page, totalPages);
   const paged = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
-  const openCreate = () => { setForm(emptyForm()); setDialogMode("create"); setEditId(null); setDialogOpen(true); };
-  const openEdit = (item: AIIntegration) => { setForm({ name: item.name, provider: item.provider, model: item.model, apiEndpoint: item.apiEndpoint, apiKey: item.apiKey, status: item.status }); setDialogMode("edit"); setEditId(item.id); setDialogOpen(true); };
+  const openCreate = () => { setForm(emptyForm()); setDialogMode("create"); setEditId(null); setConnectionResult(null); setDialogOpen(true); };
+  const openEdit = (item: AIIntegration) => { setForm({ name: item.name, provider: item.provider, model: item.model, apiEndpoint: item.apiEndpoint, apiKey: item.apiKey, status: item.status }); setDialogMode("edit"); setEditId(item.id); setConnectionResult(null); setDialogOpen(true); };
 
   const handleProviderChange = (provider: AIProvider) => {
     const config = getProviderConfig(provider);
@@ -414,6 +471,15 @@ export default function AIIntegrationSettings() {
                   <TableCell className="text-right tabular-nums text-muted-foreground">{item.usageCount.toLocaleString()}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        title="Test Connection"
+                        onClick={() => testConnection(item.provider, item.apiEndpoint, item.apiKey, item.model, item.id)}
+                        disabled={testingItemId === item.id}
+                      >
+                        {testingItemId === item.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plug className="w-4 h-4 text-primary" />}
+                      </Button>
                       <Button variant="ghost" size="icon" onClick={() => openEdit(item)}><Pencil className="w-4 h-4" /></Button>
                       <Button variant="ghost" size="icon" onClick={() => setDeleteId(item.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
                     </div>
@@ -548,10 +614,29 @@ export default function AIIntegrationSettings() {
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
+
+            {/* Connection test result */}
+            {connectionResult && (
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${connectionResult.success ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"}`}>
+                {connectionResult.success ? <Wifi className="w-4 h-4 shrink-0" /> : <WifiOff className="w-4 h-4 shrink-0" />}
+                {connectionResult.message}
+              </div>
+            )}
           </div>
-          <DialogFooter>
-            <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-            <Button variant="default" onClick={handleSave}>{dialogMode === "create" ? "Create" : "Save Changes"}</Button>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => testConnection(form.provider, form.apiEndpoint, form.apiKey, form.model)}
+              disabled={testingConnection || !form.apiKey || !form.apiEndpoint}
+              className="gap-2"
+            >
+              {testingConnection ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plug className="w-4 h-4" />}
+              {testingConnection ? "Testing..." : "Connect API"}
+            </Button>
+            <div className="flex gap-2 ml-auto">
+              <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+              <Button variant="default" onClick={handleSave}>{dialogMode === "create" ? "Create" : "Save Changes"}</Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
