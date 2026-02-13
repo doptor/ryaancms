@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Zap, LogOut, Menu, X, CircleDot, icons, User } from "lucide-react";
+import { Zap, LogOut, Menu, X, CircleDot, icons, User, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -171,9 +171,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         onMouseLeave={() => { setSidebarHovered(false); setTopZoneHovered(false); setBottomZoneHovered(false); }}
         className={cn(
           "hidden md:flex flex-col border-r border-border bg-card transition-all duration-300 ease-in-out overflow-hidden",
-          sidebarHovered ? "w-60" : "w-2 cursor-pointer"
+          sidebarHovered ? "w-60" : "w-3 cursor-pointer items-center justify-center"
         )}
       >
+        {!sidebarHovered && (
+          <ChevronRight className="w-3 h-3 text-muted-foreground" />
+        )}
         {sidebarHovered && (
           <>
             {/* Header / Logo */}
