@@ -1,15 +1,14 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Zap, ChevronLeft, LogOut, Menu, X, CircleDot } from "lucide-react";
-import * as LucideIcons from "lucide-react";
+import { Zap, ChevronLeft, LogOut, Menu, X, CircleDot, icons } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 
 function getIcon(name: string | null): React.ComponentType<any> {
   if (!name) return CircleDot;
-  const icon = (LucideIcons as any)[name];
-  return icon && typeof icon === "function" ? icon : CircleDot;
+  const icon = (icons as Record<string, any>)[name];
+  return icon || CircleDot;
 }
 
 interface DynamicMenuItem {
