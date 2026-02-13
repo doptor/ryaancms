@@ -118,12 +118,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="flex h-screen bg-background">
       {/* Mobile header */}
       <div className="fixed top-0 left-0 right-0 z-50 md:hidden flex items-center justify-between h-14 px-4 border-b border-border bg-card">
-        <div className="flex items-center gap-2">
+        <Link to="/dashboard" className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-gradient-primary flex items-center justify-center">
             <Zap className="w-3.5 h-3.5 text-primary-foreground" />
           </div>
           <span className="font-bold text-foreground">RyaanCMS</span>
-        </div>
+        </Link>
         <button onClick={() => setMobileOpen(!mobileOpen)} className="text-foreground p-1">
           {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
@@ -180,12 +180,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {sidebarHovered && (
           <>
             {/* Header / Logo */}
-            <div className="flex items-center gap-2 px-4 h-14 border-b border-border shrink-0">
+            <Link to="/dashboard" className="flex items-center gap-2 px-4 h-14 border-b border-border shrink-0">
               <div className="w-7 h-7 rounded-lg bg-gradient-primary flex items-center justify-center shrink-0">
                 <Zap className="w-3.5 h-3.5 text-primary-foreground" />
               </div>
               <span className="font-bold text-foreground whitespace-nowrap">RyaanCMS</span>
-            </div>
+            </Link>
 
             {/* Top zone - header menu items */}
             <div
