@@ -228,10 +228,9 @@ const sectionComponents: Record<string, React.FC> = {
 };
 
 export default function SettingsPage() {
-  const [activeSection, setActiveSection] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<string>("general");
 
-  const activeData = settingSections.find((s) => s.id === activeSection);
-  const ActiveComponent = activeSection ? sectionComponents[activeSection] : null;
+  const ActiveComponent = sectionComponents[activeSection];
 
   const handleSave = () => {
     toast({ title: "Settings saved", description: "Your changes have been saved successfully." });
@@ -240,61 +239,44 @@ export default function SettingsPage() {
   return (
     <DashboardLayout>
       <div className="p-6 lg:p-8 max-w-4xl">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            {activeSection && (
-              <Button variant="ghost" size="icon" onClick={() => setActiveSection(null)}>
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
-            )}
-            <div>
-              <h1 className="text-2xl font-bold text-foreground mb-1">
-                {activeData ? activeData.label : "Settings"}
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                {activeData ? activeData.desc : "Configure your RyaanCMS instance."}
-              </p>
-            </div>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground mb-1">Settings</h1>
+            <p className="text-sm text-muted-foreground">Configure your RyaanCMS instance.</p>
           </div>
-          {activeSection && (
-            <Button variant="default" size="sm" onClick={handleSave}>
-              <Save className="w-4 h-4 mr-1" /> Save Changes
-            </Button>
-          )}
+          <Button variant="default" size="sm" onClick={handleSave}>
+            <Save className="w-4 h-4 mr-1" /> Save Changes
+          </Button>
         </div>
 
-        {!activeSection ? (
-          <div className="space-y-2">
-            {settingSections.map((s) => (
+        {/* Colorful tab bar */}
+        <div className="flex gap-1 mb-6 overflow-x-auto pb-1">
+          {settingSections.map((s) => {
+            const active = activeSection === s.id;
+            return (
               <button
                 key={s.id}
                 onClick={() => setActiveSection(s.id)}
-                className="w-full flex items-center gap-4 px-5 py-4 rounded-xl border border-border bg-card hover:border-primary/30 transition-all duration-300 text-left"
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200",
+                  active
+                    ? "bg-primary/10 text-primary border border-primary/30 shadow-sm"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground border border-transparent"
+                )}
               >
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                  <s.icon className={cn("w-5 h-5", s.color)} />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-foreground">{s.label}</h3>
-                  <p className="text-xs text-muted-foreground">{s.desc}</p>
-                </div>
+                <s.icon className={cn("w-4 h-4", active ? "text-primary" : s.color)} />
+                {s.label}
               </button>
-            ))}
-          </div>
-        ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                {activeData && <activeData.icon className={cn("w-5 h-5", activeData.color)} />}
-                {activeData?.label}
-              </CardTitle>
-              <CardDescription>{activeData?.desc}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {ActiveComponent && <ActiveComponent />}
-            </CardContent>
-          </Card>
-        )}
+            );
+          })}
+        </div>
+
+        {/* Active section content */}
+        <Card>
+          <CardContent className="pt-6">
+            {ActiveComponent && <ActiveComponent />}
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );
