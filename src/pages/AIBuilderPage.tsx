@@ -76,6 +76,24 @@ const ENGINE_LABELS = [
   "✅ Pipeline complete",
 ];
 
+const FRIENDLY_LABELS = [
+  "Understanding your idea...",
+  "Analyzing requirements...",
+  "Creating a plan...",
+  "Designing the architecture...",
+  "Setting up the database...",
+  "Building backend logic...",
+  "Designing the interface...",
+  "Running quality checks...",
+  "Fixing potential issues...",
+  "Final review...",
+  "Assembling components...",
+  "Preparing database...",
+  "Checking security...",
+  "Wrapping things up...",
+  "All done!",
+];
+
 const suggestions = [
   { icon: Database, label: "SaaS Dashboard", prompt: "Build a SaaS analytics dashboard with user auth, subscription tiers, real-time charts, and admin panel" },
   { icon: FileText, label: "Blog Platform", prompt: "Create a blog platform with posts, categories, comments, media gallery, and SEO optimization" },
@@ -113,6 +131,7 @@ export default function AIBuilderPage() {
   const [isAutoImproving, setIsAutoImproving] = useState(false);
   const [screenshotUrl, setScreenshotUrl] = useState("");
   const [showUrlInput, setShowUrlInput] = useState(false);
+  const [showAdvancedPipeline, setShowAdvancedPipeline] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const hasProcessedIncoming = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -740,20 +759,76 @@ export default function AIBuilderPage() {
   const renderChat = () => (
     <div className="flex flex-col h-full">
       {progress.length > 0 && (
-        <div className="border-b border-border p-3 space-y-1.5 bg-card shrink-0">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Engine Pipeline</p>
-          {progress.map((step, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <StatusIcon status={step.status} />
-              <span className={cn(
-                "text-xs",
-                step.status === "done" ? "text-foreground" :
-                step.status === "in_progress" ? "text-primary font-medium" :
-                step.status === "error" ? "text-destructive" :
-                "text-muted-foreground"
-              )}>{step.label}</span>
+        <div className="border-b border-border p-3 space-y-2 bg-card shrink-0">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              {showAdvancedPipeline ? "Engine Pipeline" : "Build Progress"}
+            </p>
+            <button
+              onClick={() => setShowAdvancedPipeline(!showAdvancedPipeline)}
+              className="text-[10px] text-muted-foreground hover:text-foreground transition-colors px-1.5 py-0.5 rounded border border-border hover:border-primary/30"
+            >
+              {showAdvancedPipeline ? "Simple View" : "Show Details"}
+            </button>
+          </div>
+
+          {showAdvancedPipeline ? (
+            /* Advanced: full agent list */
+            <div className="space-y-1">
+              {progress.map((step, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <StatusIcon status={step.status} />
+                  <span className={cn(
+                    "text-xs",
+                    step.status === "done" ? "text-foreground" :
+                    step.status === "in_progress" ? "text-primary font-medium" :
+                    step.status === "error" ? "text-destructive" :
+                    "text-muted-foreground"
+                  )}>{step.label}</span>
+                </div>
+              ))}
             </div>
-          ))}
+          ) : (
+            /* Simple: progress bar + friendly message */
+            (() => {
+              const doneCount = progress.filter(s => s.status === "done").length;
+              const currentStep = progress.findIndex(s => s.status === "in_progress");
+              const hasError = progress.some(s => s.status === "error");
+              const percent = Math.round((doneCount / progress.length) * 100);
+              const friendlyMsg = hasError
+                ? "Something went wrong..."
+                : currentStep >= 0
+                  ? FRIENDLY_LABELS[currentStep] || "Processing..."
+                  : doneCount === progress.length
+                    ? "✅ Your app is ready!"
+                    : "Getting started...";
+
+              return (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    {hasError ? (
+                      <AlertCircle className="w-4 h-4 text-destructive shrink-0" />
+                    ) : doneCount === progress.length ? (
+                      <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                    ) : (
+                      <Loader2 className="w-4 h-4 text-primary animate-spin shrink-0" />
+                    )}
+                    <span className="text-sm font-medium text-foreground">{friendlyMsg}</span>
+                    <span className="text-xs text-muted-foreground ml-auto">{percent}%</span>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full bg-secondary overflow-hidden">
+                    <div
+                      className={cn(
+                        "h-full rounded-full transition-all duration-500",
+                        hasError ? "bg-destructive" : "bg-primary"
+                      )}
+                      style={{ width: `${percent}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })()
+          )}
         </div>
       )}
 
