@@ -69,33 +69,32 @@ function hexToHsl(hex: string): string {
   return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
 }
 
+// Parse HSL string "H S% L%" into components
+function parseHslParts(hsl: string): { h: number; s: number; l: number } {
+  const parts = hsl.split(/\s+/);
+  return {
+    h: parseInt(parts[0]),
+    s: parseInt(parts[1]),
+    l: parseInt(parts[2]),
+  };
+}
+
 function applyBranding(branding: BrandingValues) {
   const root = document.documentElement;
 
-  // Apply primary color
   const primaryHsl = hexToHsl(branding.primaryColor);
-  root.style.setProperty("--primary", primaryHsl);
-  root.style.setProperty("--ring", primaryHsl);
-  root.style.setProperty("--sidebar-primary", primaryHsl);
-  root.style.setProperty("--sidebar-ring", primaryHsl);
-  root.style.setProperty("--chart-1", primaryHsl);
-
-  // Accent color
   const accentHsl = hexToHsl(branding.accentColor);
-  root.style.setProperty("--accent-foreground", accentHsl);
-  root.style.setProperty("--sidebar-accent-foreground", accentHsl);
-  root.style.setProperty("--chart-2", accentHsl);
+  const { h, s, l } = parseHslParts(primaryHsl);
+  const { h: ah, s: as, l: al } = parseHslParts(accentHsl);
 
-  // Gradient
-  root.style.setProperty(
-    "--gradient-primary",
-    `linear-gradient(135deg, hsl(${primaryHsl}), hsl(${accentHsl}))`
-  );
+  // Dark mode variants: bump lightness for readability
+  const primaryHslDark = `${h} ${s}% ${Math.min(l + 7, 80)}%`;
+  const accentHslDark = `${ah} ${as}% ${Math.min(al + 15, 85)}%`;
 
   // Fonts - load Google Fonts dynamically
   const fontsToLoad = new Set([branding.headingFont, branding.bodyFont]);
   fontsToLoad.forEach((font) => {
-    if (font === "JetBrains Mono") return; // already loaded
+    if (font === "JetBrains Mono") return;
     const id = `gfont-${font.replace(/\s/g, "-")}`;
     if (!document.getElementById(id)) {
       const link = document.createElement("link");
@@ -106,12 +105,10 @@ function applyBranding(branding: BrandingValues) {
     }
   });
 
-  // Apply fonts via CSS custom properties used by tailwind
-  root.style.setProperty("--font-heading", `"${branding.headingFont}", ui-sans-serif, system-ui, sans-serif`);
-  root.style.setProperty("--font-body", `"${branding.bodyFont}", ui-sans-serif, system-ui, sans-serif`);
-  document.body.style.fontFamily = `"${branding.bodyFont}", ui-sans-serif, system-ui, sans-serif`;
+  const fontHeading = `"${branding.headingFont}", ui-sans-serif, system-ui, sans-serif`;
+  const fontBody = `"${branding.bodyFont}", ui-sans-serif, system-ui, sans-serif`;
 
-  // Apply heading font to all h1-h6
+  // Use a <style> element so .dark class specificity works correctly
   let styleEl = document.getElementById("branding-styles");
   if (!styleEl) {
     styleEl = document.createElement("style");
@@ -119,7 +116,38 @@ function applyBranding(branding: BrandingValues) {
     document.head.appendChild(styleEl);
   }
   styleEl.textContent = `
-    h1, h2, h3, h4, h5, h6 { font-family: "${branding.headingFont}", ui-sans-serif, system-ui, sans-serif !important; }
+    :root {
+      --primary: ${primaryHsl};
+      --ring: ${primaryHsl};
+      --sidebar-primary: ${primaryHsl};
+      --sidebar-ring: ${primaryHsl};
+      --chart-1: ${primaryHsl};
+      --accent-foreground: ${accentHsl};
+      --sidebar-accent-foreground: ${accentHsl};
+      --chart-2: ${accentHsl};
+      --gradient-primary: linear-gradient(135deg, hsl(${primaryHsl}), hsl(${accentHsl}));
+      --shadow-glow: 0 0 60px hsl(${primaryHsl} / 0.15);
+      --shadow-primary: 0 8px 32px hsl(${primaryHsl} / 0.2);
+      --font-heading: ${fontHeading};
+      --font-body: ${fontBody};
+    }
+    .dark {
+      --primary: ${primaryHslDark};
+      --ring: ${primaryHslDark};
+      --sidebar-primary: ${primaryHslDark};
+      --sidebar-ring: ${primaryHslDark};
+      --chart-1: ${primaryHslDark};
+      --accent-foreground: ${accentHslDark};
+      --sidebar-accent-foreground: ${accentHslDark};
+      --chart-2: ${accentHslDark};
+      --gradient-primary: linear-gradient(135deg, hsl(${primaryHsl}), hsl(${accentHsl}));
+      --shadow-glow: 0 0 80px hsl(${primaryHsl} / 0.2);
+      --shadow-primary: 0 8px 32px hsl(${primaryHsl} / 0.3);
+      --font-heading: ${fontHeading};
+      --font-body: ${fontBody};
+    }
+    body { font-family: ${fontBody}; }
+    h1, h2, h3, h4, h5, h6 { font-family: ${fontHeading} !important; }
     ${branding.customCss || ""}
   `;
 
