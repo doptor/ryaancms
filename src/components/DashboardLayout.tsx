@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
-import { Database, Puzzle, Sparkles, LayoutDashboard, Store, Settings, Zap, ChevronLeft, Download, Brain } from "lucide-react";
+import { Database, Puzzle, Sparkles, LayoutDashboard, Store, Settings, Zap, ChevronLeft, Download, Brain, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
 const sidebarItems = [
@@ -14,6 +15,7 @@ const sidebarItems = [
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { signOut, user } = useAuth();
   const location = useLocation();
 
   return (
@@ -45,7 +47,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             );
           })}
         </nav>
-        <div className="p-3 border-t border-border">
+        <div className="p-3 border-t border-border space-y-1">
+          <div className="px-3 py-1.5 text-xs text-muted-foreground truncate">
+            {user?.email}
+          </div>
+          <button
+            onClick={() => signOut()}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-destructive transition-colors w-full rounded-lg hover:bg-destructive/10"
+          >
+            <LogOut className="w-4 h-4" /> Sign Out
+          </button>
           <Link to="/" className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
             <ChevronLeft className="w-4 h-4" /> Back to Site
           </Link>
