@@ -1,25 +1,111 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Sparkles, LayoutDashboard, Store, Settings, Zap, ChevronLeft, Download, LogOut, Menu, X, List } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
-const sidebarItems = [
-  { label: "Overview", icon: LayoutDashboard, path: "/dashboard", color: "text-blue-400" },
-  { label: "AI Builder", icon: Sparkles, path: "/dashboard/ai", color: "text-violet-400" },
-  { label: "Marketplace", icon: Store, path: "/dashboard/marketplace", color: "text-amber-400" },
-  { label: "Installer", icon: Download, path: "/dashboard/installer", color: "text-cyan-400" },
-  { label: "Dashboard Footer", icon: List, path: "/dashboard/menus", color: "text-emerald-400" },
-  { label: "Settings", icon: Settings, path: "/dashboard/settings", color: "text-orange-400" },
-];
+const ICON_MAP: Record<string, React.ComponentType<any>> = {
+  LayoutDashboard, Sparkles, Store, Download, List, Settings,
+};
+
+const COLOR_MAP: Record<string, string> = {
+  LayoutDashboard: "text-blue-400",
+  Sparkles: "text-violet-400",
+  Store: "text-amber-400",
+  Download: "text-cyan-400",
+  List: "text-emerald-400",
+  Settings: "text-orange-400",
+};
+
+interface DynamicMenuItem {
+  id: string;
+  label: string;
+  url: string;
+  icon: string | null;
+  sort_order: number;
+  is_active: boolean;
+}
+
+interface DynamicMenuGroup {
+  id: string;
+  name: string;
+  position: string;
+  is_active: boolean;
+  items: DynamicMenuItem[];
+}
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { signOut, user } = useAuth();
   const location = useLocation();
   const [hovered, setHovered] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [headerItems, setHeaderItems] = useState<DynamicMenuItem[]>([]);
+  const [footerItems, setFooterItems] = useState<DynamicMenuItem[]>([]);
 
   const collapsed = !hovered;
+
+  useEffect(() => {
+    if (!user) return;
+    async function fetchMenus() {
+      const { data: groups } = await supabase
+        .from("menu_groups")
+        .select("*")
+        .in("position", ["dashboard-header", "dashboard-footer"])
+        .eq("target", "dashboard")
+        .eq("is_active", true)
+        .order("sort_order");
+
+      if (!groups || groups.length === 0) return;
+
+      const { data: items } = await supabase
+        .from("menu_items")
+        .select("*")
+        .in("group_id", groups.map(g => g.id))
+        .eq("is_active", true)
+        .is("parent_id", null)
+        .order("sort_order");
+
+      if (!items) return;
+
+      const headerGroupIds = groups.filter(g => g.position === "dashboard-header").map(g => g.id);
+      const footerGroupIds = groups.filter(g => g.position === "dashboard-footer").map(g => g.id);
+
+      setHeaderItems(items.filter(i => headerGroupIds.includes(i.group_id)).map(i => ({
+        id: i.id, label: i.label, url: i.url || "/dashboard", icon: i.icon, sort_order: i.sort_order, is_active: i.is_active,
+      })));
+      setFooterItems(items.filter(i => footerGroupIds.includes(i.group_id)).map(i => ({
+        id: i.id, label: i.label, url: i.url || "/dashboard", icon: i.icon, sort_order: i.sort_order, is_active: i.is_active,
+      })));
+    }
+    fetchMenus();
+  }, [user]);
+
+  const renderItem = (item: DynamicMenuItem, isMobile: boolean) => {
+    const active = location.pathname === item.url;
+    const IconComp = item.icon && ICON_MAP[item.icon] ? ICON_MAP[item.icon] : LayoutDashboard;
+    const color = item.icon && COLOR_MAP[item.icon] ? COLOR_MAP[item.icon] : "text-muted-foreground";
+    const iconSize = isMobile ? "w-5 h-5" : "w-4 h-4";
+
+    return (
+      <Link
+        key={item.id}
+        to={item.url}
+        title={item.label}
+        onClick={isMobile ? () => setMobileOpen(false) : undefined}
+        className={cn(
+          "flex items-center gap-3 rounded-lg text-sm transition-colors",
+          isMobile ? "px-4 py-3" : "px-3 py-2",
+          active
+            ? "bg-primary/10 text-primary font-medium"
+            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+        )}
+      >
+        <IconComp className={cn(iconSize, "shrink-0", active ? "text-primary" : color)} />
+        {(isMobile || !collapsed) && <span className="whitespace-nowrap">{item.label}</span>}
+      </Link>
+    );
+  };
 
   return (
     <div className="flex h-screen bg-background">
@@ -40,28 +126,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {mobileOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <div className="absolute top-14 left-0 right-0 bottom-0 bg-card border-t border-border overflow-y-auto">
-            <nav className="p-3 space-y-0.5">
-              {sidebarItems.map((item) => {
-                const active = location.pathname === item.path;
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    onClick={() => setMobileOpen(false)}
-                    className={cn(
-                      "flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-colors",
-                      active
-                        ? "bg-primary/10 text-primary font-medium"
-                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                    )}
-                  >
-                    <item.icon className={cn("w-5 h-5 shrink-0", active ? "text-primary" : item.color)} />
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
+          <div className="absolute top-14 left-0 right-0 bottom-0 bg-card border-t border-border overflow-y-auto flex flex-col">
+            <nav className="p-3 space-y-0.5 flex-1">
+              {headerItems.map(item => renderItem(item, true))}
             </nav>
+            {footerItems.length > 0 && (
+              <div className="p-3 border-t border-border space-y-0.5">
+                {footerItems.map(item => renderItem(item, true))}
+              </div>
+            )}
             <div className="p-3 border-t border-border space-y-0.5">
               <div className="px-4 py-2 text-xs text-muted-foreground truncate">{user?.email}</div>
               <button
@@ -94,26 +167,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {!collapsed && <span className="font-bold text-foreground whitespace-nowrap">RyaanCMS</span>}
         </div>
         <nav className="flex-1 p-2 space-y-0.5">
-          {sidebarItems.map((item) => {
-            const active = location.pathname === item.path;
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                title={item.label}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
-                  active
-                    ? "bg-primary/10 text-primary font-medium"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                )}
-              >
-                <item.icon className={cn("w-4 h-4 shrink-0", active ? "text-primary" : item.color)} />
-                {!collapsed && <span className="whitespace-nowrap">{item.label}</span>}
-              </Link>
-            );
-          })}
+          {headerItems.map(item => renderItem(item, false))}
         </nav>
+        {footerItems.length > 0 && (
+          <div className="p-2 border-t border-border space-y-0.5">
+            {footerItems.map(item => renderItem(item, false))}
+          </div>
+        )}
         <div className="p-2 border-t border-border space-y-0.5">
           {!collapsed && (
             <div className="px-3 py-1 text-xs text-muted-foreground truncate">
