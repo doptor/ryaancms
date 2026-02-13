@@ -25,7 +25,10 @@ const DEFAULT_SETTINGS: SettingsData = {
   },
   appearance: {
     darkMode: true,
-    brandColor: "#6366f1",
+    primaryColor: "#6366f1",
+    accentColor: "#8b5cf6",
+    headingFont: "Inter",
+    bodyFont: "Inter",
     customCss: "",
   },
   database: {
@@ -96,6 +99,8 @@ export function useSettings() {
       }
 
       toast({ title: "Settings saved", description: "Your changes have been saved successfully." });
+      // Notify branding context to re-apply
+      window.dispatchEvent(new Event("branding-updated"));
     } catch (err: any) {
       console.error("Save error:", err);
       toast({ title: "Error saving settings", description: err.message, variant: "destructive" });
