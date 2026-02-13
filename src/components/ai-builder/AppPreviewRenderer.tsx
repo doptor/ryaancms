@@ -180,6 +180,8 @@ function ComponentRenderer({ component, config }: { component: ComponentConfig; 
     case "payment_page": return <PaymentPagePreview props={props} />;
     case "settings_panel": return <SettingsPanelPreview props={props} />;
     case "api_docs": return <ApiDocsPreview props={props} />;
+    case "rich_text_editor": return <RichTextEditorPreview props={props} />;
+    case "map": return <MapPreview props={props} />;
     case "sidebar": return null;
     case "dashboard_layout": return null;
     default:
@@ -665,6 +667,117 @@ function FileUploadPreview({ props }: { props: Record<string, any> }) {
         </p>
         <Button variant="outline" size="sm" className="text-xs">Browse Files</Button>
       </div>
+    </div>
+  );
+}
+function RichTextEditorPreview({ props }: { props: Record<string, any> }) {
+  const toolbar = props.toolbar || "standard";
+  const toolbarItems: Record<string, string[]> = {
+    minimal: ["B", "I", "U", "Link"],
+    standard: ["B", "I", "U", "S", "Link", "H1", "H2", "List", "Quote", "Code"],
+    full: ["B", "I", "U", "S", "Link", "H1", "H2", "H3", "List", "OL", "Quote", "Code", "Image", "Table", "HR"],
+  };
+  const items = toolbarItems[toolbar] || toolbarItems.standard;
+
+  return (
+    <div className="rounded-xl border border-border bg-card">
+      <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-border flex-wrap">
+        {items.map((item) => (
+          <button
+            key={item}
+            className="px-1.5 py-1 rounded text-[10px] font-mono font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+          >
+            {item}
+          </button>
+        ))}
+        {props.markdown_mode && (
+          <div className="ml-auto">
+            <Badge variant="outline" className="text-[9px] h-4">MD</Badge>
+          </div>
+        )}
+      </div>
+      <div className="p-4 min-h-[160px] space-y-2">
+        <p className="text-sm text-foreground font-semibold">Welcome to the Editor</p>
+        <p className="text-xs text-muted-foreground">
+          Start typing here to create rich content. Use the toolbar above to format text, add headings, insert links, and more.
+        </p>
+        <p className="text-xs text-muted-foreground italic">
+          This is a preview of the rich text editing experience.
+        </p>
+      </div>
+      {props.max_length && (
+        <div className="px-4 py-1.5 border-t border-border">
+          <span className="text-[10px] text-muted-foreground">0 / {props.max_length} characters</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MapPreview({ props }: { props: Record<string, any> }) {
+  const provider = props.provider || "leaflet";
+  const zoom = props.zoom || 10;
+  const markers = [
+    { lat: 40.7128, lng: -74.006, label: "New York" },
+    { lat: 40.7589, lng: -73.9851, label: "Times Square" },
+    { lat: 40.6892, lng: -74.0445, label: "Statue of Liberty" },
+  ];
+
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-border">
+        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+          <MapPin className="w-4 h-4 text-primary" /> Interactive Map
+        </h3>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="text-[10px] h-4 font-mono">{provider}</Badge>
+          <span className="text-[10px] text-muted-foreground">Zoom: {zoom}</span>
+        </div>
+      </div>
+      <div className="relative h-52 bg-gradient-to-br from-primary/5 via-accent/10 to-primary/5">
+        {/* Simulated map grid */}
+        <div className="absolute inset-0 opacity-10">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={`h-${i}`} className="absolute w-full border-t border-foreground/20" style={{ top: `${(i + 1) * 12.5}%` }} />
+          ))}
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={`v-${i}`} className="absolute h-full border-l border-foreground/20" style={{ left: `${(i + 1) * 12.5}%` }} />
+          ))}
+        </div>
+        {/* Markers */}
+        {markers.map((m, i) => (
+          <div
+            key={i}
+            className="absolute flex flex-col items-center group"
+            style={{ left: `${20 + i * 25}%`, top: `${30 + (i % 2) * 25}%` }}
+          >
+            <MapPin className="w-5 h-5 text-primary drop-shadow-md" />
+            <span className="text-[9px] bg-card/90 text-foreground px-1 py-0.5 rounded shadow-sm mt-0.5 font-medium">
+              {m.label}
+            </span>
+          </div>
+        ))}
+        {/* Zoom controls */}
+        <div className="absolute top-2 right-2 flex flex-col gap-0.5">
+          <button className="w-6 h-6 rounded bg-card border border-border flex items-center justify-center text-xs text-foreground shadow-sm">+</button>
+          <button className="w-6 h-6 rounded bg-card border border-border flex items-center justify-center text-xs text-foreground shadow-sm">−</button>
+        </div>
+        {/* Search */}
+        <div className="absolute top-2 left-2 right-10">
+          <div className="relative">
+            <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              placeholder="Search location..."
+              className="w-full h-6 pl-6 pr-2 rounded bg-card border border-border text-[10px] text-foreground placeholder:text-muted-foreground shadow-sm"
+            />
+          </div>
+        </div>
+      </div>
+      {props.markers_collection && (
+        <div className="px-3 py-1.5 border-t border-border">
+          <span className="text-[10px] text-muted-foreground">Data source: {props.markers_collection}</span>
+        </div>
+      )}
     </div>
   );
 }
