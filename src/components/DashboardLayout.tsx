@@ -186,10 +186,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
       >
         <div className="flex items-center gap-2 px-4 h-14 border-b border-border">
-          <div className="w-7 h-7 rounded-lg bg-gradient-primary flex items-center justify-center shrink-0">
-            <Zap className="w-3.5 h-3.5 text-primary-foreground" />
-          </div>
-          {!collapsed && <span className="font-bold text-foreground whitespace-nowrap">RyaanCMS</span>}
+          <Link to="/" className="flex items-center gap-2 shrink-0">
+            <div className="w-7 h-7 rounded-lg bg-gradient-primary flex items-center justify-center shrink-0">
+              <Zap className="w-3.5 h-3.5 text-primary-foreground" />
+            </div>
+            {!collapsed && <span className="font-bold text-foreground whitespace-nowrap">RyaanCMS</span>}
+          </Link>
           <button
             onClick={() => setSidebarExpanded(prev => !prev)}
             className={cn(
