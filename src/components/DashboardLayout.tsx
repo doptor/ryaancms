@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Database, Puzzle, Sparkles, LayoutDashboard, Store, Settings, Zap, ChevronLeft } from "lucide-react";
+import { Database, Puzzle, Sparkles, LayoutDashboard, Store, Settings, Zap, ChevronLeft, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const sidebarItems = [
@@ -7,6 +7,7 @@ const sidebarItems = [
   { label: "Schema Architect", icon: Database, path: "/dashboard/schema" },
   { label: "AI Builder", icon: Sparkles, path: "/dashboard/ai" },
   { label: "Marketplace", icon: Store, path: "/dashboard/marketplace" },
+  { label: "Installer", icon: Download, path: "/dashboard/installer" },
   { label: "Plugins", icon: Puzzle, path: "/dashboard/plugins" },
   { label: "Settings", icon: Settings, path: "/dashboard/settings" },
 ];

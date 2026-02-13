@@ -9,6 +9,7 @@ import SchemaPage from "./pages/SchemaPage";
 import AIBuilderPage from "./pages/AIBuilderPage";
 import MarketplacePage from "./pages/MarketplacePage";
 import PluginsPage from "./pages/PluginsPage";
+import InstallerPage from "./pages/InstallerPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/dashboard/schema" element={<SchemaPage />} />
           <Route path="/dashboard/ai" element={<AIBuilderPage />} />
           <Route path="/dashboard/marketplace" element={<MarketplacePage />} />
+          <Route path="/dashboard/installer" element={<InstallerPage />} />
           <Route path="/dashboard/plugins" element={<PluginsPage />} />
           <Route path="/dashboard/settings" element={<SettingsPage />} />
           <Route path="*" element={<NotFound />} />
