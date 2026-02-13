@@ -107,9 +107,8 @@ Deno.serve(async (req) => {
         status: "failed",
         release_url: null,
       });
-      throw new Error(
-        `GitHub API error [${ghResponse.status}]: ${JSON.stringify(ghData)}`
-      );
+      console.error(`GitHub API error [${ghResponse.status}]:`, ghData);
+      throw new Error("Release creation failed");
     }
 
     // Record success
