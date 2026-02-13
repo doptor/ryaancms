@@ -7,14 +7,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Save, Globe, Shield, Bell, Palette, Database, Loader2 } from "lucide-react";
+import { Save, Globe, Shield, Bell, Palette, Database, Loader2, Brain, Layers } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSettings } from "@/hooks/useSettings";
 import { Skeleton } from "@/components/ui/skeleton";
+import SchemaSettings from "@/components/settings/SchemaSettings";
+import AIIntegrationSettings from "@/components/settings/AIIntegrationSettings";
 
 const settingSections = [
   { id: "general", icon: Globe, label: "General", desc: "Site name, URL, timezone, and language settings.", color: "text-blue-400" },
-  { id: "security", icon: Shield, label: "Security", desc: "SSO, MFA, API keys, and role-based access control.", color: "text-emerald-400" },
+  { id: "schema", icon: Layers, label: "Schema", desc: "Design your data models visually or with AI.", color: "text-emerald-400" },
+  { id: "ai-integrations", icon: Brain, label: "AI Integrations", desc: "Manage AI platform connections and models.", color: "text-pink-400" },
+  { id: "security", icon: Shield, label: "Security", desc: "SSO, MFA, API keys, and role-based access control.", color: "text-teal-400" },
   { id: "notifications", icon: Bell, label: "Notifications", desc: "Email, webhook, and in-app notification preferences.", color: "text-amber-400" },
   { id: "appearance", icon: Palette, label: "Appearance", desc: "Theme, branding, custom CSS, and favicon.", color: "text-violet-400" },
   { id: "database", icon: Database, label: "Database", desc: "Backup, restore, migration settings, and export.", color: "text-cyan-400" },
@@ -352,18 +356,22 @@ export default function SettingsPage() {
     );
   }
 
+  const isStandaloneTab = activeSection === "schema" || activeSection === "ai-integrations";
+
   return (
     <DashboardLayout>
-      <div className="p-6 lg:p-8 max-w-4xl">
+      <div className={cn("p-6 lg:p-8", isStandaloneTab ? "max-w-6xl" : "max-w-4xl")}>
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-foreground mb-1">Settings</h1>
             <p className="text-sm text-muted-foreground">Configure your RyaanCMS instance.</p>
           </div>
-          <Button variant="default" size="sm" onClick={saveAll} disabled={saving}>
-            {saving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
-            {saving ? "Saving..." : "Save Changes"}
-          </Button>
+          {!isStandaloneTab && (
+            <Button variant="default" size="sm" onClick={saveAll} disabled={saving}>
+              {saving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
+              {saving ? "Saving..." : "Save Changes"}
+            </Button>
+          )}
         </div>
 
         {/* Colorful tab bar */}
@@ -389,16 +397,22 @@ export default function SettingsPage() {
         </div>
 
         {/* Active section content */}
-        <Card>
-          <CardContent className="pt-6">
-            {ActiveComponent && (
-              <ActiveComponent
-                values={settings[activeSection] || {}}
-                onChange={handleFieldChange}
-              />
-            )}
-          </CardContent>
-        </Card>
+        {activeSection === "schema" ? (
+          <SchemaSettings />
+        ) : activeSection === "ai-integrations" ? (
+          <AIIntegrationSettings />
+        ) : (
+          <Card>
+            <CardContent className="pt-6">
+              {ActiveComponent && (
+                <ActiveComponent
+                  values={settings[activeSection] || {}}
+                  onChange={handleFieldChange}
+                />
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </DashboardLayout>
   );
