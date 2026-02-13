@@ -73,7 +73,7 @@ export default function LandingPage() {
       {/* Navbar */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass">
         <div className="container flex items-center justify-between h-14 sm:h-16 px-4 sm:px-6">
-          <Link to="/" className="flex items-center gap-2 shrink-0">
+          <Link to="/dashboard" className="flex items-center gap-2 shrink-0">
             <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
               <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary-foreground" />
             </div>
