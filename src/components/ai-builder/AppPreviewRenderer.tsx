@@ -26,9 +26,11 @@ import { useState } from "react";
 
 interface AppPreviewRendererProps {
   config: AppConfig;
+  selectedComponent?: { pageIndex: number; componentIndex: number } | null;
+  onSelectComponent?: (pageIndex: number, componentIndex: number) => void;
 }
 
-export function AppPreviewRenderer({ config }: AppPreviewRendererProps) {
+export function AppPreviewRenderer({ config, selectedComponent, onSelectComponent }: AppPreviewRendererProps) {
   const [activePage, setActivePage] = useState(0);
   const currentPage = config.pages[activePage];
 
@@ -59,7 +61,15 @@ export function AppPreviewRenderer({ config }: AppPreviewRendererProps) {
       {/* Page preview */}
       <ScrollArea className="flex-1">
         <div className="bg-background min-h-full">
-          {currentPage && <PageRenderer page={currentPage} config={config} />}
+          {currentPage && (
+            <PageRenderer
+              page={currentPage}
+              config={config}
+              pageIndex={activePage}
+              selectedComponent={selectedComponent}
+              onSelectComponent={onSelectComponent}
+            />
+          )}
         </div>
       </ScrollArea>
     </div>
@@ -68,11 +78,41 @@ export function AppPreviewRenderer({ config }: AppPreviewRendererProps) {
 
 // === Page Renderer ===
 
-function PageRenderer({ page, config }: { page: PageConfig; config: AppConfig }) {
+interface PageRendererProps {
+  page: PageConfig;
+  config: AppConfig;
+  pageIndex: number;
+  selectedComponent?: { pageIndex: number; componentIndex: number } | null;
+  onSelectComponent?: (pageIndex: number, componentIndex: number) => void;
+}
+
+function PageRenderer({ page, config, pageIndex, selectedComponent, onSelectComponent }: PageRendererProps) {
+  const wrapComponent = (comp: ComponentConfig, i: number) => {
+    const isSelected = selectedComponent?.pageIndex === pageIndex && selectedComponent?.componentIndex === i;
+    return (
+      <div
+        key={i}
+        onClick={(e) => { e.stopPropagation(); onSelectComponent?.(pageIndex, i); }}
+        className={cn(
+          "relative cursor-pointer transition-all",
+          isSelected
+            ? "ring-2 ring-primary ring-offset-2 ring-offset-background rounded-xl"
+            : "hover:ring-1 hover:ring-primary/30 hover:ring-offset-1 hover:ring-offset-background rounded-xl"
+        )}
+      >
+        {isSelected && (
+          <div className="absolute -top-2.5 left-2 z-10 px-1.5 py-0.5 rounded bg-primary text-primary-foreground text-[10px] font-medium">
+            {comp.type.replace(/_/g, " ")}
+          </div>
+        )}
+        <ComponentRenderer component={comp} config={config} />
+      </div>
+    );
+  };
+
   if (page.layout === "dashboard") {
     return (
       <div className="flex min-h-[600px]">
-        {/* Sidebar */}
         <div className="w-56 border-r border-border bg-card p-4 space-y-4 shrink-0 hidden sm:block">
           <div className="flex items-center gap-2 mb-6">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
@@ -90,7 +130,6 @@ function PageRenderer({ page, config }: { page: PageConfig; config: AppConfig })
             </div>
           ))}
         </div>
-        {/* Content */}
         <div className="flex-1 p-4 space-y-4 overflow-hidden">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-foreground">{page.name}</h2>
@@ -101,20 +140,15 @@ function PageRenderer({ page, config }: { page: PageConfig; config: AppConfig })
               </div>
             </div>
           </div>
-          {page.components.map((comp, i) => (
-            <ComponentRenderer key={i} component={comp} config={config} />
-          ))}
+          {page.components.map((comp, i) => wrapComponent(comp, i))}
         </div>
       </div>
     );
   }
 
-  // Public / Marketing / Auth layout
   return (
     <div className="space-y-0">
-      {page.components.map((comp, i) => (
-        <ComponentRenderer key={i} component={comp} config={config} />
-      ))}
+      {page.components.map((comp, i) => wrapComponent(comp, i))}
     </div>
   );
 }
@@ -146,8 +180,8 @@ function ComponentRenderer({ component, config }: { component: ComponentConfig; 
     case "payment_page": return <PaymentPagePreview props={props} />;
     case "settings_panel": return <SettingsPanelPreview props={props} />;
     case "api_docs": return <ApiDocsPreview props={props} />;
-    case "sidebar": return null; // handled in layout
-    case "dashboard_layout": return null; // handled in layout
+    case "sidebar": return null;
+    case "dashboard_layout": return null;
     default:
       return (
         <div className="rounded-lg border border-dashed border-border p-4 flex items-center justify-center">
