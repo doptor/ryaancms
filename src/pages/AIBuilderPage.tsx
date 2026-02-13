@@ -125,9 +125,35 @@ export default function AIBuilderPage() {
     return <Circle className="w-3.5 h-3.5 text-muted-foreground/40" />;
   };
 
-  return (
+    return (
     <DashboardLayout>
       <div className="flex flex-col h-[calc(100vh-3.5rem)] md:h-screen">
+        {/* Top bar with Publish */}
+        <div className="flex items-center justify-between px-4 h-11 border-b border-border bg-card shrink-0">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-primary" />
+            <span className="text-sm font-semibold text-foreground">AI Builder</span>
+            {progress.length > 0 && !buildComplete && (
+              <span className="flex items-center gap-1.5 text-xs text-primary">
+                <Loader2 className="w-3 h-3 animate-spin" /> Building...
+              </span>
+            )}
+            {buildComplete && (
+              <span className="flex items-center gap-1.5 text-xs text-primary">
+                <CheckCircle2 className="w-3 h-3" /> Complete
+              </span>
+            )}
+          </div>
+          <Button
+            size="sm"
+            onClick={handlePublish}
+            disabled={!buildComplete}
+            className="gap-1.5"
+          >
+            <Rocket className="w-3.5 h-3.5" /> Publish
+          </Button>
+        </div>
+
         {/* Mobile: stacked layout, Desktop: resizable split */}
         <div className="flex-1 min-h-0">
           {/* Desktop split */}
@@ -149,11 +175,6 @@ export default function AIBuilderPage() {
                           )}>{step.label}</span>
                         </div>
                       ))}
-                      {buildComplete && (
-                        <Button size="sm" className="w-full mt-2 gap-1.5" onClick={handlePublish}>
-                          <Rocket className="w-3.5 h-3.5" /> Publish Project
-                        </Button>
-                      )}
                     </div>
                   )}
 
@@ -256,25 +277,42 @@ export default function AIBuilderPage() {
                   {/* Tab content */}
                   <div className="flex-1 min-h-0">
                     {activeTab === "preview" && (
-                      <div className="h-full flex items-center justify-center bg-muted/30 p-6">
-                        <div className="text-center space-y-3">
-                          <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
-                            {buildComplete ? <CheckCircle2 className="w-7 h-7 text-primary" /> : <ExternalLink className="w-7 h-7 text-primary" />}
+                      <div className="h-full relative bg-muted/30">
+                        {progress.length > 0 ? (
+                          <>
+                            {/* Building overlay */}
+                            {!buildComplete && (
+                              <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-sm">
+                                <div className="text-center space-y-3">
+                                  <Loader2 className="w-10 h-10 text-primary mx-auto animate-spin" />
+                                  <p className="text-sm font-medium text-foreground">Building your project...</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {progress.find(s => s.status === "in_progress")?.label || "Processing..."}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                            {/* Preview iframe */}
+                            <iframe
+                              src="about:blank"
+                              className="w-full h-full border-0"
+                              title="Project Preview"
+                              sandbox="allow-scripts allow-same-origin"
+                            />
+                          </>
+                        ) : (
+                          <div className="h-full flex items-center justify-center p-6">
+                            <div className="text-center space-y-3">
+                              <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
+                                <ExternalLink className="w-7 h-7 text-primary" />
+                              </div>
+                              <h3 className="text-lg font-semibold text-foreground">Live Preview</h3>
+                              <p className="text-sm text-muted-foreground max-w-sm">
+                                Start a conversation with AI to generate components. The live preview will appear here.
+                              </p>
+                            </div>
                           </div>
-                          <h3 className="text-lg font-semibold text-foreground">
-                            {buildComplete ? "Build Complete!" : "Live Preview"}
-                          </h3>
-                          <p className="text-sm text-muted-foreground max-w-sm">
-                            {buildComplete
-                              ? "Your project is ready. Review and publish when you're satisfied."
-                              : "Start a conversation with AI to generate components. The live preview will appear here."}
-                          </p>
-                          {buildComplete && (
-                            <Button onClick={handlePublish} className="mt-4 gap-2">
-                              <Rocket className="w-4 h-4" /> Publish
-                            </Button>
-                          )}
-                        </div>
+                        )}
                       </div>
                     )}
                     {activeTab === "code" && (
@@ -432,11 +470,41 @@ export default function AIBuilderPage() {
                 </div>
               )}
 
-              {activeTab !== "chat" && (
+              {activeTab === "preview" && (
+                <div className="h-full relative bg-muted/30">
+                  {progress.length > 0 ? (
+                    <>
+                      {!buildComplete && (
+                        <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-sm">
+                          <div className="text-center space-y-3">
+                            <Loader2 className="w-8 h-8 text-primary mx-auto animate-spin" />
+                            <p className="text-sm font-medium text-foreground">Building...</p>
+                            <p className="text-xs text-muted-foreground">
+                              {progress.find(s => s.status === "in_progress")?.label || "Processing..."}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      <iframe src="about:blank" className="w-full h-full border-0" title="Preview" sandbox="allow-scripts allow-same-origin" />
+                    </>
+                  ) : (
+                    <div className="h-full flex items-center justify-center p-6">
+                      <div className="text-center space-y-3">
+                        <div className="w-14 h-14 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
+                          <ExternalLink className="w-6 h-6 text-primary" />
+                        </div>
+                        <h3 className="text-base font-semibold text-foreground">Preview</h3>
+                        <p className="text-sm text-muted-foreground max-w-xs">Start building to see preview.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab !== "chat" && activeTab !== "preview" && (
                 <div className="h-full flex items-center justify-center bg-muted/30 p-6">
                   <div className="text-center space-y-3">
                     <div className="w-14 h-14 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
-                      {activeTab === "preview" && <ExternalLink className="w-6 h-6 text-primary" />}
                       {activeTab === "code" && <Code className="w-6 h-6 text-primary" />}
                       {activeTab === "design" && <Palette className="w-6 h-6 text-primary" />}
                       {activeTab === "analysis" && <BarChart3 className="w-6 h-6 text-primary" />}
