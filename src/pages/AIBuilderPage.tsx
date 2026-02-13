@@ -43,7 +43,7 @@ export default function AIBuilderPage() {
     { role: "ai", content: "Hello! I'm RyaanCMS AI. I can help you generate schemas, write content, optimize SEO, build layouts, and more. What would you like to create?" },
   ]);
   const [progress, setProgress] = useState<ProgressStep[]>([]);
-  const [activeTab, setActiveTab] = useState("preview");
+  const [activeTab, setActiveTab] = useState("chat");
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -263,33 +263,33 @@ export default function AIBuilderPage() {
           </div>
 
           {/* Mobile: stacked layout */}
-          <div className="md:hidden flex flex-col h-full">
+          <div className="md:hidden flex flex-col h-full overflow-hidden">
             {/* Mobile tabs */}
-            <div className="border-b border-border bg-card px-2 overflow-x-auto">
+            <div className="border-b border-border bg-card px-2 shrink-0">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="bg-transparent h-10 p-0 gap-0 w-max">
-                  <TabsTrigger value="chat" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs">
+                <TabsList className="bg-transparent h-10 p-0 gap-0 w-full justify-start overflow-x-auto scrollbar-none">
+                  <TabsTrigger value="chat" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
                     <Sparkles className="w-3.5 h-3.5" /> Chat
                   </TabsTrigger>
-                  <TabsTrigger value="preview" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs">
+                  <TabsTrigger value="preview" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
                     <ExternalLink className="w-3.5 h-3.5" /> Preview
                   </TabsTrigger>
-                  <TabsTrigger value="code" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs">
+                  <TabsTrigger value="code" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
                     <Code className="w-3.5 h-3.5" /> Code
                   </TabsTrigger>
-                  <TabsTrigger value="design" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs">
+                  <TabsTrigger value="design" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
                     <Palette className="w-3.5 h-3.5" /> Design
                   </TabsTrigger>
-                  <TabsTrigger value="analysis" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs">
+                  <TabsTrigger value="analysis" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
                     <BarChart3 className="w-3.5 h-3.5" /> Analysis
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
 
-            <div className="flex-1 min-h-0">
+            <div className="flex-1 min-h-0 overflow-hidden">
               {activeTab === "chat" && (
-                <div className="flex flex-col h-full">
+                <div className="flex flex-col h-full overflow-hidden">
                   {/* Progress */}
                   {progress.length > 0 && (
                     <div className="border-b border-border p-3 space-y-1.5 bg-card">
