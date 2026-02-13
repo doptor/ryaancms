@@ -28,6 +28,7 @@ import {
   GeneratedSchema,
 } from "@/lib/engine";
 import ReactMarkdown from "react-markdown";
+import { AppPreviewRenderer } from "@/components/ai-builder/AppPreviewRenderer";
 
 type Message = { role: "user" | "ai"; content: string };
 
@@ -86,6 +87,7 @@ export default function AIBuilderPage() {
   const [progress, setProgress] = useState<ProgressStep[]>([]);
   const [isBuilding, setIsBuilding] = useState(false);
   const [activeTab, setActiveTab] = useState("preview");
+  const [previewMode, setPreviewMode] = useState<"visual" | "schema">("visual");
   const [pipelineState, setPipelineState] = useState<PipelineState | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const hasProcessedIncoming = useRef(false);
@@ -236,6 +238,8 @@ export default function AIBuilderPage() {
     return <Circle className="w-3.5 h-3.5 text-muted-foreground/40" />;
   };
 
+
+
   // === Preview Tab ===
   const renderPreview = () => {
     const config = pipelineState?.config;
@@ -271,153 +275,149 @@ export default function AIBuilderPage() {
     const validation = pipelineState?.validation;
 
     return (
-      <ScrollArea className="h-full">
-        <div className="p-4 space-y-6 text-sm">
-          {/* Header */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-foreground">{config.title}</h2>
-              {validation && (
-                <span className={cn(
-                  "px-2.5 py-1 rounded-full text-xs font-medium",
-                  validation.score >= 80 ? "bg-primary/10 text-primary" :
-                  validation.score >= 50 ? "bg-yellow-500/10 text-yellow-600" :
-                  "bg-destructive/10 text-destructive"
-                )}>
-                  🔐 {validation.score}/100
-                </span>
-              )}
+      <div className="flex flex-col h-full">
+        {/* Preview mode toggle */}
+        <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-card shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="flex rounded-lg border border-border overflow-hidden">
+              <button
+                onClick={() => setPreviewMode("visual")}
+                className={cn(
+                  "px-3 py-1 text-xs font-medium transition-colors",
+                  previewMode === "visual" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"
+                )}
+              >
+                Visual
+              </button>
+              <button
+                onClick={() => setPreviewMode("schema")}
+                className={cn(
+                  "px-3 py-1 text-xs font-medium transition-colors",
+                  previewMode === "schema" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"
+                )}
+              >
+                Schema
+              </button>
             </div>
-            <p className="text-muted-foreground">{config.description}</p>
-            <div className="flex gap-2 flex-wrap">
-              <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">{config.project_type}</span>
-              {config.multi_tenant && <span className="px-2 py-0.5 rounded-full bg-accent text-accent-foreground text-xs">🏢 Multi-tenant</span>}
-              {config.modules.map((m) => (
-                <span key={m} className="px-2 py-0.5 rounded-full bg-accent text-accent-foreground text-xs">{m}</span>
-              ))}
-            </div>
+            {validation && (
+              <span className={cn(
+                "px-2 py-0.5 rounded-full text-[10px] font-medium",
+                validation.score >= 80 ? "bg-primary/10 text-primary" :
+                validation.score >= 50 ? "bg-yellow-500/10 text-yellow-600" :
+                "bg-destructive/10 text-destructive"
+              )}>
+                🔐 {validation.score}/100
+              </span>
+            )}
           </div>
-
-          {/* Security Issues */}
-          {validation && (validation.errors.length > 0 || validation.warnings.length > 0) && (
-            <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                <Shield className="w-4 h-4 text-primary" /> Security Report
-              </h3>
-              {validation.errors.map((e, i) => (
-                <div key={`e${i}`} className="flex items-start gap-2 p-2 rounded-lg bg-destructive/5 border border-destructive/20">
-                  <AlertCircle className="w-3.5 h-3.5 text-destructive mt-0.5 shrink-0" />
-                  <div>
-                    <p className="text-xs text-foreground">{e.message}</p>
-                    {e.fix && <p className="text-xs text-muted-foreground mt-0.5">Fix: {e.fix}</p>}
-                  </div>
-                </div>
-              ))}
-              {validation.warnings.map((w, i) => (
-                <div key={`w${i}`} className="flex items-start gap-2 p-2 rounded-lg bg-yellow-500/5 border border-yellow-500/20">
-                  <AlertTriangle className="w-3.5 h-3.5 text-yellow-600 mt-0.5 shrink-0" />
-                  <div>
-                    <p className="text-xs text-foreground">{w.message}</p>
-                    {w.fix && <p className="text-xs text-muted-foreground mt-0.5">Fix: {w.fix}</p>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Pages */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              <ExternalLink className="w-4 h-4 text-primary" /> Pages ({config.pages.length})
-            </h3>
-            {config.pages.map((page) => (
-              <div key={page.route} className="rounded-lg border border-border p-3 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-foreground">{page.name}</span>
-                    {page.requires_auth && <Lock className="w-3 h-3 text-muted-foreground" />}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <code className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{page.route}</code>
-                    <span className="text-xs text-muted-foreground">{page.layout}</span>
-                  </div>
-                </div>
-                <div className="flex gap-1.5 flex-wrap">
-                  {page.components.map((comp, i) => {
-                    const Icon = componentIcons[comp.type] || Sparkles;
-                    return (
-                      <span key={i} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-accent text-xs text-accent-foreground">
-                        <Icon className="w-3 h-3" /> {comp.type.replace(/_/g, " ")}
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Collections */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              <Database className="w-4 h-4 text-primary" /> Database ({config.collections.length})
-            </h3>
-            {config.collections.map((col) => (
-              <div key={col.name} className="rounded-lg border border-border p-3 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-foreground">{col.name}</span>
-                  <div className="flex items-center gap-2">
-                    {col.rls && <span className="text-xs text-primary flex items-center gap-1"><Lock className="w-3 h-3" /> RLS</span>}
-                    {col.tenant_isolated && <span className="text-xs text-muted-foreground">🏢</span>}
-                    {col.soft_delete && <span className="text-xs text-muted-foreground">♻️</span>}
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-1">
-                  {col.fields.map((f) => (
-                    <div key={f.name} className="text-xs flex items-center gap-1.5">
-                      <span className="font-mono text-foreground">{f.name}</span>
-                      <span className="text-muted-foreground/60">{f.type}</span>
-                      {f.required && <span className="text-destructive">*</span>}
-                      {f.unique && <span className="text-primary text-[10px]">U</span>}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Roles */}
-          {config.roles && config.roles.length > 0 && (
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                <Shield className="w-4 h-4 text-primary" /> Roles ({config.roles.length})
-              </h3>
-              {config.roles.map((role) => (
-                <div key={role.name} className="rounded-lg border border-border p-3">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-foreground">{role.name}</span>
-                    {role.is_default && <span className="text-xs text-muted-foreground">(default)</span>}
-                  </div>
-                  <div className="flex gap-1.5 flex-wrap mt-1.5">
-                    {role.permissions.map((p) => (
-                      <span key={p} className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{p}</span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Export buttons */}
-          <div className="flex gap-2 pt-2 border-t border-border">
-            <Button variant="outline" size="sm" onClick={handleExportJSON} className="gap-1.5">
-              <Download className="w-3.5 h-3.5" /> Export JSON
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleExportJSON} className="gap-1 h-7 text-xs">
+              <Download className="w-3 h-3" /> JSON
             </Button>
-            <Button variant="outline" size="sm" onClick={handleExportSQL} className="gap-1.5">
-              <Download className="w-3.5 h-3.5" /> Export SQL
+            <Button variant="outline" size="sm" onClick={handleExportSQL} className="gap-1 h-7 text-xs">
+              <Download className="w-3 h-3" /> SQL
             </Button>
           </div>
         </div>
-      </ScrollArea>
+
+        {/* Content */}
+        <div className="flex-1 min-h-0">
+          {previewMode === "visual" ? (
+            <AppPreviewRenderer config={config} />
+          ) : (
+            <ScrollArea className="h-full">
+              <div className="p-4 space-y-6 text-sm">
+                {/* Header */}
+                <div className="space-y-2">
+                  <h2 className="text-lg font-bold text-foreground">{config.title}</h2>
+                  <p className="text-muted-foreground">{config.description}</p>
+                  <div className="flex gap-2 flex-wrap">
+                    <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">{config.project_type}</span>
+                    {config.multi_tenant && <span className="px-2 py-0.5 rounded-full bg-accent text-accent-foreground text-xs">🏢 Multi-tenant</span>}
+                    {config.modules.map((m) => (
+                      <span key={m} className="px-2 py-0.5 rounded-full bg-accent text-accent-foreground text-xs">{m}</span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Pages */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <ExternalLink className="w-4 h-4 text-primary" /> Pages ({config.pages.length})
+                  </h3>
+                  {config.pages.map((page) => (
+                    <div key={page.route} className="rounded-lg border border-border p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-foreground">{page.name}</span>
+                          {page.requires_auth && <Lock className="w-3 h-3 text-muted-foreground" />}
+                        </div>
+                        <code className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{page.route}</code>
+                      </div>
+                      <div className="flex gap-1.5 flex-wrap">
+                        {page.components.map((comp, i) => {
+                          const Icon = componentIcons[comp.type] || Sparkles;
+                          return (
+                            <span key={i} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-accent text-xs text-accent-foreground">
+                              <Icon className="w-3 h-3" /> {comp.type.replace(/_/g, " ")}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Collections */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <Database className="w-4 h-4 text-primary" /> Database ({config.collections.length})
+                  </h3>
+                  {config.collections.map((col) => (
+                    <div key={col.name} className="rounded-lg border border-border p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-foreground">{col.name}</span>
+                        <div className="flex items-center gap-2">
+                          {col.rls && <span className="text-xs text-primary flex items-center gap-1"><Lock className="w-3 h-3" /> RLS</span>}
+                          {col.tenant_isolated && <span className="text-xs text-muted-foreground">🏢</span>}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-1">
+                        {col.fields.map((f) => (
+                          <div key={f.name} className="text-xs flex items-center gap-1.5">
+                            <span className="font-mono text-foreground">{f.name}</span>
+                            <span className="text-muted-foreground/60">{f.type}</span>
+                            {f.required && <span className="text-destructive">*</span>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Roles */}
+                {config.roles && config.roles.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-primary" /> Roles ({config.roles.length})
+                    </h3>
+                    {config.roles.map((role) => (
+                      <div key={role.name} className="rounded-lg border border-border p-3">
+                        <span className="font-medium text-foreground">{role.name}</span>
+                        <div className="flex gap-1.5 flex-wrap mt-1.5">
+                          {role.permissions.map((p) => (
+                            <span key={p} className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{p}</span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          )}
+        </div>
+      </div>
     );
   };
 
