@@ -11,6 +11,7 @@ import MarketplacePage from "./pages/MarketplacePage";
 import PluginsPage from "./pages/PluginsPage";
 import InstallerPage from "./pages/InstallerPage";
 import SettingsPage from "./pages/SettingsPage";
+import AIIntegrationPage from "./pages/AIIntegrationPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/dashboard" element={<DashboardOverview />} />
           <Route path="/dashboard/schema" element={<SchemaPage />} />
           <Route path="/dashboard/ai" element={<AIBuilderPage />} />
+          <Route path="/dashboard/ai-integrations" element={<AIIntegrationPage />} />
           <Route path="/dashboard/marketplace" element={<MarketplacePage />} />
           <Route path="/dashboard/installer" element={<InstallerPage />} />
           <Route path="/dashboard/plugins" element={<PluginsPage />} />
