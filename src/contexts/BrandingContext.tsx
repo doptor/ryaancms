@@ -181,9 +181,20 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
   // Load appearance settings
   useEffect(() => {
     const load = async () => {
+      // For non-logged-in users, apply cached branding from localStorage or defaults instantly
       if (!user) {
-        // Apply defaults for non-logged-in users
-        applyBranding(DEFAULT_BRANDING);
+        try {
+          const cached = localStorage.getItem("ryaan-branding");
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            setBranding(parsed);
+            applyBranding(parsed);
+          } else {
+            applyBranding(DEFAULT_BRANDING);
+          }
+        } catch {
+          applyBranding(DEFAULT_BRANDING);
+        }
         setLoaded(true);
         return;
       }
@@ -207,6 +218,7 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
 
       setBranding(merged);
       applyBranding(merged);
+      try { localStorage.setItem("ryaan-branding", JSON.stringify(merged)); } catch {}
       setLoaded(true);
     };
 
@@ -248,6 +260,13 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
     window.addEventListener("branding-updated", handler);
     return () => window.removeEventListener("branding-updated", handler);
   }, [user]);
+
+  // Prevent flash of default branding while loading user preferences
+  if (!loaded) {
+    return (
+      <div className="h-screen bg-background" />
+    );
+  }
 
   return (
     <BrandingContext.Provider value={{ branding, loaded }}>
