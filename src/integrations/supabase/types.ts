@@ -14,6 +14,90 @@ export type Database = {
   }
   public: {
     Tables: {
+      build_analytics: {
+        Row: {
+          collection_count: number | null
+          component_count: number | null
+          components_used: Json | null
+          created_at: string
+          duration_ms: number | null
+          id: string
+          page_count: number | null
+          project_title: string | null
+          prompt: string
+          security_score: number | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          collection_count?: number | null
+          component_count?: number | null
+          components_used?: Json | null
+          created_at?: string
+          duration_ms?: number | null
+          id?: string
+          page_count?: number | null
+          project_title?: string | null
+          prompt: string
+          security_score?: number | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          collection_count?: number | null
+          component_count?: number | null
+          components_used?: Json | null
+          created_at?: string
+          duration_ms?: number | null
+          id?: string
+          page_count?: number | null
+          project_title?: string | null
+          prompt?: string
+          security_score?: number | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      deploy_approvals: {
+        Row: {
+          config: Json
+          id: string
+          project_title: string
+          reviewed_at: string | null
+          reviewer_notes: string | null
+          schema_sql: string | null
+          status: string
+          submitted_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          config?: Json
+          id?: string
+          project_title: string
+          reviewed_at?: string | null
+          reviewer_notes?: string | null
+          schema_sql?: string | null
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          config?: Json
+          id?: string
+          project_title?: string
+          reviewed_at?: string | null
+          reviewer_notes?: string | null
+          schema_sql?: string | null
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       menu_groups: {
         Row: {
           created_at: string

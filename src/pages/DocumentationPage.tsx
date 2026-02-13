@@ -47,6 +47,10 @@ const docMenu: DocSection[] = [
       { id: "ai-builder-overview", title: "Overview" },
       { id: "content-generation", title: "Content Generation" },
       { id: "seo-optimization", title: "SEO Optimization" },
+      { id: "github-deploy", title: "GitHub Deploy" },
+      { id: "project-export", title: "Project Export" },
+      { id: "approval-workflows", title: "Approval Workflows" },
+      { id: "build-analytics", title: "Build Analytics" },
     ],
   },
   {
@@ -351,6 +355,101 @@ Navigate to **Dashboard → AI Builder** from the sidebar.`,
 - Customize meta descriptions for each page
 - Use semantic HTML headings (H1, H2, H3)
 - Ensure images have descriptive alt text`,
+  },
+  "github-deploy": {
+    title: "GitHub Deploy",
+    content: `### Push to GitHub
+
+The AI Builder can push generated configurations directly to a GitHub repository via the **Deploy** tab.
+
+### How It Works
+
+1. Generate your app configuration in the AI Builder
+2. Switch to the **Deploy** tab
+3. Select **Push to GitHub**
+4. Enter a repository name (e.g., \`my-saas-app\`)
+5. Click **Push to GitHub**
+
+### What Gets Pushed
+
+| File | Description |
+|------|-------------|
+| config.json | Full application configuration |
+| schema.sql | Database migration SQL |
+| README.md | Auto-generated project documentation |
+| .ryaancms/metadata.json | Build metadata and versioning |
+
+### Requirements
+
+- A valid **GITHUB_TOKEN** must be configured in your backend secrets
+- The token needs \`repo\` scope permissions
+- If the repository doesn't exist, it will be created automatically`,
+  },
+  "project-export": {
+    title: "Project Export",
+    content: `### Download Project Files
+
+Export your AI-generated project as downloadable files for local development.
+
+### Available Downloads
+
+- **config.json** — Complete application configuration
+- **schema.sql** — Database migration SQL
+- **README.md** — Project documentation
+- **setup.sh** — Quick setup script for local development
+
+### Download All
+
+Click **Download All** to get all files at once. Each file downloads individually with the project name prefix.
+
+### Local Setup
+
+After downloading, run the setup script and apply the database schema.`,
+  },
+  "approval-workflows": {
+    title: "Approval Workflows",
+    content: `### Submit for Review
+
+Before deploying, you can submit configurations for team review.
+
+### How It Works
+
+1. Generate your app in the AI Builder
+2. Go to the **Deploy** tab → **Submit for Approval**
+3. Navigate to **Dashboard → Approvals** to manage reviews
+
+### Review Process
+
+- **Pending**: Awaiting review
+- **Approved**: Ready for deployment
+- **Rejected**: Needs changes
+
+### Access
+
+Navigate to \`/dashboard/approvals\` from the dashboard.`,
+  },
+  "build-analytics": {
+    title: "Build Analytics",
+    content: `### Track Your Builds
+
+The Build Analytics dashboard provides insights into AI Builder usage.
+
+### Metrics
+
+| Metric | Description |
+|--------|-------------|
+| Total Builds | Number of AI generations |
+| Success Rate | Percentage of successful builds |
+| Avg Security Score | Average security validation score |
+| Total Components | All components generated |
+
+### Component Usage
+
+See which component types are most frequently generated with visual bar charts.
+
+### Access
+
+Navigate to \`/dashboard/analytics\` from the dashboard.`,
   },
   "ai-integrations-overview": {
     title: "AI Integrations — Overview",

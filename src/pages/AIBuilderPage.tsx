@@ -145,13 +145,35 @@ export default function AIBuilderPage() {
     });
 
     try {
+      const startTime = Date.now();
       const result = await orchestrator.execute(text);
+      const duration = Date.now() - startTime;
       setPipelineState(result);
 
       if (result.stage === "complete" && result.config) {
         const config = result.config;
         const v = result.validation;
         const schema = result.schema;
+
+        // Track build analytics
+        try {
+          const { data: { user: currentUser } } = await (await import("@/integrations/supabase/client")).supabase.auth.getUser();
+          if (currentUser) {
+            const allComponents = config.pages.flatMap((p) => p.components.map((c) => c.type));
+            await (await import("@/integrations/supabase/client")).supabase.from("build_analytics").insert({
+              user_id: currentUser.id,
+              prompt: text,
+              project_title: config.title || "Untitled",
+              components_used: allComponents,
+              component_count: allComponents.length,
+              page_count: config.pages.length,
+              collection_count: config.collections.length,
+              security_score: v?.score || 0,
+              status: "success",
+              duration_ms: duration,
+            });
+          }
+        } catch {}
 
         const summary = [
           `## ✅ ${config.title}`,
@@ -185,6 +207,19 @@ export default function AIBuilderPage() {
 
         setMessages((prev) => [...prev, { role: "ai", content: summary }]);
       } else if (result.error) {
+        // Track failed build
+        try {
+          const { data: { user: currentUser } } = await (await import("@/integrations/supabase/client")).supabase.auth.getUser();
+          if (currentUser) {
+            await (await import("@/integrations/supabase/client")).supabase.from("build_analytics").insert({
+              user_id: currentUser.id,
+              prompt: text,
+              status: "error",
+              duration_ms: Date.now() - startTime,
+            });
+          }
+        } catch {}
+
         setMessages((prev) => [
           ...prev,
           { role: "ai", content: `❌ **Pipeline failed:** ${result.error}\n\nPlease refine your prompt and try again.` },
@@ -729,6 +764,7 @@ export default function AIBuilderPage() {
                     {activeTab === "deploy" && (
                       <DeployPanel
                         config={pipelineState?.config || null}
+                        sql={pipelineState?.schema?.sql}
                         onExportJSON={handleExportJSON}
                         onExportSQL={handleExportSQL}
                       />
