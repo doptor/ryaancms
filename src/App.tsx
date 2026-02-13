@@ -18,6 +18,7 @@ import DocumentationPage from "./pages/DocumentationPage";
 import MenuBuilderPage from "./pages/MenuBuilderPage";
 import BuildAnalyticsPage from "./pages/BuildAnalyticsPage";
 import ApprovalsPage from "./pages/ApprovalsPage";
+import PreviewPage from "./pages/PreviewPage";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ const App = () => (
               <Route path="/dashboard/menus" element={<ProtectedRoute><MenuBuilderPage /></ProtectedRoute>} />
               <Route path="/dashboard/analytics" element={<ProtectedRoute><BuildAnalyticsPage /></ProtectedRoute>} />
               <Route path="/dashboard/approvals" element={<ProtectedRoute><ApprovalsPage /></ProtectedRoute>} />
+              <Route path="/preview" element={<PreviewPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrandingProvider>
