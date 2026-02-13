@@ -130,6 +130,12 @@ export default function AuthPage() {
                       <Input id="signin-password" name="password" type="password" placeholder="••••••••" className="pl-9" required />
                     </div>
                   </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Checkbox id="remember" name="remember" />
+                      <Label htmlFor="remember" className="text-sm font-normal">Remember me</Label>
+                    </div>
+                  </div>
                   <Dialog open={showForgot} onOpenChange={setShowForgot}>
                     <DialogTrigger asChild>
                       <button type="button" className="text-sm text-primary hover:underline">
