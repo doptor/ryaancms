@@ -1,11 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
-import { Database, Puzzle, Sparkles, LayoutDashboard, Store, Settings, Zap, ChevronLeft, Download } from "lucide-react";
+import { Database, Puzzle, Sparkles, LayoutDashboard, Store, Settings, Zap, ChevronLeft, Download, Brain } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const sidebarItems = [
   { label: "Overview", icon: LayoutDashboard, path: "/dashboard" },
   { label: "Schema Architect", icon: Database, path: "/dashboard/schema" },
   { label: "AI Builder", icon: Sparkles, path: "/dashboard/ai" },
+  { label: "AI Integrations", icon: Brain, path: "/dashboard/ai-integrations" },
   { label: "Marketplace", icon: Store, path: "/dashboard/marketplace" },
   { label: "Installer", icon: Download, path: "/dashboard/installer" },
   { label: "Plugins", icon: Puzzle, path: "/dashboard/plugins" },
