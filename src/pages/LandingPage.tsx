@@ -158,15 +158,15 @@ export default function LandingPage() {
                 <div className="w-3 h-3 rounded-full bg-primary/30" />
                 <span className="ml-3 text-xs text-muted-foreground font-mono">ryaancms.app/dashboard</span>
               </div>
-              <div className="p-6 grid grid-cols-3 gap-4 min-h-[200px]">
-                <div className="col-span-1 space-y-3">
+              <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-3 gap-4 min-h-[200px]">
+                <div className="hidden sm:block col-span-1 space-y-3">
                   {["Collections", "Media", "Plugins", "Users", "Settings"].map((item) => (
                     <div key={item} className="px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer">
                       {item}
                     </div>
                   ))}
                 </div>
-                <div className="col-span-2 rounded-lg border border-border p-4">
+                <div className="sm:col-span-2 rounded-lg border border-border p-4">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-semibold text-foreground">Schema Architect</h3>
                     <span className="text-xs text-primary font-mono">AI Ready</span>
