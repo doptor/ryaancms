@@ -9,7 +9,7 @@ const sidebarItems = [
   { label: "AI Builder", icon: Sparkles, path: "/dashboard/ai", color: "text-violet-400" },
   { label: "Marketplace", icon: Store, path: "/dashboard/marketplace", color: "text-amber-400" },
   { label: "Installer", icon: Download, path: "/dashboard/installer", color: "text-cyan-400" },
-  { label: "Menus", icon: List, path: "/dashboard/menus", color: "text-emerald-400" },
+  { label: "Dashboard Footer", icon: List, path: "/dashboard/menus", color: "text-emerald-400" },
   { label: "Settings", icon: Settings, path: "/dashboard/settings", color: "text-orange-400" },
 ];
 
