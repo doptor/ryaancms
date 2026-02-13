@@ -12,6 +12,14 @@
   </head>
 
   <body>
+    <script>
+      // Synchronously apply cached theme to prevent dark/light flash
+      try {
+        var t = localStorage.getItem("ryaan-theme");
+        if (t === "light") document.documentElement.classList.remove("dark");
+        else document.documentElement.classList.add("dark");
+      } catch(e) {}
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
