@@ -4,7 +4,7 @@ import { Zap, LogOut, Menu, X, CircleDot, icons, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 
 function getIcon(name: string | null): React.ComponentType<any> {
   if (!name) return CircleDot;
@@ -40,7 +40,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [sidebarHovered, setSidebarHovered] = useState(false);
-  const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
   const [headerItems, setHeaderItems] = useState<DynamicMenuItem[]>([]);
   const [footerItems, setFooterItems] = useState<DynamicMenuItem[]>([]);
   const [displayName, setDisplayName] = useState<string>("");
@@ -93,15 +92,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const IconComp = getIcon(item.icon);
     const color = ICON_COLORS[index % ICON_COLORS.length];
     const iconSize = isMobile ? "w-5 h-5" : "w-4 h-4";
-    const showLabel = isMobile || (sidebarHovered && hoveredItemId === item.id);
 
-    const linkContent = (
+    return (
       <Link
         key={item.id}
         to={item.url}
         onClick={isMobile ? () => setMobileOpen(false) : undefined}
-        onMouseEnter={!isMobile ? () => setHoveredItemId(item.id) : undefined}
-        onMouseLeave={!isMobile ? () => setHoveredItemId(null) : undefined}
         className={cn(
           "flex items-center gap-2 rounded-lg text-sm transition-colors",
           isMobile ? "px-4 py-2" : "px-3 py-1.5",
@@ -111,22 +107,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
       >
         <IconComp className={cn(iconSize, "shrink-0", active ? "text-primary" : color)} />
-        {showLabel && <span className="whitespace-nowrap">{item.label}</span>}
+        <span className="whitespace-nowrap">{item.label}</span>
       </Link>
     );
-
-    if (!isMobile && !sidebarHovered) {
-      return (
-        <Tooltip key={item.id}>
-          <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-          <TooltipContent side="right" sideOffset={8}>
-            {item.label}
-          </TooltipContent>
-        </Tooltip>
-      );
-    }
-
-    return linkContent;
   };
 
   return (
@@ -180,56 +163,56 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       )}
 
-      <TooltipProvider delayDuration={0}>
+      
       <aside
         onMouseEnter={() => setSidebarHovered(true)}
-        onMouseLeave={() => { setSidebarHovered(false); setHoveredItemId(null); }}
+        onMouseLeave={() => setSidebarHovered(false)}
         className={cn(
           "hidden md:flex flex-col border-r border-border bg-card transition-all duration-300 ease-in-out overflow-hidden",
-          sidebarHovered ? "w-60" : "w-16"
+          sidebarHovered ? "w-60" : "w-2 hover:w-2 cursor-pointer"
         )}
       >
-        <div className="flex items-center gap-2 px-4 h-14 border-b border-border">
-          <div className="w-7 h-7 rounded-lg bg-gradient-primary flex items-center justify-center shrink-0">
-            <Zap className="w-3.5 h-3.5 text-primary-foreground" />
-          </div>
-          {sidebarHovered && <span className="font-bold text-foreground whitespace-nowrap">RyaanCMS</span>}
-        </div>
-        <nav className="flex-1 p-2 space-y-0.5">
-          {headerItems.map((item, i) => renderItem(item, false, i))}
-        </nav>
-        {footerItems.length > 0 && (
-          <div className="p-2 border-t border-border space-y-0.5">
-            {footerItems.map((item, i) => renderItem(item, false, headerItems.length + i))}
-          </div>
-        )}
-        <div className="p-2 border-t border-border">
-          <div className="flex items-center gap-2 px-3 py-1.5">
-            <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <User className="w-3.5 h-3.5 text-primary" />
-              )}
+        {sidebarHovered && (
+          <>
+            <div className="flex items-center gap-2 px-4 h-14 border-b border-border">
+              <div className="w-7 h-7 rounded-lg bg-gradient-primary flex items-center justify-center shrink-0">
+                <Zap className="w-3.5 h-3.5 text-primary-foreground" />
+              </div>
+              <span className="font-bold text-foreground whitespace-nowrap">RyaanCMS</span>
             </div>
-            {sidebarHovered && hoveredItemId === '__user__' && (
-              <span className="text-sm font-medium text-foreground truncate flex-1">
-                {displayName || user?.email}
-              </span>
+            <nav className="flex-1 p-2 space-y-0.5">
+              {headerItems.map((item, i) => renderItem(item, false, i))}
+            </nav>
+            {footerItems.length > 0 && (
+              <div className="p-2 border-t border-border space-y-0.5">
+                {footerItems.map((item, i) => renderItem(item, false, headerItems.length + i))}
+              </div>
             )}
-            <button
-              onClick={() => signOut()}
-              title="Sign Out"
-              className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
-              onMouseEnter={() => setHoveredItemId('__user__')}
-              onMouseLeave={() => setHoveredItemId(null)}
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+            <div className="p-2 border-t border-border">
+              <div className="flex items-center gap-2 px-3 py-1.5">
+                <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-3.5 h-3.5 text-primary" />
+                  )}
+                </div>
+                <span className="text-sm font-medium text-foreground truncate flex-1">
+                  {displayName || user?.email}
+                </span>
+                <button
+                  onClick={() => signOut()}
+                  title="Sign Out"
+                  className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </aside>
-      </TooltipProvider>
+      
 
       <main className="flex-1 overflow-y-auto pt-14 md:pt-0">
         {children}
