@@ -190,8 +190,16 @@ function NotificationSettings({ values, onChange }: SectionProps) {
 }
 
 function AppearanceSettings({ values, onChange }: SectionProps) {
+  const [fontOpen, setFontOpen] = useState<string | null>(null);
+
+  const FONT_OPTIONS = [
+    "Inter", "JetBrains Mono", "Georgia", "Playfair Display", "Merriweather",
+    "Roboto", "Open Sans", "Lato", "Montserrat", "Poppins", "Raleway",
+    "Nunito", "Source Sans 3", "DM Sans", "Space Grotesk", "Outfit", "Sora", "Manrope",
+  ];
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <Label>Dark Mode</Label>
@@ -199,13 +207,94 @@ function AppearanceSettings({ values, onChange }: SectionProps) {
         </div>
         <Switch checked={!!values.darkMode} onCheckedChange={(v) => onChange("darkMode", v)} />
       </div>
-      <div className="space-y-2">
-        <Label>Brand Color</Label>
-        <Input type="color" value={values.brandColor || "#6366f1"} onChange={(e) => onChange("brandColor", e.target.value)} className="w-16 h-10" />
+
+      {/* Branding Colors */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3">Branding Colors</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Primary Color</Label>
+            <div className="flex items-center gap-3">
+              <Input
+                type="color"
+                value={values.primaryColor || "#6366f1"}
+                onChange={(e) => onChange("primaryColor", e.target.value)}
+                className="w-12 h-10 p-1 cursor-pointer"
+              />
+              <Input
+                value={values.primaryColor || "#6366f1"}
+                onChange={(e) => onChange("primaryColor", e.target.value)}
+                className="flex-1 font-mono text-sm"
+                placeholder="#6366f1"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">Buttons, links, active states</p>
+          </div>
+          <div className="space-y-2">
+            <Label>Accent Color</Label>
+            <div className="flex items-center gap-3">
+              <Input
+                type="color"
+                value={values.accentColor || "#8b5cf6"}
+                onChange={(e) => onChange("accentColor", e.target.value)}
+                className="w-12 h-10 p-1 cursor-pointer"
+              />
+              <Input
+                value={values.accentColor || "#8b5cf6"}
+                onChange={(e) => onChange("accentColor", e.target.value)}
+                className="flex-1 font-mono text-sm"
+                placeholder="#8b5cf6"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">Gradients, highlights, badges</p>
+          </div>
+        </div>
+        {/* Color preview */}
+        <div className="mt-3 flex gap-2 items-center">
+          <div className="h-8 w-16 rounded-md" style={{ background: values.primaryColor || "#6366f1" }} />
+          <div className="h-8 flex-1 rounded-md" style={{ background: `linear-gradient(135deg, ${values.primaryColor || "#6366f1"}, ${values.accentColor || "#8b5cf6"})` }} />
+          <div className="h-8 w-16 rounded-md" style={{ background: values.accentColor || "#8b5cf6" }} />
+        </div>
       </div>
+
+      {/* Fonts */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3">Typography</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Heading Font</Label>
+            <SearchableSelect
+              label=""
+              value={values.headingFont || "Inter"}
+              onValueChange={(v) => onChange("headingFont", v)}
+              options={FONT_OPTIONS}
+              placeholder="Select heading font..."
+            />
+            <p className="text-xs text-muted-foreground" style={{ fontFamily: values.headingFont || "Inter" }}>
+              Preview: The quick brown fox
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label>Body Font</Label>
+            <SearchableSelect
+              label=""
+              value={values.bodyFont || "Inter"}
+              onValueChange={(v) => onChange("bodyFont", v)}
+              options={FONT_OPTIONS}
+              placeholder="Select body font..."
+            />
+            <p className="text-xs text-muted-foreground" style={{ fontFamily: values.bodyFont || "Inter" }}>
+              Preview: The quick brown fox
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Custom CSS */}
       <div className="space-y-2">
         <Label>Custom CSS</Label>
-        <Input value={values.customCss || ""} onChange={(e) => onChange("customCss", e.target.value)} placeholder="e.g. body { font-family: 'Inter'; }" />
+        <Input value={values.customCss || ""} onChange={(e) => onChange("customCss", e.target.value)} placeholder="e.g. body { letter-spacing: 0.02em; }" />
+        <p className="text-xs text-muted-foreground">Advanced: inject custom CSS rules</p>
       </div>
     </div>
   );
