@@ -1,0 +1,2 @@
+ALTER TABLE public.menu_groups DROP CONSTRAINT menu_groups_position_check;
+ALTER TABLE public.menu_groups ADD CONSTRAINT menu_groups_position_check CHECK (position = ANY (ARRAY['header'::text, 'footer'::text, 'sidebar'::text, 'dashboard-header'::text, 'dashboard-footer'::text]));
