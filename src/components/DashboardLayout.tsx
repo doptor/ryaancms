@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Zap, LogOut, Menu, X, CircleDot, icons, User } from "lucide-react";
+import { Zap, LogOut, Menu, X, CircleDot, icons, User, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 function getIcon(name: string | null): React.ComponentType<any> {
   if (!name) return CircleDot;
@@ -37,14 +38,14 @@ interface DynamicMenuGroup {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { signOut, user } = useAuth();
   const location = useLocation();
-  const [hovered, setHovered] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [headerItems, setHeaderItems] = useState<DynamicMenuItem[]>([]);
   const [footerItems, setFooterItems] = useState<DynamicMenuItem[]>([]);
   const [displayName, setDisplayName] = useState<string>("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
-  const collapsed = !hovered;
+  const collapsed = !sidebarExpanded;
 
   useEffect(() => {
     if (!user) return;
@@ -94,11 +95,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const color = ICON_COLORS[index % ICON_COLORS.length];
     const iconSize = isMobile ? "w-5 h-5" : "w-4 h-4";
 
-    return (
+    const linkContent = (
       <Link
         key={item.id}
         to={item.url}
-        title={item.label}
         onClick={isMobile ? () => setMobileOpen(false) : undefined}
         className={cn(
           "flex items-center gap-2 rounded-lg text-sm transition-colors",
@@ -112,6 +112,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {(isMobile || !collapsed) && <span className="whitespace-nowrap">{item.label}</span>}
       </Link>
     );
+
+    if (!isMobile && collapsed) {
+      return (
+        <Tooltip key={item.id}>
+          <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+          <TooltipContent side="right" sideOffset={8}>
+            {item.label}
+          </TooltipContent>
+        </Tooltip>
+      );
+    }
+
+    return linkContent;
   };
 
   return (
@@ -165,10 +178,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       )}
 
-      {/* Desktop sidebar */}
+      <TooltipProvider delayDuration={0}>
       <aside
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
         className={cn(
           "hidden md:flex flex-col border-r border-border bg-card transition-all duration-300 ease-in-out overflow-hidden",
           collapsed ? "w-16" : "w-60"
@@ -179,6 +190,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Zap className="w-3.5 h-3.5 text-primary-foreground" />
           </div>
           {!collapsed && <span className="font-bold text-foreground whitespace-nowrap">RyaanCMS</span>}
+          <button
+            onClick={() => setSidebarExpanded(prev => !prev)}
+            className={cn(
+              "ml-auto text-muted-foreground hover:text-foreground transition-colors shrink-0",
+              collapsed && "ml-0 mx-auto mt-2"
+            )}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            <ChevronRight className={cn("w-4 h-4 transition-transform", !collapsed && "rotate-180")} />
+          </button>
         </div>
         <nav className="flex-1 p-2 space-y-0.5">
           {headerItems.map((item, i) => renderItem(item, false, i))}
@@ -212,6 +233,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </div>
       </aside>
+      </TooltipProvider>
 
       <main className="flex-1 overflow-y-auto pt-14 md:pt-0">
         {children}
