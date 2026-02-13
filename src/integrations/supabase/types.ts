@@ -206,6 +206,60 @@ export type Database = {
           },
         ]
       }
+      plugins: {
+        Row: {
+          author: string | null
+          category: string
+          config_schema: Json | null
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          install_count: number | null
+          is_official: boolean | null
+          name: string
+          rating: number | null
+          slug: string
+          tags: string[] | null
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          author?: string | null
+          category?: string
+          config_schema?: Json | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          install_count?: number | null
+          is_official?: boolean | null
+          name: string
+          rating?: number | null
+          slug: string
+          tags?: string[] | null
+          updated_at?: string
+          version?: string
+        }
+        Update: {
+          author?: string | null
+          category?: string
+          config_schema?: Json | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          install_count?: number | null
+          is_official?: boolean | null
+          name?: string
+          rating?: number | null
+          slug?: string
+          tags?: string[] | null
+          updated_at?: string
+          version?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -399,6 +453,44 @@ export type Database = {
           value?: Json
         }
         Relationships: []
+      }
+      user_plugins: {
+        Row: {
+          config: Json | null
+          id: string
+          installed_at: string
+          is_active: boolean | null
+          plugin_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          config?: Json | null
+          id?: string
+          installed_at?: string
+          is_active?: boolean | null
+          plugin_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          config?: Json | null
+          id?: string
+          installed_at?: string
+          is_active?: boolean | null
+          plugin_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_plugins_plugin_id_fkey"
+            columns: ["plugin_id"]
+            isOneToOne: false
+            referencedRelation: "plugins"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
