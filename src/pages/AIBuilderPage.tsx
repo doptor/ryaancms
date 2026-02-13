@@ -5,15 +5,17 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sparkles, Send, Database, FileText, Image, Wand2,
   Paperclip, Mic, Code, Palette, BarChart3, CheckCircle2,
-  Circle, Loader2, ExternalLink,
+  Circle, Loader2, ExternalLink, Rocket,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
   ResizablePanelGroup,
   ResizablePanel,
   ResizableHandle,
 } from "@/components/ui/resizable";
+import { toast } from "@/hooks/use-toast";
 
 type Message = { role: "user" | "ai"; content: string };
 
@@ -29,26 +31,67 @@ const suggestions = [
   { icon: Wand2, label: "Optimize layout", prompt: "Suggest layout improvements for the homepage" },
 ];
 
-const initialProgress: ProgressStep[] = [
-  { label: "Analyzing request", status: "done" },
-  { label: "Generating schema", status: "in_progress" },
+const buildSteps: ProgressStep[] = [
+  { label: "Analyzing request", status: "pending" },
+  { label: "Generating structure", status: "pending" },
   { label: "Creating components", status: "pending" },
   { label: "Applying styles", status: "pending" },
-  { label: "Running preview", status: "pending" },
+  { label: "Building preview", status: "pending" },
+  { label: "Ready to publish", status: "pending" },
 ];
 
 export default function AIBuilderPage() {
+  const location = useLocation();
+  const incomingPrompt = (location.state as any)?.prompt || "";
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([
     { role: "ai", content: "Hello! I'm RyaanCMS AI. I can help you generate schemas, write content, optimize SEO, build layouts, and more. What would you like to create?" },
   ]);
   const [progress, setProgress] = useState<ProgressStep[]>([]);
+  const [buildComplete, setBuildComplete] = useState(false);
   const [activeTab, setActiveTab] = useState("chat");
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const hasProcessedIncoming = useRef(false);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Auto-process incoming prompt from dashboard
+  useEffect(() => {
+    if (incomingPrompt && !hasProcessedIncoming.current) {
+      hasProcessedIncoming.current = true;
+      // Small delay so user sees the transition
+      setTimeout(() => sendMessage(incomingPrompt), 300);
+    }
+  }, [incomingPrompt]);
+
+  const simulateBuild = () => {
+    setBuildComplete(false);
+    const steps = buildSteps.map((s) => ({ ...s }));
+    setProgress(steps);
+
+    // Animate each step sequentially
+    steps.forEach((_, i) => {
+      // Set current step to in_progress
+      setTimeout(() => {
+        setProgress((prev) =>
+          prev.map((s, j) => ({
+            ...s,
+            status: j < i ? "done" : j === i ? "in_progress" : "pending",
+          }))
+        );
+      }, i * 1200);
+
+      // Set last step to done
+      if (i === steps.length - 1) {
+        setTimeout(() => {
+          setProgress((prev) => prev.map((s) => ({ ...s, status: "done" as const })));
+          setBuildComplete(true);
+        }, (i + 1) * 1200);
+      }
+    });
+  };
 
   const sendMessage = (text: string) => {
     if (!text.trim()) return;
@@ -58,19 +101,22 @@ export default function AIBuilderPage() {
     ]);
     setInput("");
 
-    // Simulate progress
-    setProgress(initialProgress);
+    // Start build simulation
+    simulateBuild();
 
-    // Simulate AI response
+    // Simulate AI response after build completes
+    const totalBuildTime = buildSteps.length * 1200 + 500;
     setTimeout(() => {
       setMessages((prev) => [
         ...prev,
-        { role: "ai", content: `Processing: "${text}"\n\nThis is a demo response. In the full version, this will connect to the AI engine to generate schemas, content, and more.` },
+        { role: "ai", content: `✅ Your project is ready!\n\nI've analyzed your request: "${text.slice(0, 80)}${text.length > 80 ? '...' : ''}"\n\n• Structure generated\n• Components created\n• Styles applied\n• Preview is live\n\nYou can now review the preview and publish when ready.` },
       ]);
-      setProgress((prev) =>
-        prev.map((s) => ({ ...s, status: "done" as const }))
-      );
-    }, 2000);
+    }, totalBuildTime);
+  };
+
+  const handlePublish = () => {
+    toast({ title: "🚀 Published!", description: "Your project has been published successfully." });
+    setBuildComplete(false);
   };
 
   const StatusIcon = ({ status }: { status: ProgressStep["status"] }) => {
@@ -103,6 +149,11 @@ export default function AIBuilderPage() {
                           )}>{step.label}</span>
                         </div>
                       ))}
+                      {buildComplete && (
+                        <Button size="sm" className="w-full mt-2 gap-1.5" onClick={handlePublish}>
+                          <Rocket className="w-3.5 h-3.5" /> Publish Project
+                        </Button>
+                      )}
                     </div>
                   )}
 
@@ -208,12 +259,21 @@ export default function AIBuilderPage() {
                       <div className="h-full flex items-center justify-center bg-muted/30 p-6">
                         <div className="text-center space-y-3">
                           <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
-                            <ExternalLink className="w-7 h-7 text-primary" />
+                            {buildComplete ? <CheckCircle2 className="w-7 h-7 text-primary" /> : <ExternalLink className="w-7 h-7 text-primary" />}
                           </div>
-                          <h3 className="text-lg font-semibold text-foreground">Live Preview</h3>
+                          <h3 className="text-lg font-semibold text-foreground">
+                            {buildComplete ? "Build Complete!" : "Live Preview"}
+                          </h3>
                           <p className="text-sm text-muted-foreground max-w-sm">
-                            Start a conversation with AI to generate components. The live preview will appear here.
+                            {buildComplete
+                              ? "Your project is ready. Review and publish when you're satisfied."
+                              : "Start a conversation with AI to generate components. The live preview will appear here."}
                           </p>
+                          {buildComplete && (
+                            <Button onClick={handlePublish} className="mt-4 gap-2">
+                              <Rocket className="w-4 h-4" /> Publish
+                            </Button>
+                          )}
                         </div>
                       </div>
                     )}

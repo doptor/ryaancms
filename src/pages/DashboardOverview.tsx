@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -84,20 +85,24 @@ export default function DashboardOverview() {
     enabled: !!user,
   });
 
+  const navigate = useNavigate();
+
   const createProject = useMutation({
     mutationFn: async (promptText: string) => {
-      const { error } = await supabase.from("projects").insert({
+      const { data, error } = await supabase.from("projects").insert({
         user_id: user!.id,
         prompt: promptText,
         title: promptText.slice(0, 60),
-      });
+      }).select().single();
       if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       setPrompt("");
       setAttachments([]);
-      toast({ title: "Project saved!" });
+      // Navigate to AI Builder with the prompt
+      navigate("/dashboard/ai", { state: { prompt: data.prompt, projectId: data.id } });
     },
     onError: () => toast({ title: "Failed to save", variant: "destructive" }),
   });
@@ -282,7 +287,12 @@ export default function DashboardOverview() {
               {projects.map((p) => (
                 <div
                   key={p.id}
-                  className="rounded-xl border border-border bg-card px-4 py-3 flex items-start gap-3 group hover:border-primary/30 transition-colors"
+                  onClick={() => {
+                    if (editingId !== p.id) {
+                      navigate("/dashboard/ai", { state: { prompt: p.prompt, projectId: p.id } });
+                    }
+                  }}
+                  className="rounded-xl border border-border bg-card px-4 py-3 flex items-start gap-3 group hover:border-primary/30 transition-colors cursor-pointer"
                 >
                   <Clock className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
                   <div className="flex-1 min-w-0">
