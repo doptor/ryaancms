@@ -142,6 +142,10 @@ function ComponentRenderer({ component, config }: { component: ComponentConfig; 
     case "notification_center": return <NotificationPreview props={props} />;
     case "timeline": return <TimelinePreview props={props} />;
     case "file_upload": return <FileUploadPreview props={props} />;
+    case "role_manager": return <RoleManagerPreview props={props} />;
+    case "payment_page": return <PaymentPagePreview props={props} />;
+    case "settings_panel": return <SettingsPanelPreview props={props} />;
+    case "api_docs": return <ApiDocsPreview props={props} />;
     case "sidebar": return null; // handled in layout
     case "dashboard_layout": return null; // handled in layout
     default:
@@ -626,6 +630,176 @@ function FileUploadPreview({ props }: { props: Record<string, any> }) {
           {props.accept || "Images, PDFs"} · Max {props.max_size_mb || 10}MB
         </p>
         <Button variant="outline" size="sm" className="text-xs">Browse Files</Button>
+      </div>
+    </div>
+  );
+}
+
+function RoleManagerPreview({ props }: { props: Record<string, any> }) {
+  const roles = [
+    { name: "Admin", users: 3, perms: ["Full Access", "Manage Users", "Billing", "Settings"] },
+    { name: "Editor", users: 8, perms: ["Create Content", "Edit Content", "View Analytics"] },
+    { name: "Viewer", users: 24, perms: ["View Content", "View Analytics"] },
+  ];
+  return (
+    <div className="rounded-xl border border-border bg-card">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+        <h3 className="text-sm font-semibold text-foreground">Roles & Permissions</h3>
+        <Button size="sm" className="h-7 text-xs"><Plus className="w-3 h-3 mr-1" /> Add Role</Button>
+      </div>
+      <div className="divide-y divide-border">
+        {roles.map((role) => (
+          <div key={role.name} className="px-4 py-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium text-foreground">{role.name}</span>
+                <Badge variant="secondary" className="text-[10px] h-4">{role.users} users</Badge>
+              </div>
+              <div className="flex items-center gap-1">
+                {props.editable !== false && (
+                  <Button variant="ghost" size="icon" className="h-6 w-6"><Edit className="w-3 h-3" /></Button>
+                )}
+                <Button variant="ghost" size="icon" className="h-6 w-6"><MoreHorizontal className="w-3 h-3" /></Button>
+              </div>
+            </div>
+            {props.show_permissions !== false && (
+              <div className="flex flex-wrap gap-1">
+                {role.perms.map((p) => (
+                  <Badge key={p} variant="outline" className="text-[10px] h-5 font-normal">{p}</Badge>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PaymentPagePreview({ props }: { props: Record<string, any> }) {
+  return (
+    <div className="max-w-lg mx-auto py-8 px-4 space-y-4">
+      <h2 className="text-lg font-bold text-foreground">Checkout</h2>
+      {props.show_summary !== false && (
+        <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+          <h3 className="text-sm font-semibold text-foreground">Order Summary</h3>
+          <div className="space-y-1.5">
+            {[{ item: "Pro Plan (Annual)", price: "$290" }, { item: "Tax", price: "$29" }].map((row) => (
+              <div key={row.item} className="flex justify-between text-xs">
+                <span className="text-muted-foreground">{row.item}</span>
+                <span className="text-foreground font-medium">{row.price}</span>
+              </div>
+            ))}
+            <Separator />
+            <div className="flex justify-between text-sm font-bold">
+              <span className="text-foreground">Total</span>
+              <span className="text-foreground">$319</span>
+            </div>
+          </div>
+        </div>
+      )}
+      <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+          <CreditCard className="w-4 h-4" /> Payment Details
+        </h3>
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-foreground">Card Number</label>
+          <Input placeholder="4242 4242 4242 4242" className="h-8 text-xs" />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-foreground">Expiry</label>
+            <Input placeholder="MM/YY" className="h-8 text-xs" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-foreground">CVC</label>
+            <Input placeholder="123" className="h-8 text-xs" />
+          </div>
+        </div>
+        <Button className="w-full h-9 text-xs">
+          <Lock className="w-3 h-3 mr-1.5" /> Pay $319
+        </Button>
+        <p className="text-[10px] text-muted-foreground text-center">
+          Powered by {props.provider === "paypal" ? "PayPal" : props.provider === "manual" ? "Manual" : "Stripe"}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function SettingsPanelPreview({ props }: { props: Record<string, any> }) {
+  const sections = props.sections || [
+    { title: "General", fields: ["Site Name", "Description", "Language"] },
+    { title: "Notifications", fields: ["Email Alerts", "Push Notifications", "Weekly Digest"] },
+    { title: "Security", fields: ["Two-Factor Auth", "Session Timeout", "IP Whitelist"] },
+  ];
+  return (
+    <div className="rounded-xl border border-border bg-card">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+          <Settings className="w-4 h-4" /> Settings
+        </h3>
+        <Button size="sm" className="h-7 text-xs">Save Changes</Button>
+      </div>
+      <div className="divide-y divide-border">
+        {sections.map((section: any) => (
+          <div key={section.title} className="px-4 py-4 space-y-3">
+            <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">{section.title}</h4>
+            {(section.fields || []).map((field: string) => (
+              <div key={field} className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">{field}</span>
+                {field.includes("Auth") || field.includes("Notification") || field.includes("Alert") || field.includes("Digest") ? (
+                  <div className="w-8 h-4 rounded-full bg-primary/20 relative cursor-pointer">
+                    <div className="absolute left-0.5 top-0.5 w-3 h-3 rounded-full bg-primary transition-all" />
+                  </div>
+                ) : (
+                  <Input placeholder={field} className="h-7 text-xs w-40" />
+                )}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ApiDocsPreview({ props }: { props: Record<string, any> }) {
+  const endpoints = [
+    { method: "GET", path: "/api/users", desc: "List all users", status: "200" },
+    { method: "POST", path: "/api/users", desc: "Create a user", status: "201" },
+    { method: "GET", path: "/api/users/:id", desc: "Get user by ID", status: "200" },
+    { method: "PUT", path: "/api/users/:id", desc: "Update a user", status: "200" },
+    { method: "DELETE", path: "/api/users/:id", desc: "Delete a user", status: "204" },
+  ];
+  const methodColor: Record<string, string> = {
+    GET: "bg-primary/10 text-primary",
+    POST: "bg-green-500/10 text-green-600",
+    PUT: "bg-amber-500/10 text-amber-600",
+    DELETE: "bg-destructive/10 text-destructive",
+  };
+  return (
+    <div className="rounded-xl border border-border bg-card">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+          <Code className="w-4 h-4" /> API Documentation
+        </h3>
+        {props.base_url && <Badge variant="outline" className="text-[10px] font-mono">{props.base_url}</Badge>}
+      </div>
+      <div className="divide-y divide-border">
+        {endpoints.map((ep, i) => (
+          <div key={i} className="px-4 py-2.5 flex items-center gap-3 hover:bg-accent/50">
+            <Badge className={cn("text-[10px] font-mono w-14 justify-center", methodColor[ep.method] || "")} variant="secondary">
+              {ep.method}
+            </Badge>
+            <code className="text-xs text-foreground font-mono flex-1">{ep.path}</code>
+            <span className="text-xs text-muted-foreground hidden sm:inline">{ep.desc}</span>
+            {props.show_try_it !== false && (
+              <Button variant="ghost" size="sm" className="h-6 text-[10px] shrink-0">Try It</Button>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );
