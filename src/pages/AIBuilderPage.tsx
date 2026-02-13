@@ -1,7 +1,26 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Send, Database, FileText, Image, Wand2 } from "lucide-react";
-import { useState } from "react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Sparkles, Send, Database, FileText, Image, Wand2,
+  Paperclip, Mic, Code, Palette, BarChart3, CheckCircle2,
+  Circle, Loader2, ExternalLink,
+} from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { cn } from "@/lib/utils";
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from "@/components/ui/resizable";
+
+type Message = { role: "user" | "ai"; content: string };
+
+type ProgressStep = {
+  label: string;
+  status: "done" | "in_progress" | "pending";
+};
 
 const suggestions = [
   { icon: Database, label: "Generate a schema", prompt: "Create a blog schema with posts, categories, tags, and comments" },
@@ -10,77 +29,366 @@ const suggestions = [
   { icon: Wand2, label: "Optimize layout", prompt: "Suggest layout improvements for the homepage" },
 ];
 
+const initialProgress: ProgressStep[] = [
+  { label: "Analyzing request", status: "done" },
+  { label: "Generating schema", status: "in_progress" },
+  { label: "Creating components", status: "pending" },
+  { label: "Applying styles", status: "pending" },
+  { label: "Running preview", status: "pending" },
+];
+
 export default function AIBuilderPage() {
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<{ role: "user" | "ai"; content: string }[]>([
+  const [messages, setMessages] = useState<Message[]>([
     { role: "ai", content: "Hello! I'm RyaanCMS AI. I can help you generate schemas, write content, optimize SEO, build layouts, and more. What would you like to create?" },
   ]);
+  const [progress, setProgress] = useState<ProgressStep[]>([]);
+  const [activeTab, setActiveTab] = useState("preview");
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const sendMessage = (text: string) => {
     if (!text.trim()) return;
     setMessages((prev) => [
       ...prev,
       { role: "user", content: text },
-      { role: "ai", content: `Processing: "${text}"\n\nThis is a demo response. In the full version, this will connect to the AI engine to generate schemas, content, and more.` },
     ]);
     setInput("");
+
+    // Simulate progress
+    setProgress(initialProgress);
+
+    // Simulate AI response
+    setTimeout(() => {
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", content: `Processing: "${text}"\n\nThis is a demo response. In the full version, this will connect to the AI engine to generate schemas, content, and more.` },
+      ]);
+      setProgress((prev) =>
+        prev.map((s) => ({ ...s, status: "done" as const }))
+      );
+    }, 2000);
+  };
+
+  const StatusIcon = ({ status }: { status: ProgressStep["status"] }) => {
+    if (status === "done") return <CheckCircle2 className="w-3.5 h-3.5 text-primary" />;
+    if (status === "in_progress") return <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />;
+    return <Circle className="w-3.5 h-3.5 text-muted-foreground/40" />;
   };
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col h-full">
-        <div className="p-6 lg:p-8 border-b border-border">
-          <h1 className="text-2xl font-bold text-foreground mb-1">AI Builder</h1>
-          <p className="text-sm text-muted-foreground">Build, generate, and optimize with AI assistance.</p>
-        </div>
+      <div className="flex flex-col h-[calc(100vh-3.5rem)] md:h-screen">
+        {/* Mobile: stacked layout, Desktop: resizable split */}
+        <div className="flex-1 min-h-0">
+          {/* Desktop split */}
+          <div className="hidden md:block h-full">
+            <ResizablePanelGroup direction="horizontal">
+              {/* LEFT: Chat Panel */}
+              <ResizablePanel defaultSize={35} minSize={25} maxSize={50}>
+                <div className="flex flex-col h-full border-r border-border">
+                  {/* Progress tracker */}
+                  {progress.length > 0 && (
+                    <div className="border-b border-border p-3 space-y-1.5 bg-card">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Development Progress</p>
+                      {progress.map((step, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <StatusIcon status={step.status} />
+                          <span className={cn(
+                            "text-xs",
+                            step.status === "done" ? "text-foreground" : step.status === "in_progress" ? "text-primary font-medium" : "text-muted-foreground"
+                          )}>{step.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
-        {/* Chat */}
-        <div className="flex-1 overflow-y-auto p-6 lg:p-8 space-y-4">
-          {messages.map((msg, i) => (
-            <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-lg rounded-xl px-4 py-3 text-sm ${
-                msg.role === "user"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-card border border-border text-foreground"
-              }`}>
-                {msg.role === "ai" && <Sparkles className="w-4 h-4 text-primary mb-1" />}
-                <p className="whitespace-pre-wrap">{msg.content}</p>
-              </div>
-            </div>
-          ))}
+                  {/* Chat messages */}
+                  <ScrollArea className="flex-1">
+                    <div className="p-4 space-y-3">
+                      {messages.map((msg, i) => (
+                        <div key={i} className={cn("flex", msg.role === "user" ? "justify-end" : "justify-start")}>
+                          <div className={cn(
+                            "max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm",
+                            msg.role === "user"
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted text-foreground"
+                          )}>
+                            {msg.role === "ai" && <Sparkles className="w-3.5 h-3.5 text-primary mb-1" />}
+                            <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                          </div>
+                        </div>
+                      ))}
 
-          {messages.length === 1 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto mt-6">
-              {suggestions.map((s) => (
-                <button
-                  key={s.label}
-                  onClick={() => sendMessage(s.prompt)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-card text-left hover:border-primary/30 hover:shadow-glow transition-all duration-300"
-                >
-                  <s.icon className="w-5 h-5 text-primary shrink-0" />
-                  <div>
-                    <div className="text-sm font-medium text-foreground">{s.label}</div>
-                    <div className="text-xs text-muted-foreground line-clamp-1">{s.prompt}</div>
+                      {/* Suggestions */}
+                      {messages.length === 1 && (
+                        <div className="grid grid-cols-1 gap-2 mt-4">
+                          {suggestions.map((s) => (
+                            <button
+                              key={s.label}
+                              onClick={() => sendMessage(s.prompt)}
+                              className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg border border-border bg-card text-left hover:border-primary/30 hover:bg-accent/50 transition-all text-xs"
+                            >
+                              <s.icon className="w-4 h-4 text-primary shrink-0" />
+                              <div className="min-w-0">
+                                <div className="font-medium text-foreground">{s.label}</div>
+                                <div className="text-muted-foreground truncate">{s.prompt}</div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      <div ref={chatEndRef} />
+                    </div>
+                  </ScrollArea>
+
+                  {/* Input area */}
+                  <div className="border-t border-border p-3 bg-card">
+                    <div className="flex items-end gap-2">
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" title="Attach file">
+                          <Paperclip className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" title="Voice input">
+                          <Mic className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <textarea
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            sendMessage(input);
+                          }
+                        }}
+                        placeholder="Ask AI to build something..."
+                        rows={1}
+                        className="flex-1 resize-none px-3 py-2 rounded-lg border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring min-h-[36px] max-h-[120px]"
+                      />
+                      <Button variant="hero" size="icon" className="h-9 w-9 shrink-0" onClick={() => sendMessage(input)}>
+                        <Send className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+                </div>
+              </ResizablePanel>
 
-        {/* Input */}
-        <div className="border-t border-border p-4 lg:px-8">
-          <div className="flex gap-3 max-w-3xl mx-auto">
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
-              placeholder="Ask AI to build something..."
-              className="flex-1 px-4 py-2.5 rounded-xl border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-            <Button variant="hero" size="default" onClick={() => sendMessage(input)}>
-              <Send className="w-4 h-4" />
-            </Button>
+              <ResizableHandle withHandle />
+
+              {/* RIGHT: Preview Panel */}
+              <ResizablePanel defaultSize={65} minSize={40}>
+                <div className="flex flex-col h-full">
+                  {/* Top tabs */}
+                  <div className="border-b border-border bg-card px-4">
+                    <Tabs value={activeTab} onValueChange={setActiveTab}>
+                      <TabsList className="bg-transparent h-11 p-0 gap-0">
+                        <TabsTrigger value="preview" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 gap-1.5">
+                          <ExternalLink className="w-3.5 h-3.5" /> Preview
+                        </TabsTrigger>
+                        <TabsTrigger value="code" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 gap-1.5">
+                          <Code className="w-3.5 h-3.5" /> Code
+                        </TabsTrigger>
+                        <TabsTrigger value="design" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 gap-1.5">
+                          <Palette className="w-3.5 h-3.5" /> Design
+                        </TabsTrigger>
+                        <TabsTrigger value="analysis" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 gap-1.5">
+                          <BarChart3 className="w-3.5 h-3.5" /> Analysis
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </div>
+
+                  {/* Tab content */}
+                  <div className="flex-1 min-h-0">
+                    {activeTab === "preview" && (
+                      <div className="h-full flex items-center justify-center bg-muted/30 p-6">
+                        <div className="text-center space-y-3">
+                          <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
+                            <ExternalLink className="w-7 h-7 text-primary" />
+                          </div>
+                          <h3 className="text-lg font-semibold text-foreground">Live Preview</h3>
+                          <p className="text-sm text-muted-foreground max-w-sm">
+                            Start a conversation with AI to generate components. The live preview will appear here.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {activeTab === "code" && (
+                      <div className="h-full flex items-center justify-center bg-muted/30 p-6">
+                        <div className="text-center space-y-3">
+                          <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
+                            <Code className="w-7 h-7 text-primary" />
+                          </div>
+                          <h3 className="text-lg font-semibold text-foreground">Code Editor</h3>
+                          <p className="text-sm text-muted-foreground max-w-sm">
+                            View and edit the generated code. Changes sync to the preview in real-time.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {activeTab === "design" && (
+                      <div className="h-full flex items-center justify-center bg-muted/30 p-6">
+                        <div className="text-center space-y-3">
+                          <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
+                            <Palette className="w-7 h-7 text-primary" />
+                          </div>
+                          <h3 className="text-lg font-semibold text-foreground">Design Editor</h3>
+                          <p className="text-sm text-muted-foreground max-w-sm">
+                            Visually edit colors, typography, spacing, and layout of generated components.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {activeTab === "analysis" && (
+                      <div className="h-full flex items-center justify-center bg-muted/30 p-6">
+                        <div className="text-center space-y-3">
+                          <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
+                            <BarChart3 className="w-7 h-7 text-primary" />
+                          </div>
+                          <h3 className="text-lg font-semibold text-foreground">Analysis</h3>
+                          <p className="text-sm text-muted-foreground max-w-sm">
+                            Performance metrics, SEO score, accessibility audit, and optimization suggestions.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </ResizablePanel>
+            </ResizablePanelGroup>
+          </div>
+
+          {/* Mobile: stacked layout */}
+          <div className="md:hidden flex flex-col h-full">
+            {/* Mobile tabs */}
+            <div className="border-b border-border bg-card px-2 overflow-x-auto">
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="bg-transparent h-10 p-0 gap-0 w-max">
+                  <TabsTrigger value="chat" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs">
+                    <Sparkles className="w-3.5 h-3.5" /> Chat
+                  </TabsTrigger>
+                  <TabsTrigger value="preview" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs">
+                    <ExternalLink className="w-3.5 h-3.5" /> Preview
+                  </TabsTrigger>
+                  <TabsTrigger value="code" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs">
+                    <Code className="w-3.5 h-3.5" /> Code
+                  </TabsTrigger>
+                  <TabsTrigger value="design" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs">
+                    <Palette className="w-3.5 h-3.5" /> Design
+                  </TabsTrigger>
+                  <TabsTrigger value="analysis" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs">
+                    <BarChart3 className="w-3.5 h-3.5" /> Analysis
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+
+            <div className="flex-1 min-h-0">
+              {activeTab === "chat" && (
+                <div className="flex flex-col h-full">
+                  {/* Progress */}
+                  {progress.length > 0 && (
+                    <div className="border-b border-border p-3 space-y-1.5 bg-card">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Progress</p>
+                      {progress.map((step, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <StatusIcon status={step.status} />
+                          <span className={cn(
+                            "text-xs",
+                            step.status === "done" ? "text-foreground" : step.status === "in_progress" ? "text-primary font-medium" : "text-muted-foreground"
+                          )}>{step.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <ScrollArea className="flex-1">
+                    <div className="p-4 space-y-3">
+                      {messages.map((msg, i) => (
+                        <div key={i} className={cn("flex", msg.role === "user" ? "justify-end" : "justify-start")}>
+                          <div className={cn(
+                            "max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm",
+                            msg.role === "user"
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted text-foreground"
+                          )}>
+                            {msg.role === "ai" && <Sparkles className="w-3.5 h-3.5 text-primary mb-1" />}
+                            <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                          </div>
+                        </div>
+                      ))}
+                      {messages.length === 1 && (
+                        <div className="grid grid-cols-1 gap-2 mt-4">
+                          {suggestions.map((s) => (
+                            <button
+                              key={s.label}
+                              onClick={() => sendMessage(s.prompt)}
+                              className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg border border-border bg-card text-left hover:border-primary/30 transition-all text-xs"
+                            >
+                              <s.icon className="w-4 h-4 text-primary shrink-0" />
+                              <div className="min-w-0">
+                                <div className="font-medium text-foreground">{s.label}</div>
+                                <div className="text-muted-foreground truncate">{s.prompt}</div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      <div ref={chatEndRef} />
+                    </div>
+                  </ScrollArea>
+
+                  {/* Mobile input */}
+                  <div className="border-t border-border p-3 bg-card">
+                    <div className="flex items-end gap-2">
+                      <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground shrink-0">
+                        <Paperclip className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground shrink-0">
+                        <Mic className="w-4 h-4" />
+                      </Button>
+                      <textarea
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            sendMessage(input);
+                          }
+                        }}
+                        placeholder="Ask AI..."
+                        rows={1}
+                        className="flex-1 resize-none px-3 py-2 rounded-lg border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring min-h-[36px] max-h-[100px]"
+                      />
+                      <Button variant="hero" size="icon" className="h-9 w-9 shrink-0" onClick={() => sendMessage(input)}>
+                        <Send className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab !== "chat" && (
+                <div className="h-full flex items-center justify-center bg-muted/30 p-6">
+                  <div className="text-center space-y-3">
+                    <div className="w-14 h-14 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
+                      {activeTab === "preview" && <ExternalLink className="w-6 h-6 text-primary" />}
+                      {activeTab === "code" && <Code className="w-6 h-6 text-primary" />}
+                      {activeTab === "design" && <Palette className="w-6 h-6 text-primary" />}
+                      {activeTab === "analysis" && <BarChart3 className="w-6 h-6 text-primary" />}
+                    </div>
+                    <h3 className="text-base font-semibold text-foreground capitalize">{activeTab}</h3>
+                    <p className="text-sm text-muted-foreground max-w-xs">
+                      Start building with AI to see content here.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
