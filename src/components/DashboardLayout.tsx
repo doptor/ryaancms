@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Zap, ChevronLeft, LogOut, Menu, X, CircleDot, icons } from "lucide-react";
+import { Zap, LogOut, Menu, X, CircleDot, icons } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,6 +41,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [mobileOpen, setMobileOpen] = useState(false);
   const [headerItems, setHeaderItems] = useState<DynamicMenuItem[]>([]);
   const [footerItems, setFooterItems] = useState<DynamicMenuItem[]>([]);
+  const [displayName, setDisplayName] = useState<string>("");
 
   const collapsed = !hovered;
 
@@ -77,7 +78,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         id: i.id, label: i.label, url: i.url || "/dashboard", icon: i.icon, sort_order: i.sort_order, is_active: i.is_active,
       })));
     }
+    async function fetchProfile() {
+      const { data } = await supabase.from("profiles").select("display_name").eq("user_id", user!.id).single();
+      if (data?.display_name) setDisplayName(data.display_name);
+    }
     fetchMenus();
+    fetchProfile();
   }, [user]);
 
   const renderItem = (item: DynamicMenuItem, isMobile: boolean, index: number) => {
@@ -134,17 +140,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {footerItems.map((item, i) => renderItem(item, true, headerItems.length + i))}
               </div>
             )}
-            <div className="p-3 border-t border-border space-y-0.5">
-              <div className="px-4 py-2 text-xs text-muted-foreground truncate">{user?.email}</div>
-              <button
-                onClick={() => { signOut(); setMobileOpen(false); }}
-                className="flex items-center gap-3 px-4 py-3 text-sm text-muted-foreground hover:text-destructive transition-colors w-full rounded-lg hover:bg-destructive/10"
-              >
-                <LogOut className="w-5 h-5" /> Sign Out
-              </button>
-              <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                <ChevronLeft className="w-5 h-5" /> Back to Site
-              </Link>
+            <div className="p-3 border-t border-border">
+              <div className="flex items-center justify-between px-4 py-2">
+                <span className="text-sm font-medium text-foreground truncate">{displayName || user?.email}</span>
+                <button
+                  onClick={() => { signOut(); setMobileOpen(false); }}
+                  className="text-muted-foreground hover:text-destructive transition-colors"
+                  title="Sign Out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -173,22 +179,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {footerItems.map((item, i) => renderItem(item, false, headerItems.length + i))}
           </div>
         )}
-        <div className="p-2 border-t border-border space-y-0.5">
-          {!collapsed && (
-            <div className="px-3 py-1 text-xs text-muted-foreground truncate">
-              {user?.email}
-            </div>
-          )}
-          <button
-            onClick={() => signOut()}
-            title="Sign Out"
-            className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-destructive transition-colors w-full rounded-lg hover:bg-destructive/10"
-          >
-            <LogOut className="w-4 h-4 shrink-0" /> {!collapsed && "Sign Out"}
-          </button>
-          <Link to="/" title="Back to Site" className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <ChevronLeft className="w-4 h-4 shrink-0" /> {!collapsed && "Back to Site"}
-          </Link>
+        <div className="p-2 border-t border-border">
+          <div className="flex items-center gap-2 px-3 py-1.5">
+            {!collapsed && (
+              <span className="text-sm font-medium text-foreground truncate flex-1">
+                {displayName || user?.email}
+              </span>
+            )}
+            <button
+              onClick={() => signOut()}
+              title="Sign Out"
+              className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </aside>
 
