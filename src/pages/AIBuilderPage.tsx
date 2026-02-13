@@ -8,7 +8,7 @@ import {
   Circle, Loader2, ExternalLink, Rocket, AlertCircle,
   Table, Lock, LayoutGrid, Search, Bell,
   Calendar, Columns, Clock, MapPin, Download,
-  Shield, AlertTriangle, Info, Image,
+  Shield, AlertTriangle, Info, Image, Upload,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useLocation } from "react-router-dom";
@@ -29,6 +29,8 @@ import {
 } from "@/lib/engine";
 import ReactMarkdown from "react-markdown";
 import { AppPreviewRenderer } from "@/components/ai-builder/AppPreviewRenderer";
+import { DeployPanel } from "@/components/ai-builder/DeployPanel";
+import { PropEditorSidebar } from "@/components/ai-builder/PropEditorSidebar";
 
 type Message = { role: "user" | "ai"; content: string };
 
@@ -89,6 +91,7 @@ export default function AIBuilderPage() {
   const [activeTab, setActiveTab] = useState("preview");
   const [previewMode, setPreviewMode] = useState<"visual" | "schema">("visual");
   const [pipelineState, setPipelineState] = useState<PipelineState | null>(null);
+  const [selectedComponent, setSelectedComponent] = useState<{ pageIndex: number; componentIndex: number } | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const hasProcessedIncoming = useRef(false);
   const orchestrator = useMemo(() => new AIPipelineOrchestrator(), []);
@@ -231,6 +234,25 @@ export default function AIBuilderPage() {
 
   const buildComplete = pipelineState?.stage === "complete";
 
+  const handlePropUpdate = (pageIndex: number, componentIndex: number, newProps: Record<string, any>) => {
+    if (!pipelineState?.config) return;
+    const updated = { ...pipelineState };
+    const config = { ...updated.config! };
+    const pages = [...config.pages];
+    const page = { ...pages[pageIndex] };
+    const components = [...page.components];
+    components[componentIndex] = { ...components[componentIndex], props: newProps };
+    page.components = components;
+    pages[pageIndex] = page;
+    config.pages = pages;
+    updated.config = config;
+    setPipelineState(updated);
+  };
+
+  const selectedComp = selectedComponent && pipelineState?.config
+    ? pipelineState.config.pages[selectedComponent.pageIndex]?.components[selectedComponent.componentIndex] || null
+    : null;
+
   const StatusIcon = ({ status }: { status: ProgressStep["status"] }) => {
     if (status === "done") return <CheckCircle2 className="w-3.5 h-3.5 text-primary" />;
     if (status === "in_progress") return <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />;
@@ -323,7 +345,24 @@ export default function AIBuilderPage() {
         {/* Content */}
         <div className="flex-1 min-h-0">
           {previewMode === "visual" ? (
-            <AppPreviewRenderer config={config} />
+            <div className="flex h-full">
+              <div className="flex-1 min-w-0">
+                <AppPreviewRenderer
+                  config={config}
+                  selectedComponent={selectedComponent}
+                  onSelectComponent={(pi, ci) => setSelectedComponent({ pageIndex: pi, componentIndex: ci })}
+                />
+              </div>
+              {selectedComponent && selectedComp && (
+                <PropEditorSidebar
+                  component={selectedComp}
+                  componentIndex={selectedComponent.componentIndex}
+                  pageIndex={selectedComponent.pageIndex}
+                  onClose={() => setSelectedComponent(null)}
+                  onUpdate={handlePropUpdate}
+                />
+              )}
+            </div>
           ) : (
             <ScrollArea className="h-full">
               <div className="p-4 space-y-6 text-sm">
@@ -626,6 +665,9 @@ export default function AIBuilderPage() {
                         <TabsTrigger value="security" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 gap-1.5">
                           <Shield className="w-3.5 h-3.5" /> Security
                         </TabsTrigger>
+                        <TabsTrigger value="deploy" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 gap-1.5">
+                          <Rocket className="w-3.5 h-3.5" /> Deploy
+                        </TabsTrigger>
                       </TabsList>
                     </Tabs>
                   </div>
@@ -684,6 +726,13 @@ export default function AIBuilderPage() {
                         )}
                       </ScrollArea>
                     )}
+                    {activeTab === "deploy" && (
+                      <DeployPanel
+                        config={pipelineState?.config || null}
+                        onExportJSON={handleExportJSON}
+                        onExportSQL={handleExportSQL}
+                      />
+                    )}
                   </div>
                 </div>
               </ResizablePanel>
@@ -707,6 +756,9 @@ export default function AIBuilderPage() {
                   <TabsTrigger value="sql" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
                     <Database className="w-3.5 h-3.5" /> SQL
                   </TabsTrigger>
+                  <TabsTrigger value="deploy" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
+                    <Rocket className="w-3.5 h-3.5" /> Deploy
+                  </TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
@@ -715,6 +767,13 @@ export default function AIBuilderPage() {
               {activeTab === "preview" && renderPreview()}
               {activeTab === "config" && renderConfig()}
               {activeTab === "sql" && renderSQL()}
+              {activeTab === "deploy" && (
+                <DeployPanel
+                  config={pipelineState?.config || null}
+                  onExportJSON={handleExportJSON}
+                  onExportSQL={handleExportSQL}
+                />
+              )}
             </div>
           </div>
         </div>
