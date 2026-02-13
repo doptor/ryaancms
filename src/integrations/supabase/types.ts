@@ -14,6 +14,111 @@ export type Database = {
   }
   public: {
     Tables: {
+      menu_groups: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          position: string
+          slug: string
+          sort_order: number
+          target: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          position?: string
+          slug: string
+          sort_order?: number
+          target?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          position?: string
+          slug?: string
+          sort_order?: number
+          target?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      menu_items: {
+        Row: {
+          created_at: string
+          group_id: string
+          icon: string | null
+          id: string
+          is_active: boolean
+          label: string
+          link_type: string
+          open_in_new_tab: boolean
+          parent_id: string | null
+          plugin_slug: string | null
+          sort_order: number
+          updated_at: string
+          url: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          label: string
+          link_type?: string
+          open_in_new_tab?: boolean
+          parent_id?: string | null
+          plugin_slug?: string | null
+          sort_order?: number
+          updated_at?: string
+          url?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          link_type?: string
+          open_in_new_tab?: boolean
+          parent_id?: string | null
+          plugin_slug?: string | null
+          sort_order?: number
+          updated_at?: string
+          url?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_items_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "menu_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_items_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
