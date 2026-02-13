@@ -45,12 +45,17 @@ const docMenu: DocSection[] = [
     title: "AI Builder",
     children: [
       { id: "ai-builder-overview", title: "Overview" },
+      { id: "ten-agent-pipeline", title: "10-Agent Pipeline" },
+      { id: "master-system-prompt", title: "Master System Prompt" },
+      { id: "autonomous-build-loop", title: "Autonomous Build Loop" },
+      { id: "enterprise-data", title: "Enterprise Data & Summary" },
       { id: "content-generation", title: "Content Generation" },
       { id: "seo-optimization", title: "SEO Optimization" },
       { id: "github-deploy", title: "GitHub Deploy" },
       { id: "project-export", title: "Project Export" },
       { id: "approval-workflows", title: "Approval Workflows" },
       { id: "build-analytics", title: "Build Analytics" },
+      { id: "live-preview", title: "Live Sandboxed Preview" },
     ],
   },
   {
@@ -309,18 +314,182 @@ Schema changes are deployed with zero downtime:
   },
   "ai-builder-overview": {
     title: "AI Builder — Overview",
-    content: `The AI Builder lets you generate content, layouts, and optimizations using artificial intelligence.
+    content: `The AI Builder is RyaanCMS's flagship feature — a **10-agent autonomous pipeline** that generates complete, production-ready applications from a single prompt.
 
 ### Capabilities
 
-- **Content Generation**: Write blog posts, product descriptions, landing pages
-- **Layout Suggestions**: AI-recommended page structures
-- **SEO Optimization**: Auto-generate meta tags, alt text, and structured data
-- **Translation**: Generate content in multiple languages
+- **10 Specialized AI Agents** working in sequence to plan, design, build, test, and review
+- **Master System Prompt** governing all agents for consistent, enterprise-grade output
+- **Autonomous Build Loop** with auto-retry and error-fix memory
+- **Live Sandboxed Preview** with hot-reload and console output
+- **Enterprise Data** including admin credentials, documentation plan, security checklist
+- **Code Generation** with downloadable React + Express project files
+- **GitHub Deploy** and **Approval Workflows**
 
 ### How to Access
 
 Navigate to **Dashboard → AI Builder** from the sidebar.`,
+  },
+  "ten-agent-pipeline": {
+    title: "10-Agent Autonomous Pipeline",
+    content: `The AI Builder runs **10 specialized agents** in sequence to build your app:
+
+### Agent Roster
+
+| # | Agent | Responsibility |
+|---|-------|---------------|
+| 1 | **Requirement Analyst** | Converts prompt into FRS/SRS, asks smart questions if needed |
+| 2 | **Product Manager** | Defines modules, user stories, roles & workflows |
+| 3 | **Task Planner** | Creates structured task plan with dependencies & complexity |
+| 4 | **System Architect** | Designs folder structure, API patterns & reusable components |
+| 5 | **Database Agent** | Generates MySQL/Prisma schema, migrations & seed data |
+| 6 | **Backend Agent** | Builds Express server, routes, controllers & RBAC |
+| 7 | **UI/UX Designer** | Creates page layouts, forms, tables & responsive design |
+| 8 | **Testing Agent** | Generates test scenarios & validates main flows |
+| 9 | **Debugger Agent** | Auto-detects & fixes build errors with retry loop |
+| 10 | **Quality Reviewer** | Scores UI, Backend, Security & Performance (target 90+) |
+
+### Pipeline Flow
+
+Each agent receives the output of previous agents and adds its own structured contribution. The entire pipeline runs autonomously — no manual intervention required.
+
+### Smart Requirement Mode
+
+For common app types, agents auto-populate standard features:
+- **CRM**: customers, leads, deals pipeline, notes, tasks, follow-ups
+- **E-commerce**: products, cart, checkout, orders, inventory
+- **SaaS**: auth, subscriptions, dashboard, billing, admin panel`,
+  },
+  "master-system-prompt": {
+    title: "Master System Prompt",
+    content: `The **Master System Prompt** is an enterprise-grade governance layer that controls all 10 agents.
+
+### What It Enforces
+
+- **Fixed Tech Stack**: React (Vite) + TailwindCSS frontend, Node.js + Express + Prisma + MySQL backend
+- **Standard API Response Format**: All APIs return \`{success, message, data}\` or \`{success, message, errors}\`
+- **Security Protocols**: bcrypt hashing, JWT auth, Zod validation, RBAC middleware
+- **Folder Structure**: Strict \`frontend/\` + \`backend/\` separation with organized sub-folders
+- **Code Quality**: Service layer separation, reusable components, pagination, audit logs
+
+### Global Rules
+
+1. Always create a complete working project, not partial code snippets
+2. Never assume user knows coding — everything automated
+3. Every module includes UI, API, DB schema, validation, error handling
+4. Always generate seed demo data and default admin login
+5. Must include installer-like setup for environment config
+6. Must store all progress into Project Memory JSON
+
+### Enterprise Quality Rules
+
+- Service layer separation (no spaghetti code)
+- Reusable UI components (Card, Table, Modal, Form)
+- Responsive layout for all pages
+- Pagination for large tables
+- Access control with role-based middleware
+- Audit logs table for enterprise apps`,
+  },
+  "autonomous-build-loop": {
+    title: "Autonomous Build Loop",
+    content: `The AI Builder uses an **autonomous retry loop** to ensure every build succeeds.
+
+### Loop Flow
+
+\`\`\`
+PLAN → GENERATE → RUN → FAIL? → FIX → RETRY → SUCCESS
+\`\`\`
+
+### How It Works
+
+1. **PLAN**: Agents analyze requirements and create task plan
+2. **GENERATE**: Code, schema, and configuration are generated
+3. **RUN**: Build commands execute (npm install, prisma generate, npm run build)
+4. **FAIL?**: If any command fails, error logs are captured
+5. **FIX**: Debugger agent analyzes logs and patches code
+6. **RETRY**: Process repeats (up to 5 retries)
+7. **SUCCESS**: Stops when backend runs, frontend builds, auth works, UI loads
+
+### Error Fix Memory
+
+When a build error is fixed, the system saves:
+- **Error signature** — the error pattern
+- **Fix applied** — what was changed
+- **File changes** — which files were modified
+
+Future builds use this memory to fix known errors instantly.
+
+### Quality Gate
+
+After success, the Quality Reviewer agent scores the build:
+- UI completeness score
+- Backend completeness score
+- Security score
+- Test coverage score
+
+If the overall score is **below 90%**, an improvement loop runs automatically.`,
+  },
+  "enterprise-data": {
+    title: "Enterprise Data & Summary",
+    content: `After a successful build, the AI Builder displays a comprehensive **enterprise summary** in the chat.
+
+### Summary Sections
+
+| Section | Description |
+|---------|-------------|
+| **Task Plan** | Numbered steps with name, description, and complexity |
+| **Pages** | All generated pages with routes, components, and layouts |
+| **Database** | Collections with field counts, RLS, and tenant isolation |
+| **API Endpoints** | REST endpoints with methods and descriptions |
+| **Test Scenarios** | Generated test cases with types and modules |
+| **Bugs Found & Fixed** | Auto-detected issues with severity and applied fixes |
+| **Roles** | User roles with their permissions |
+| **Quality Score** | UI, Backend, Security, and Test scores out of 100 |
+
+### Enterprise-Specific Data
+
+| Data | Description |
+|------|-------------|
+| **Default Admin Credentials** | Pre-configured email and password for first login |
+| **Documentation Plan** | List of auto-generated docs (README, INSTALL, API, DB_SCHEMA) |
+| **Documentation Checklist** | Status of each documentation file |
+| **Security Checklist** | Verification of security requirements (bcrypt, JWT, CORS, etc.) |
+| **Installer Steps** | Step-by-step deployment instructions |
+| **Error Fix Memory** | History of errors encountered and fixes applied |
+| **Plugin Hooks** | Available extension points for plugin integration |
+| **Reusable Components** | List of shared UI components in the project |
+
+### Accessing Enterprise Data
+
+All enterprise data is visible in the build summary message in the AI Builder chat after a successful pipeline run. It's also stored in the project memory for future reference.`,
+  },
+  "live-preview": {
+    title: "Live Sandboxed Preview",
+    content: `The **Live Preview** tab renders your generated React code in a real sandboxed iframe.
+
+### Features
+
+- **Sandboxed Execution**: Code runs in an isolated iframe with Babel transpilation
+- **Hot Reload**: Changes in the Code tab automatically refresh the preview
+- **Responsive Viewports**: Switch between Mobile (375px), Tablet (768px), and Desktop (1280px)
+- **Console Output**: Captures console.log, warnings, and errors from the preview
+- **Fullscreen Mode**: Expand the preview to full browser width
+
+### How It Works
+
+1. Generate code in the AI Builder (click "Generate Code")
+2. Switch to the **Live** tab
+3. Your React components render in a sandboxed iframe
+4. Edit code in the **Code** tab — preview updates automatically
+5. Check the console panel below for errors or logs
+
+### Console Panel
+
+The collapsible console shows:
+- 🔵 **Info** logs (console.log)
+- 🟡 **Warning** messages (console.warn)
+- 🔴 **Error** messages (console.error)
+- Timestamps and message count badges`,
   },
   "content-generation": {
     title: "Content Generation",
