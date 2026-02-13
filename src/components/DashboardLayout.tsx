@@ -1,22 +1,16 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Sparkles, LayoutDashboard, Store, Settings, Zap, ChevronLeft, Download, LogOut, Menu, X, List } from "lucide-react";
+import { Zap, ChevronLeft, LogOut, Menu, X, CircleDot } from "lucide-react";
+import * as LucideIcons from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 
-const ICON_MAP: Record<string, React.ComponentType<any>> = {
-  LayoutDashboard, Sparkles, Store, Download, List, Settings,
-};
-
-const COLOR_MAP: Record<string, string> = {
-  LayoutDashboard: "text-blue-400",
-  Sparkles: "text-violet-400",
-  Store: "text-amber-400",
-  Download: "text-cyan-400",
-  List: "text-emerald-400",
-  Settings: "text-orange-400",
-};
+function getIcon(name: string | null): React.ComponentType<any> {
+  if (!name) return CircleDot;
+  const icon = (LucideIcons as any)[name];
+  return icon && typeof icon === "function" ? icon : CircleDot;
+}
 
 interface DynamicMenuItem {
   id: string;
@@ -83,8 +77,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const renderItem = (item: DynamicMenuItem, isMobile: boolean) => {
     const active = location.pathname === item.url;
-    const IconComp = item.icon && ICON_MAP[item.icon] ? ICON_MAP[item.icon] : LayoutDashboard;
-    const color = item.icon && COLOR_MAP[item.icon] ? COLOR_MAP[item.icon] : "text-muted-foreground";
+    const IconComp = getIcon(item.icon);
+    const color = "text-muted-foreground";
     const iconSize = isMobile ? "w-5 h-5" : "w-4 h-4";
 
     return (
