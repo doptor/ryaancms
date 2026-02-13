@@ -93,8 +93,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         title={item.label}
         onClick={isMobile ? () => setMobileOpen(false) : undefined}
         className={cn(
-          "flex items-center gap-3 rounded-lg text-sm transition-colors",
-          isMobile ? "px-4 py-3" : "px-3 py-2",
+          "flex items-center gap-2 rounded-lg text-sm transition-colors",
+          isMobile ? "px-4 py-2" : "px-3 py-1.5",
           active
             ? "bg-primary/10 text-primary font-medium"
             : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
