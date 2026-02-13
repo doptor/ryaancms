@@ -356,20 +356,31 @@ Navigate to **Dashboard → AI Builder** from the sidebar.`,
     title: "AI Integrations — Overview",
     content: `Manage your AI platform connections from **Settings → AI Integrations**.
 
-### Supported Platforms
+### Supported Providers
 
-Connect to various AI providers to power your CMS:
-- OpenAI (GPT models)
-- Google (Gemini models)
-- Anthropic (Claude models)
-- Custom API endpoints
+RyaanCMS supports **11 AI providers** out of the box:
+
+| Provider | Models | Best For |
+|----------|--------|----------|
+| OpenAI | GPT-5, GPT-4.1, o3, DALL-E 3 | General content, coding, images |
+| Google Gemini | Gemini 2.5 Pro/Flash, Gemma 3 | Multimodal, large context |
+| Anthropic | Claude Sonnet 4, Claude 3.5 | Long-form, analysis |
+| Mistral AI | Mistral Large, Codestral | European AI, coding |
+| Cohere | Command R+, Embed v4 | RAG, embeddings, reranking |
+| Meta (Llama) | Llama 4 Scout/Maverick, Llama 3.3 | Open-source, self-hosted |
+| DeepSeek | DeepSeek Chat, Reasoner | Cost-effective reasoning |
+| Groq | Llama 3.3 70B, Gemma2 9B | Ultra-fast inference |
+| Perplexity | Sonar Pro, Deep Research | Search-augmented AI |
+| xAI (Grok) | Grok 3, Grok 2 Vision | Multimodal, real-time |
+| Custom | Any model | OpenAI-compatible endpoints |
 
 ### Configuration
 
 Each integration requires:
-1. An API key from the provider
-2. Model selection
-3. Usage limits and preferences`,
+1. A **name** for identification
+2. **Provider** selection (models auto-populate)
+3. **API key** from the provider
+4. **API endpoint** (auto-filled per provider)`,
   },
   "connecting-providers": {
     title: "Connecting Providers",
@@ -377,11 +388,18 @@ Each integration requires:
 
 1. Go to **Settings → AI Integrations**
 2. Click **"Add Integration"**
-3. Select the provider
-4. Enter your API key
-5. Choose the default model
-6. Test the connection
-7. Save
+3. Select the provider — models and endpoint are auto-filled
+4. Enter a name for the integration
+5. Enter your API key
+6. Choose a model from the auto-populated list
+7. Click **"Create"**
+
+### Getting API Keys
+
+Each provider has step-by-step instructions built into the dialog. Click **"How to get your API key"** to expand the guide with:
+- Step-by-step instructions
+- Direct link to the provider's API key dashboard
+- Notes about pricing and free tiers
 
 ### Managing Keys
 
