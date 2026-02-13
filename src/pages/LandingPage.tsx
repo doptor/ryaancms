@@ -7,6 +7,7 @@ const navLinks = [
   { label: "Features", href: "#features" },
   { label: "Architecture", href: "#architecture" },
   { label: "Marketplace", href: "#marketplace" },
+  { label: "Docs", href: "/docs", isRoute: true },
   { label: "Open Source", href: "#opensource" },
 ];
 
@@ -80,11 +81,17 @@ export default function LandingPage() {
           </Link>
 
           <div className="hidden md:flex items-center gap-6 lg:gap-8">
-            {navLinks.map((link) => (
-              <a key={link.href} href={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                {link.label}
-              </a>
-            ))}
+            {navLinks.map((link) =>
+              (link as any).isRoute ? (
+                <Link key={link.href} to={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  {link.label}
+                </Link>
+              ) : (
+                <a key={link.href} href={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  {link.label}
+                </a>
+              )
+            )}
           </div>
 
           <div className="hidden md:flex items-center gap-3">
@@ -106,11 +113,17 @@ export default function LandingPage() {
         </div>
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-border bg-card p-4 space-y-3">
-            {navLinks.map((link) => (
-              <a key={link.href} href={link.href} className="block text-sm text-muted-foreground hover:text-foreground" onClick={() => setMobileMenuOpen(false)}>
-                {link.label}
-              </a>
-            ))}
+            {navLinks.map((link) =>
+              (link as any).isRoute ? (
+                <Link key={link.href} to={link.href} className="block text-sm text-muted-foreground hover:text-foreground" onClick={() => setMobileMenuOpen(false)}>
+                  {link.label}
+                </Link>
+              ) : (
+                <a key={link.href} href={link.href} className="block text-sm text-muted-foreground hover:text-foreground" onClick={() => setMobileMenuOpen(false)}>
+                  {link.label}
+                </a>
+              )
+            )}
             <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
               <Button variant="hero" size="sm" className="w-full mt-2">Get Started</Button>
             </Link>
