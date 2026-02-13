@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Save, Globe, Shield, Bell, Palette, Database, ArrowLeft } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { toast } from "@/hooks/use-toast";
+import { Save, Globe, Shield, Bell, Palette, Database, Loader2 } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { useSettings } from "@/hooks/useSettings";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const settingSections = [
   { id: "general", icon: Globe, label: "General", desc: "Site name, URL, timezone, and language settings.", color: "text-blue-400" },
@@ -32,16 +33,25 @@ const ALL_LANGUAGES = [
   "Yiddish","Yoruba","Zulu",
 ];
 
+function cn(...classes: (string | undefined | false)[]) {
+  return classes.filter(Boolean).join(" ");
+}
+
+interface SectionProps {
+  values: Record<string, any>;
+  onChange: (key: string, value: any) => void;
+}
+
 function SearchableSelect({
   label,
   value,
-  onChange,
+  onValueChange,
   options,
   placeholder,
 }: {
   label: string;
   value: string;
-  onChange: (v: string) => void;
+  onValueChange: (v: string) => void;
   options: string[];
   placeholder: string;
 }) {
@@ -68,7 +78,7 @@ function SearchableSelect({
                     key={opt}
                     value={opt}
                     onSelect={() => {
-                      onChange(opt);
+                      onValueChange(opt);
                       setOpen(false);
                     }}
                   >
@@ -85,34 +95,36 @@ function SearchableSelect({
   );
 }
 
-function GeneralSettings() {
-  const timezones = useMemo(() => (Intl as any).supportedValuesOf("timeZone") as string[], []);
-  const detectedTz = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone, []);
-
-  const [timezone, setTimezone] = useState(detectedTz);
-  const [language, setLanguage] = useState("English");
+function GeneralSettings({ values, onChange }: SectionProps) {
+  const timezones = useMemo(() => {
+    try {
+      return (Intl as any).supportedValuesOf("timeZone") as string[];
+    } catch {
+      return ["UTC", "America/New_York", "Europe/London", "Asia/Tokyo"];
+    }
+  }, []);
 
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="siteName">Site Name</Label>
-        <Input id="siteName" placeholder="RyaanCMS" defaultValue="RyaanCMS" />
+        <Label>Site Name</Label>
+        <Input value={values.siteName || ""} onChange={(e) => onChange("siteName", e.target.value)} placeholder="RyaanCMS" />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="siteUrl">Site URL</Label>
-        <Input id="siteUrl" placeholder="https://example.com" />
+        <Label>Site URL</Label>
+        <Input value={values.siteUrl || ""} onChange={(e) => onChange("siteUrl", e.target.value)} placeholder="https://example.com" />
       </div>
       <SearchableSelect
         label="Timezone"
-        value={timezone}
-        onChange={setTimezone}
+        value={values.timezone || ""}
+        onValueChange={(v) => onChange("timezone", v)}
         options={timezones}
         placeholder="Select timezone..."
       />
       <SearchableSelect
         label="Language"
-        value={language}
-        onChange={setLanguage}
+        value={values.language || ""}
+        onValueChange={(v) => onChange("language", v)}
         options={ALL_LANGUAGES}
         placeholder="Select language..."
       />
@@ -120,7 +132,7 @@ function GeneralSettings() {
   );
 }
 
-function SecuritySettings() {
+function SecuritySettings({ values, onChange }: SectionProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -128,24 +140,24 @@ function SecuritySettings() {
           <Label>Enable SSO</Label>
           <p className="text-xs text-muted-foreground">Allow Single Sign-On via external providers</p>
         </div>
-        <Switch />
+        <Switch checked={!!values.enableSSO} onCheckedChange={(v) => onChange("enableSSO", v)} />
       </div>
       <div className="flex items-center justify-between">
         <div>
           <Label>Enable MFA</Label>
           <p className="text-xs text-muted-foreground">Require multi-factor authentication</p>
         </div>
-        <Switch />
+        <Switch checked={!!values.enableMFA} onCheckedChange={(v) => onChange("enableMFA", v)} />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="apiKey">API Key</Label>
-        <Input id="apiKey" type="password" placeholder="••••••••••••" />
+        <Label>API Key</Label>
+        <Input type="password" value={values.apiKey || ""} onChange={(e) => onChange("apiKey", e.target.value)} placeholder="••••••••••••" />
       </div>
     </div>
   );
 }
 
-function NotificationSettings() {
+function NotificationSettings({ values, onChange }: SectionProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -153,31 +165,31 @@ function NotificationSettings() {
           <Label>Email Notifications</Label>
           <p className="text-xs text-muted-foreground">Receive updates via email</p>
         </div>
-        <Switch defaultChecked />
+        <Switch checked={!!values.emailNotifications} onCheckedChange={(v) => onChange("emailNotifications", v)} />
       </div>
       <div className="flex items-center justify-between">
         <div>
           <Label>Webhook Notifications</Label>
           <p className="text-xs text-muted-foreground">Send events to a webhook URL</p>
         </div>
-        <Switch />
+        <Switch checked={!!values.webhookNotifications} onCheckedChange={(v) => onChange("webhookNotifications", v)} />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="webhookUrl">Webhook URL</Label>
-        <Input id="webhookUrl" placeholder="https://hooks.example.com/notify" />
+        <Label>Webhook URL</Label>
+        <Input value={values.webhookUrl || ""} onChange={(e) => onChange("webhookUrl", e.target.value)} placeholder="https://hooks.example.com/notify" />
       </div>
       <div className="flex items-center justify-between">
         <div>
           <Label>In-App Notifications</Label>
           <p className="text-xs text-muted-foreground">Show notifications inside dashboard</p>
         </div>
-        <Switch defaultChecked />
+        <Switch checked={!!values.inAppNotifications} onCheckedChange={(v) => onChange("inAppNotifications", v)} />
       </div>
     </div>
   );
 }
 
-function AppearanceSettings() {
+function AppearanceSettings({ values, onChange }: SectionProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -185,21 +197,21 @@ function AppearanceSettings() {
           <Label>Dark Mode</Label>
           <p className="text-xs text-muted-foreground">Use dark theme for the dashboard</p>
         </div>
-        <Switch defaultChecked />
+        <Switch checked={!!values.darkMode} onCheckedChange={(v) => onChange("darkMode", v)} />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="brandColor">Brand Color</Label>
-        <Input id="brandColor" type="color" defaultValue="#6366f1" className="w-16 h-10" />
+        <Label>Brand Color</Label>
+        <Input type="color" value={values.brandColor || "#6366f1"} onChange={(e) => onChange("brandColor", e.target.value)} className="w-16 h-10" />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="customCss">Custom CSS</Label>
-        <Input id="customCss" placeholder="e.g. body { font-family: 'Inter'; }" />
+        <Label>Custom CSS</Label>
+        <Input value={values.customCss || ""} onChange={(e) => onChange("customCss", e.target.value)} placeholder="e.g. body { font-family: 'Inter'; }" />
       </div>
     </div>
   );
 }
 
-function DatabaseSettings() {
+function DatabaseSettings({ values, onChange }: SectionProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -207,19 +219,21 @@ function DatabaseSettings() {
           <Label>Auto Backup</Label>
           <p className="text-xs text-muted-foreground">Automatically backup database daily</p>
         </div>
-        <Switch defaultChecked />
+        <Switch checked={!!values.autoBackup} onCheckedChange={(v) => onChange("autoBackup", v)} />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="backupPath">Backup Storage Path</Label>
-        <Input id="backupPath" placeholder="/backups" defaultValue="/backups" />
+        <Label>Backup Storage Path</Label>
+        <Input value={values.backupPath || ""} onChange={(e) => onChange("backupPath", e.target.value)} placeholder="/backups" />
       </div>
-      <Button variant="outline" size="sm">Export Database</Button>
-      <Button variant="outline" size="sm" className="ml-2">Restore from Backup</Button>
+      <div className="flex gap-2">
+        <Button variant="outline" size="sm">Export Database</Button>
+        <Button variant="outline" size="sm">Restore from Backup</Button>
+      </div>
     </div>
   );
 }
 
-const sectionComponents: Record<string, React.FC> = {
+const sectionComponentMap: Record<string, React.FC<SectionProps>> = {
   general: GeneralSettings,
   security: SecuritySettings,
   notifications: NotificationSettings,
@@ -229,12 +243,25 @@ const sectionComponents: Record<string, React.FC> = {
 
 export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState<string>("general");
+  const { settings, updateSection, saveAll, loading, saving } = useSettings();
 
-  const ActiveComponent = sectionComponents[activeSection];
+  const ActiveComponent = sectionComponentMap[activeSection];
 
-  const handleSave = () => {
-    toast({ title: "Settings saved", description: "Your changes have been saved successfully." });
+  const handleFieldChange = (key: string, value: any) => {
+    updateSection(activeSection, { [key]: value });
   };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="p-6 lg:p-8 max-w-4xl space-y-4">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-40 w-full" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -244,8 +271,9 @@ export default function SettingsPage() {
             <h1 className="text-2xl font-bold text-foreground mb-1">Settings</h1>
             <p className="text-sm text-muted-foreground">Configure your RyaanCMS instance.</p>
           </div>
-          <Button variant="default" size="sm" onClick={handleSave}>
-            <Save className="w-4 h-4 mr-1" /> Save Changes
+          <Button variant="default" size="sm" onClick={saveAll} disabled={saving}>
+            {saving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
+            {saving ? "Saving..." : "Save Changes"}
           </Button>
         </div>
 
@@ -274,14 +302,15 @@ export default function SettingsPage() {
         {/* Active section content */}
         <Card>
           <CardContent className="pt-6">
-            {ActiveComponent && <ActiveComponent />}
+            {ActiveComponent && (
+              <ActiveComponent
+                values={settings[activeSection] || {}}
+                onChange={handleFieldChange}
+              />
+            )}
           </CardContent>
         </Card>
       </div>
     </DashboardLayout>
   );
-}
-
-function cn(...classes: (string | undefined | false)[]) {
-  return classes.filter(Boolean).join(" ");
 }
