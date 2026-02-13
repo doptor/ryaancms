@@ -42,8 +42,8 @@ const POSITIONS = [
   { value: "header", label: "Header" },
   { value: "footer", label: "Footer" },
   { value: "sidebar", label: "Sidebar" },
-  { value: "dashboard-sidebar", label: "Dashboard Sidebar" },
   { value: "dashboard-header", label: "Dashboard Header" },
+  { value: "dashboard-footer", label: "Dashboard Footer" },
 ];
 
 const TARGETS = [
