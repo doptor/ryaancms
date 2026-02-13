@@ -1,1 +1,4 @@
 project_id = "qrosfbyafhgrwamagrgn"
+
+[functions.auto-release]
+verify_jwt = false
