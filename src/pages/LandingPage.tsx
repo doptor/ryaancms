@@ -68,18 +68,18 @@ export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Navbar */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass">
-        <div className="container flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
-              <Zap className="w-4 h-4 text-primary-foreground" />
+        <div className="container flex items-center justify-between h-14 sm:h-16 px-4 sm:px-6">
+          <Link to="/" className="flex items-center gap-2 shrink-0">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
+              <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary-foreground" />
             </div>
-            <span className="text-lg font-bold text-foreground">RyaanCMS</span>
+            <span className="text-base sm:text-lg font-bold text-foreground">RyaanCMS</span>
           </Link>
 
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-6 lg:gap-8">
             {navLinks.map((link) => (
               <a key={link.href} href={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 {link.label}
@@ -100,8 +100,8 @@ export default function LandingPage() {
             </Link>
           </div>
 
-          <button className="md:hidden text-foreground" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-            {mobileMenuOpen ? <X /> : <Menu />}
+          <button className="md:hidden text-foreground p-1" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
         {mobileMenuOpen && (
@@ -111,7 +111,7 @@ export default function LandingPage() {
                 {link.label}
               </a>
             ))}
-            <Link to="/dashboard">
+            <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
               <Button variant="hero" size="sm" className="w-full mt-2">Get Started</Button>
             </Link>
           </div>
@@ -119,62 +119,62 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section className="relative pt-32 pb-20 overflow-hidden">
+      <section className="relative pt-24 sm:pt-32 pb-12 sm:pb-20 overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-primary/5 blur-[120px] animate-pulse-slow" />
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[300px] sm:w-[600px] h-[300px] sm:h-[600px] rounded-full bg-primary/5 blur-[80px] sm:blur-[120px] animate-pulse-slow" />
         </div>
-        <div className="container relative">
+        <div className="container relative px-4 sm:px-6">
           <div className="max-w-3xl mx-auto text-center animate-slide-up">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-sm font-medium mb-6">
-              <Sparkles className="w-4 h-4" />
+            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-xs sm:text-sm font-medium mb-4 sm:mb-6">
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               Free & Open Source — AI-Native CMS
             </div>
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight mb-6">
+            <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight mb-4 sm:mb-6">
               The CMS Where
               <br />
               <span className="text-gradient">Others Failed</span>
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-6 sm:mb-8 px-2">
               AI + CMS + Marketplace + Revenue Engine. Not just a website builder — a complete platform for the next generation of the web.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link to="/dashboard">
-                <Button variant="hero" size="lg">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+              <Link to="/dashboard" className="w-full sm:w-auto">
+                <Button variant="hero" size="lg" className="w-full sm:w-auto">
                   Launch Dashboard <ArrowRight className="w-5 h-5" />
                 </Button>
               </Link>
-              <Button variant="hero-outline" size="lg">
+              <Button variant="hero-outline" size="lg" className="w-full sm:w-auto">
                 <Github className="w-5 h-5" /> Star on GitHub
               </Button>
             </div>
           </div>
 
           {/* Dashboard Preview */}
-          <div className="mt-16 max-w-5xl mx-auto animate-fade-in">
+          <div className="mt-10 sm:mt-16 max-w-5xl mx-auto animate-fade-in">
             <div className="rounded-xl border border-border bg-card shadow-glow overflow-hidden">
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
-                <div className="w-3 h-3 rounded-full bg-destructive/50" />
-                <div className="w-3 h-3 rounded-full bg-chart-5/30" />
-                <div className="w-3 h-3 rounded-full bg-primary/30" />
-                <span className="ml-3 text-xs text-muted-foreground font-mono">ryaancms.app/dashboard</span>
+              <div className="flex items-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 border-b border-border">
+                <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-destructive/50" />
+                <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-chart-5/30" />
+                <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-primary/30" />
+                <span className="ml-2 sm:ml-3 text-[10px] sm:text-xs text-muted-foreground font-mono truncate">ryaancms.app/dashboard</span>
               </div>
-              <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-3 gap-4 min-h-[200px]">
-                <div className="hidden sm:block col-span-1 space-y-3">
+              <div className="p-3 sm:p-6 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 min-h-[160px] sm:min-h-[200px]">
+                <div className="hidden sm:block col-span-1 space-y-2 sm:space-y-3">
                   {["Collections", "Media", "Plugins", "Users", "Settings"].map((item) => (
                     <div key={item} className="px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer">
                       {item}
                     </div>
                   ))}
                 </div>
-                <div className="sm:col-span-2 rounded-lg border border-border p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-semibold text-foreground">Schema Architect</h3>
-                    <span className="text-xs text-primary font-mono">AI Ready</span>
+                <div className="sm:col-span-2 rounded-lg border border-border p-3 sm:p-4">
+                  <div className="flex items-center justify-between mb-3 sm:mb-4">
+                    <h3 className="text-xs sm:text-sm font-semibold text-foreground">Schema Architect</h3>
+                    <span className="text-[10px] sm:text-xs text-primary font-mono">AI Ready</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3">
                     {["Blog Posts", "Products", "Users", "Orders"].map((c) => (
-                      <div key={c} className="rounded-md border border-border p-3 text-xs text-muted-foreground hover:border-primary/40 transition-colors cursor-pointer">
-                        <span className="font-medium text-foreground">{c}</span>
+                      <div key={c} className="rounded-md border border-border p-2 sm:p-3 text-[10px] sm:text-xs text-muted-foreground hover:border-primary/40 transition-colors cursor-pointer">
+                        <span className="font-medium text-foreground text-xs sm:text-sm">{c}</span>
                         <div className="mt-1 text-muted-foreground">12 fields · REST + GraphQL</div>
                       </div>
                     ))}
@@ -187,22 +187,22 @@ export default function LandingPage() {
       </section>
 
       {/* Features */}
-      <section id="features" className="py-20 bg-gradient-surface">
-        <div className="container">
-          <div className="text-center mb-14 animate-slide-up">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">Everything You Need. Nothing You Don't.</h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">
+      <section id="features" className="py-12 sm:py-20 bg-gradient-surface">
+        <div className="container px-4 sm:px-6">
+          <div className="text-center mb-8 sm:mb-14 animate-slide-up">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 text-foreground">Everything You Need. Nothing You Don't.</h2>
+            <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">
               Built from the ground up for the AI era with enterprise-grade architecture.
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {features.map((f) => (
-              <div key={f.title} className="group rounded-xl border border-border bg-card p-6 hover:shadow-glow hover:border-primary/30 transition-all duration-300">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-gradient-primary transition-all duration-300">
-                  <f.icon className="w-5 h-5 text-primary group-hover:text-primary-foreground transition-colors" />
+              <div key={f.title} className="group rounded-xl border border-border bg-card p-4 sm:p-6 hover:shadow-glow hover:border-primary/30 transition-all duration-300">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-3 sm:mb-4 group-hover:bg-gradient-primary transition-all duration-300">
+                  <f.icon className="w-4 h-4 sm:w-5 sm:h-5 text-primary group-hover:text-primary-foreground transition-colors" />
                 </div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">{f.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{f.description}</p>
+                <h3 className="text-base sm:text-lg font-semibold text-foreground mb-1.5 sm:mb-2">{f.title}</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{f.description}</p>
               </div>
             ))}
           </div>
@@ -210,30 +210,30 @@ export default function LandingPage() {
       </section>
 
       {/* Architecture */}
-      <section id="architecture" className="py-20">
-        <div className="container">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">Tri-Core Architecture</h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">Three powerful layers working in harmony.</p>
+      <section id="architecture" className="py-12 sm:py-20">
+        <div className="container px-4 sm:px-6">
+          <div className="text-center mb-8 sm:mb-14">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 text-foreground">Tri-Core Architecture</h2>
+            <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">Three powerful layers working in harmony.</p>
           </div>
-          <div className="max-w-2xl mx-auto space-y-6">
+          <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6">
             {archLayers.map((layer, i) => (
               <div key={layer.name} className="relative">
-                <div className="rounded-xl border border-border bg-card p-6 hover:border-primary/30 transition-all duration-300">
-                  <div className="flex items-center gap-4 mb-3">
-                    <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${layer.color} flex items-center justify-center text-primary-foreground text-sm font-bold`}>
+                <div className="rounded-xl border border-border bg-card p-4 sm:p-6 hover:border-primary/30 transition-all duration-300">
+                  <div className="flex items-center gap-3 sm:gap-4 mb-2 sm:mb-3">
+                    <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br ${layer.color} flex items-center justify-center text-primary-foreground text-sm font-bold shrink-0`}>
                       {i + 1}
                     </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-foreground">{layer.name}</h3>
-                      <span className="text-xs text-primary font-mono">{layer.subtitle}</span>
+                    <div className="min-w-0">
+                      <h3 className="text-base sm:text-lg font-semibold text-foreground">{layer.name}</h3>
+                      <span className="text-[10px] sm:text-xs text-primary font-mono">{layer.subtitle}</span>
                     </div>
                   </div>
-                  <p className="text-sm text-muted-foreground">{layer.description}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">{layer.description}</p>
                 </div>
                 {i < archLayers.length - 1 && (
-                  <div className="flex justify-center py-2">
-                    <div className="w-px h-6 bg-border" />
+                  <div className="flex justify-center py-1 sm:py-2">
+                    <div className="w-px h-4 sm:h-6 bg-border" />
                   </div>
                 )}
               </div>
@@ -243,27 +243,27 @@ export default function LandingPage() {
       </section>
 
       {/* Marketplace */}
-      <section id="marketplace" className="py-20 bg-gradient-surface">
-        <div className="container">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">Marketplace Ecosystem</h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">
+      <section id="marketplace" className="py-12 sm:py-20 bg-gradient-surface">
+        <div className="container px-4 sm:px-6">
+          <div className="text-center mb-8 sm:mb-14">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 text-foreground">Marketplace Ecosystem</h2>
+            <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">
               Plugins, templates, and services — install with one click.
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto">
             {[
               { title: "SEO Pro Plugin", type: "Plugin", installs: "12.4k", tag: "Popular" },
               { title: "E-Commerce Template", type: "Template", installs: "8.2k", tag: "Featured" },
               { title: "AI Content Writer", type: "Plugin", installs: "15.1k", tag: "AI" },
             ].map((item) => (
-              <div key={item.title} className="rounded-xl border border-border bg-card p-5 hover:shadow-glow hover:border-primary/30 transition-all duration-300">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-medium px-2 py-1 rounded-full bg-primary/10 text-primary">{item.tag}</span>
-                  <span className="text-xs text-muted-foreground">{item.installs} installs</span>
+              <div key={item.title} className="rounded-xl border border-border bg-card p-4 sm:p-5 hover:shadow-glow hover:border-primary/30 transition-all duration-300">
+                <div className="flex items-center justify-between mb-2 sm:mb-3">
+                  <span className="text-[10px] sm:text-xs font-medium px-2 py-1 rounded-full bg-primary/10 text-primary">{item.tag}</span>
+                  <span className="text-[10px] sm:text-xs text-muted-foreground">{item.installs} installs</span>
                 </div>
-                <h3 className="font-semibold text-foreground mb-1">{item.title}</h3>
-                <p className="text-xs text-muted-foreground mb-4">{item.type}</p>
+                <h3 className="font-semibold text-foreground mb-1 text-sm sm:text-base">{item.title}</h3>
+                <p className="text-[10px] sm:text-xs text-muted-foreground mb-3 sm:mb-4">{item.type}</p>
                 <Button variant="hero-outline" size="sm" className="w-full">Install</Button>
               </div>
             ))}
@@ -272,20 +272,20 @@ export default function LandingPage() {
       </section>
 
       {/* Open Source CTA */}
-      <section id="opensource" className="py-20">
-        <div className="container">
-          <div className="max-w-3xl mx-auto text-center rounded-2xl border border-primary/20 bg-primary/5 p-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
+      <section id="opensource" className="py-12 sm:py-20">
+        <div className="container px-4 sm:px-6">
+          <div className="max-w-3xl mx-auto text-center rounded-2xl border border-primary/20 bg-primary/5 p-6 sm:p-12">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 text-foreground">
               Free. Open Source. <span className="text-gradient">Forever.</span>
             </h2>
-            <p className="text-muted-foreground mb-8 max-w-lg mx-auto">
+            <p className="text-sm sm:text-base text-muted-foreground mb-6 sm:mb-8 max-w-lg mx-auto">
               RyaanCMS is built by the community, for the community. Fork it, extend it, make it yours.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link to="/dashboard">
-                <Button variant="hero" size="lg">Start Building <ArrowRight className="w-5 h-5" /></Button>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+              <Link to="/dashboard" className="w-full sm:w-auto">
+                <Button variant="hero" size="lg" className="w-full sm:w-auto">Start Building <ArrowRight className="w-5 h-5" /></Button>
               </Link>
-              <Button variant="hero-outline" size="lg">
+              <Button variant="hero-outline" size="lg" className="w-full sm:w-auto">
                 <Github className="w-5 h-5" /> View Source
               </Button>
             </div>
@@ -294,15 +294,15 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border py-8">
-        <div className="container flex flex-col md:flex-row items-center justify-between gap-4">
+      <footer className="border-t border-border py-6 sm:py-8">
+        <div className="container flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 px-4 sm:px-6">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-md bg-gradient-primary flex items-center justify-center">
               <Zap className="w-3 h-3 text-primary-foreground" />
             </div>
             <span className="text-sm font-semibold text-foreground">RyaanCMS</span>
           </div>
-          <p className="text-xs text-muted-foreground">© 2026 RyaanCMS. Free & Open Source. MIT License.</p>
+          <p className="text-xs text-muted-foreground text-center">© 2026 RyaanCMS. Free & Open Source. MIT License.</p>
         </div>
       </footer>
     </div>
