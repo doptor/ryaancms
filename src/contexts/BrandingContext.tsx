@@ -151,11 +151,13 @@ function applyBranding(branding: BrandingValues) {
     ${branding.customCss || ""}
   `;
 
-  // Dark mode
+  // Dark mode + cache preference for instant load
   if (branding.darkMode) {
     root.classList.add("dark");
+    try { localStorage.setItem("ryaan-theme", "dark"); } catch(e) {}
   } else {
     root.classList.remove("dark");
+    try { localStorage.setItem("ryaan-theme", "light"); } catch(e) {}
   }
 }
 
