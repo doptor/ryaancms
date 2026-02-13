@@ -39,6 +39,7 @@ interface MenuItem {
   open_in_new_tab: boolean;
   is_active: boolean;
   sort_order: number;
+  position: string;
 }
 
 const PAGE_SIZE = 10;
@@ -107,7 +108,7 @@ export default function MenuBuilderPage() {
   // Item dialog
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
-  const [itemForm, setItemForm] = useState({ label: "", link_type: "custom", url: "", plugin_slug: "", icon: "", open_in_new_tab: false, group_id: "", parent_id: "" });
+  const [itemForm, setItemForm] = useState({ label: "", link_type: "custom", url: "", plugin_slug: "", icon: "", open_in_new_tab: false, group_id: "", parent_id: "", position: "header" });
 
   useEffect(() => {
     if (user) fetchAll();
@@ -202,10 +203,10 @@ export default function MenuBuilderPage() {
   function openItemDialog(item?: MenuItem) {
     if (item) {
       setEditingItem(item);
-      setItemForm({ label: item.label, link_type: item.link_type, url: item.url || "", plugin_slug: item.plugin_slug || "", icon: item.icon || "", open_in_new_tab: item.open_in_new_tab, group_id: item.group_id, parent_id: item.parent_id || "" });
+      setItemForm({ label: item.label, link_type: item.link_type, url: item.url || "", plugin_slug: item.plugin_slug || "", icon: item.icon || "", open_in_new_tab: item.open_in_new_tab, group_id: item.group_id, parent_id: item.parent_id || "", position: item.position || "header" });
     } else {
       setEditingItem(null);
-      setItemForm({ label: "", link_type: "custom", url: "", plugin_slug: "", icon: "", open_in_new_tab: false, group_id: groups[0]?.id || "", parent_id: "" });
+      setItemForm({ label: "", link_type: "custom", url: "", plugin_slug: "", icon: "", open_in_new_tab: false, group_id: groups[0]?.id || "", parent_id: "", position: "header" });
     }
     setItemDialogOpen(true);
   }
@@ -222,6 +223,7 @@ export default function MenuBuilderPage() {
       plugin_slug: itemForm.link_type === "plugin" ? itemForm.plugin_slug || null : null,
       icon: itemForm.icon || null,
       open_in_new_tab: itemForm.open_in_new_tab,
+      position: itemForm.position,
     };
     if (editingItem) {
       const { error } = await supabase.from("menu_items").update(data).eq("id", editingItem.id);
@@ -381,6 +383,7 @@ export default function MenuBuilderPage() {
                     <TableRow>
                       <TableHead>Label</TableHead>
                       <TableHead>Group</TableHead>
+                      <TableHead className="hidden sm:table-cell">Position</TableHead>
                       <TableHead className="hidden sm:table-cell">Type</TableHead>
                       <TableHead className="hidden md:table-cell">URL / Plugin</TableHead>
                       <TableHead className="hidden lg:table-cell">Parent</TableHead>
@@ -391,7 +394,7 @@ export default function MenuBuilderPage() {
                   <TableBody>
                     {pagedItems.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                           {itemSearch ? "No items match your search." : "No menu items yet."}
                         </TableCell>
                       </TableRow>
@@ -406,6 +409,9 @@ export default function MenuBuilderPage() {
                         </TableCell>
                         <TableCell>
                           <Badge variant="secondary" className="text-xs">{getGroupName(item.group_id)}</Badge>
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          <Badge variant="outline" className="text-xs">{POSITIONS.find(p => p.value === item.position)?.label || item.position}</Badge>
                         </TableCell>
                         <TableCell className="hidden sm:table-cell">
                           <Badge variant="outline" className="text-xs">{LINK_TYPES.find(l => l.value === item.link_type)?.label}</Badge>
@@ -494,14 +500,25 @@ export default function MenuBuilderPage() {
               <DialogTitle>{editingItem ? "Edit Menu Item" : "Add Menu Item"}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              <div>
-                <Label>Group</Label>
-                <Select value={itemForm.group_id} onValueChange={v => setItemForm(f => ({ ...f, group_id: v, parent_id: "" }))}>
-                  <SelectTrigger><SelectValue placeholder="Select group" /></SelectTrigger>
-                  <SelectContent>
-                    {groups.map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Group</Label>
+                  <Select value={itemForm.group_id} onValueChange={v => setItemForm(f => ({ ...f, group_id: v, parent_id: "" }))}>
+                    <SelectTrigger><SelectValue placeholder="Select group" /></SelectTrigger>
+                    <SelectContent>
+                      {groups.map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Position</Label>
+                  <Select value={itemForm.position} onValueChange={v => setItemForm(f => ({ ...f, position: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {POSITIONS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div>
                 <Label>Label</Label>

@@ -65,6 +65,7 @@ export type Database = {
           open_in_new_tab: boolean
           parent_id: string | null
           plugin_slug: string | null
+          position: string
           sort_order: number
           updated_at: string
           url: string | null
@@ -81,6 +82,7 @@ export type Database = {
           open_in_new_tab?: boolean
           parent_id?: string | null
           plugin_slug?: string | null
+          position?: string
           sort_order?: number
           updated_at?: string
           url?: string | null
@@ -97,6 +99,7 @@ export type Database = {
           open_in_new_tab?: boolean
           parent_id?: string | null
           plugin_slug?: string | null
+          position?: string
           sort_order?: number
           updated_at?: string
           url?: string | null
