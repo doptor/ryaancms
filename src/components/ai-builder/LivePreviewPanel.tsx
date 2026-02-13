@@ -1,11 +1,14 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { GeneratedFile } from "./CodePanel";
 import { MODULE_TEMPLATES, COMPONENT_TEMPLATE_MAP } from "@/lib/engine/module-templates";
 import {
   Play, RefreshCw, Smartphone, Monitor, Tablet,
   Maximize2, Minimize2, Loader2, AlertCircle, Eye,
+  Terminal, Trash2, ChevronUp, ChevronDown,
+  AlertTriangle, Info, XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +21,13 @@ interface LivePreviewPanelProps {
 
 type ViewportSize = "mobile" | "tablet" | "desktop";
 
+interface ConsoleEntry {
+  id: number;
+  level: "log" | "warn" | "error" | "info";
+  message: string;
+  timestamp: number;
+}
+
 const VIEWPORTS: Record<ViewportSize, { width: number; label: string; icon: any }> = {
   mobile: { width: 375, label: "Mobile", icon: Smartphone },
   tablet: { width: 768, label: "Tablet", icon: Tablet },
@@ -27,9 +37,9 @@ const VIEWPORTS: Record<ViewportSize, { width: number; label: string; icon: any 
 /**
  * Builds a standalone HTML document that renders the generated React code
  * using inline React + ReactDOM from CDN, no build step needed.
+ * Includes console capture that posts messages to parent window.
  */
 function buildPreviewHtml(files: GeneratedFile[]): string {
-  // Resolve template codes
   const resolvedFiles = files.map((f) => {
     if (f.isTemplate && f.code.startsWith("// Template:")) {
       const typeMatch = f.code.match(/^\/\/ Template: (.+)$/m);
@@ -43,40 +53,26 @@ function buildPreviewHtml(files: GeneratedFile[]): string {
     return f;
   });
 
-  // Only page files (not scaffold)
   const pageFiles = resolvedFiles.filter((f) => !f.filename.startsWith("_scaffold/"));
-
   if (pageFiles.length === 0) return "";
 
-  // Strip TypeScript types, imports, and exports to make it browser-safe JSX
-  const sanitizeForBrowser = (code: string, componentName: string): string => {
-    let cleaned = code
-      // Remove import statements
+  const sanitizeForBrowser = (code: string): string => {
+    return code
       .replace(/^import\s+.*?['"];?\s*$/gm, "")
-      // Remove export default
       .replace(/^export\s+default\s+/gm, "")
-      // Remove named exports
       .replace(/^export\s+/gm, "")
-      // Remove TypeScript type annotations from function params
       .replace(/:\s*(React\.FC|FC|JSX\.Element|string|number|boolean|any|void|Props|[\w<>\[\]|&]+)\s*([,\)\=\{])/g, "$2")
-      // Remove interface/type declarations
       .replace(/^(interface|type)\s+\w+[\s\S]*?^\}/gm, "")
-      // Remove generic type params from function declarations
       .replace(/<\w+>/g, "")
-      // Remove 'as' type assertions
       .replace(/\s+as\s+\w+/g, "");
-
-    return cleaned;
   };
 
-  // Build component definitions
   const componentDefs = pageFiles.map((f) => {
     const name = f.pageName.replace(/[^a-zA-Z0-9]/g, "") || "Component";
-    const cleaned = sanitizeForBrowser(f.code, name);
+    const cleaned = sanitizeForBrowser(f.code);
     return { name, code: cleaned, route: f.route };
   });
 
-  // Create a simple app that renders all pages as sections
   const componentScripts = componentDefs.map((c) => `
     // --- ${c.name} ---
     ${c.code}
@@ -85,15 +81,7 @@ function buildPreviewHtml(files: GeneratedFile[]): string {
   const appRender = componentDefs.map((c) =>
     `React.createElement("div", { key: "${c.route}", style: { marginBottom: "2rem" } },
       React.createElement("div", { 
-        style: { 
-          padding: "8px 16px", 
-          background: "#f0f0f0", 
-          borderRadius: "8px 8px 0 0",
-          fontSize: "12px",
-          fontWeight: "600",
-          color: "#666",
-          borderBottom: "1px solid #e0e0e0"
-        } 
+        style: { padding: "8px 16px", background: "#f0f0f0", borderRadius: "8px 8px 0 0", fontSize: "12px", fontWeight: "600", color: "#666", borderBottom: "1px solid #e0e0e0" } 
       }, "📄 ${c.name} — ${c.route}"),
       React.createElement("div", { 
         style: { border: "1px solid #e0e0e0", borderTop: "none", borderRadius: "0 0 8px 8px", overflow: "hidden" }
@@ -119,13 +107,37 @@ function buildPreviewHtml(files: GeneratedFile[]): string {
     #root { padding: 1rem; }
     .preview-error { padding: 2rem; text-align: center; color: #e55; }
   </style>
+  <script>
+    // Console capture — posts to parent
+    (function() {
+      var orig = { log: console.log, warn: console.warn, error: console.error, info: console.info };
+      function send(level, args) {
+        try {
+          var msg = Array.prototype.map.call(args, function(a) {
+            return typeof a === 'object' ? JSON.stringify(a) : String(a);
+          }).join(' ');
+          window.parent.postMessage({ type: '__preview_console__', level: level, message: msg }, '*');
+        } catch(e) {}
+        orig[level].apply(console, args);
+      }
+      console.log = function() { send('log', arguments); };
+      console.warn = function() { send('warn', arguments); };
+      console.error = function() { send('error', arguments); };
+      console.info = function() { send('info', arguments); };
+      window.onerror = function(msg, src, line, col, err) {
+        send('error', ['Uncaught: ' + msg + ' at line ' + line]);
+      };
+      window.onunhandledrejection = function(e) {
+        send('error', ['Unhandled Promise: ' + (e.reason && e.reason.message || e.reason || 'unknown')]);
+      };
+    })();
+  <\/script>
 </head>
 <body>
   <div id="root"></div>
   <script type="text/babel" data-type="module">
     const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
-    // Stub commonly used imports
     const cn = (...classes) => classes.filter(Boolean).join(" ");
     const toast = (msg) => console.log("Toast:", msg);
     const Button = ({ children, className, onClick, variant, size, disabled, ...props }) => 
@@ -147,6 +159,8 @@ function buildPreviewHtml(files: GeneratedFile[]): string {
     const Badge = ({ children, className, ...props }) =>
       React.createElement("span", { className: cn("px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100", className), ...props }, children);
 
+    console.info("🚀 Live Preview loaded — ${pageFiles.length} page(s)");
+
     try {
       ${componentScripts}
 
@@ -162,7 +176,9 @@ function buildPreviewHtml(files: GeneratedFile[]): string {
 
       const root = ReactDOM.createRoot(document.getElementById("root"));
       root.render(React.createElement(App));
+      console.log("✅ All components rendered successfully");
     } catch (err) {
+      console.error("❌ Preview render failed:", err.message);
       document.getElementById("root").innerHTML = '<div class="preview-error"><h2>⚠️ Preview Error</h2><p>' + err.message + '</p></div>';
     }
   <\/script>
@@ -170,23 +186,80 @@ function buildPreviewHtml(files: GeneratedFile[]): string {
 </html>`;
 }
 
+const CONSOLE_ICONS: Record<string, any> = {
+  log: Info,
+  info: Info,
+  warn: AlertTriangle,
+  error: XCircle,
+};
+
+const CONSOLE_COLORS: Record<string, string> = {
+  log: "text-foreground",
+  info: "text-primary",
+  warn: "text-yellow-600",
+  error: "text-destructive",
+};
+
+let consoleIdCounter = 0;
+
 export function LivePreviewPanel({ files, hasConfig, isGenerating, onGenerate }: LivePreviewPanelProps) {
   const [viewport, setViewport] = useState<ViewportSize>("desktop");
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [previewKey, setPreviewKey] = useState(0);
+  const [consoleLogs, setConsoleLogs] = useState<ConsoleEntry[]>([]);
+  const [consoleOpen, setConsoleOpen] = useState(true);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const consoleEndRef = useRef<HTMLDivElement>(null);
+  const prevFilesRef = useRef<string>("");
 
   const previewHtml = useMemo(() => buildPreviewHtml(files), [files]);
 
+  // Hot-reload: auto-refresh when files change
+  useEffect(() => {
+    const filesHash = JSON.stringify(files.map(f => f.code));
+    if (prevFilesRef.current && prevFilesRef.current !== filesHash && files.length > 0) {
+      setIsLoading(true);
+      setConsoleLogs([]);
+      setPreviewKey((k) => k + 1);
+    }
+    prevFilesRef.current = filesHash;
+  }, [files]);
+
+  // Listen for console messages from iframe
+  useEffect(() => {
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type === "__preview_console__") {
+        const entry: ConsoleEntry = {
+          id: ++consoleIdCounter,
+          level: event.data.level,
+          message: event.data.message,
+          timestamp: Date.now(),
+        };
+        setConsoleLogs((prev) => [...prev.slice(-200), entry]); // Keep max 200 entries
+      }
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, []);
+
+  // Auto-scroll console
+  useEffect(() => {
+    consoleEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [consoleLogs]);
+
   const handleRefresh = () => {
     setIsLoading(true);
+    setConsoleLogs([]);
     setPreviewKey((k) => k + 1);
   };
 
   const handleIframeLoad = () => {
     setIsLoading(false);
   };
+
+  const errorCount = consoleLogs.filter((l) => l.level === "error").length;
+  const warnCount = consoleLogs.filter((l) => l.level === "warn").length;
 
   // No config yet
   if (!hasConfig) {
@@ -203,7 +276,6 @@ export function LivePreviewPanel({ files, hasConfig, isGenerating, onGenerate }:
     );
   }
 
-  // No files yet
   if (files.length === 0 && !isGenerating) {
     return (
       <div className="h-full flex items-center justify-center p-6">
@@ -262,9 +334,11 @@ export function LivePreviewPanel({ files, hasConfig, isGenerating, onGenerate }:
           <Badge variant="secondary" className="text-[10px] h-4">
             {files.filter(f => !f.filename.startsWith("_scaffold/")).length} pages
           </Badge>
+          <Badge variant="secondary" className="text-[10px] h-4 gap-0.5">
+            <RefreshCw className="w-2.5 h-2.5" /> Hot Reload
+          </Badge>
         </div>
         <div className="flex items-center gap-1">
-          {/* Viewport switcher */}
           {(Object.entries(VIEWPORTS) as [ViewportSize, typeof VIEWPORTS["mobile"]][]).map(([key, vp]) => {
             const Icon = vp.icon;
             return (
@@ -295,7 +369,7 @@ export function LivePreviewPanel({ files, hasConfig, isGenerating, onGenerate }:
       </div>
 
       {/* Preview area */}
-      <div className="flex-1 min-h-0 bg-muted/30 flex items-start justify-center overflow-auto p-4">
+      <div className="flex-1 min-h-0 bg-muted/30 flex items-start justify-center overflow-auto p-4 relative">
         <div
           className="bg-background rounded-lg border border-border shadow-lg overflow-hidden transition-all duration-300"
           style={{
@@ -319,6 +393,80 @@ export function LivePreviewPanel({ files, hasConfig, isGenerating, onGenerate }:
             onLoad={handleIframeLoad}
           />
         </div>
+      </div>
+
+      {/* Console Panel */}
+      <div className="shrink-0 border-t border-border bg-card">
+        {/* Console header */}
+        <button
+          onClick={() => setConsoleOpen(!consoleOpen)}
+          className="w-full flex items-center justify-between px-4 py-1.5 hover:bg-accent/50 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <Terminal className="w-3.5 h-3.5 text-muted-foreground" />
+            <span className="text-xs font-semibold text-foreground">Console</span>
+            {consoleLogs.length > 0 && (
+              <Badge variant="secondary" className="text-[10px] h-4">{consoleLogs.length}</Badge>
+            )}
+            {errorCount > 0 && (
+              <Badge variant="destructive" className="text-[10px] h-4 gap-0.5">
+                <XCircle className="w-2.5 h-2.5" /> {errorCount}
+              </Badge>
+            )}
+            {warnCount > 0 && (
+              <Badge variant="secondary" className="text-[10px] h-4 gap-0.5 bg-yellow-500/10 text-yellow-600">
+                <AlertTriangle className="w-2.5 h-2.5" /> {warnCount}
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-1">
+            {consoleOpen && (
+              <Button
+                variant="ghost" size="sm" className="h-6 w-6 p-0"
+                onClick={(e) => { e.stopPropagation(); setConsoleLogs([]); }}
+                title="Clear Console"
+              >
+                <Trash2 className="w-3 h-3 text-muted-foreground" />
+              </Button>
+            )}
+            {consoleOpen ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" />}
+          </div>
+        </button>
+
+        {/* Console output */}
+        {consoleOpen && (
+          <ScrollArea className="h-36 border-t border-border">
+            <div className="p-2 space-y-0.5 font-mono text-[11px]">
+              {consoleLogs.length === 0 ? (
+                <p className="text-muted-foreground text-center py-4">No console output yet. Preview will capture logs, warnings, and errors.</p>
+              ) : (
+                consoleLogs.map((entry) => {
+                  const Icon = CONSOLE_ICONS[entry.level] || Info;
+                  const colorClass = CONSOLE_COLORS[entry.level] || "text-foreground";
+                  return (
+                    <div
+                      key={entry.id}
+                      className={cn(
+                        "flex items-start gap-2 px-2 py-1 rounded",
+                        entry.level === "error" && "bg-destructive/5",
+                        entry.level === "warn" && "bg-yellow-500/5"
+                      )}
+                    >
+                      <Icon className={cn("w-3 h-3 mt-0.5 shrink-0", colorClass)} />
+                      <span className={cn("break-all whitespace-pre-wrap", colorClass)}>
+                        {entry.message}
+                      </span>
+                      <span className="text-muted-foreground/50 shrink-0 ml-auto text-[9px]">
+                        {new Date(entry.timestamp).toLocaleTimeString()}
+                      </span>
+                    </div>
+                  );
+                })
+              )}
+              <div ref={consoleEndRef} />
+            </div>
+          </ScrollArea>
+        )}
       </div>
     </div>
   );
