@@ -284,6 +284,26 @@ export default function AIBuilderPage() {
     setPipelineState(updated);
   };
 
+  const handleReorderComponents = (pageIndex: number, fromIndex: number, toIndex: number) => {
+    if (!pipelineState?.config) return;
+    const updated = { ...pipelineState };
+    const config = { ...updated.config! };
+    const pages = [...config.pages];
+    const page = { ...pages[pageIndex] };
+    const components = [...page.components];
+    const [moved] = components.splice(fromIndex, 1);
+    components.splice(toIndex, 0, moved);
+    page.components = components;
+    pages[pageIndex] = page;
+    config.pages = pages;
+    updated.config = config;
+    setPipelineState(updated);
+    // Update selection to follow the moved component
+    if (selectedComponent?.pageIndex === pageIndex && selectedComponent?.componentIndex === fromIndex) {
+      setSelectedComponent({ pageIndex, componentIndex: toIndex });
+    }
+  };
+
   const selectedComp = selectedComponent && pipelineState?.config
     ? pipelineState.config.pages[selectedComponent.pageIndex]?.components[selectedComponent.componentIndex] || null
     : null;
@@ -386,6 +406,7 @@ export default function AIBuilderPage() {
                   config={config}
                   selectedComponent={selectedComponent}
                   onSelectComponent={(pi, ci) => setSelectedComponent({ pageIndex: pi, componentIndex: ci })}
+                  onReorderComponents={handleReorderComponents}
                 />
               </div>
               {selectedComponent && selectedComp && (

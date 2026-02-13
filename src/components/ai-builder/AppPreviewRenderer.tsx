@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AppConfig, PageConfig, ComponentConfig } from "@/lib/engine";
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 
 // === Main Renderer ===
 
@@ -28,9 +28,10 @@ interface AppPreviewRendererProps {
   config: AppConfig;
   selectedComponent?: { pageIndex: number; componentIndex: number } | null;
   onSelectComponent?: (pageIndex: number, componentIndex: number) => void;
+  onReorderComponents?: (pageIndex: number, fromIndex: number, toIndex: number) => void;
 }
 
-export function AppPreviewRenderer({ config, selectedComponent, onSelectComponent }: AppPreviewRendererProps) {
+export function AppPreviewRenderer({ config, selectedComponent, onSelectComponent, onReorderComponents }: AppPreviewRendererProps) {
   const [activePage, setActivePage] = useState(0);
   const currentPage = config.pages[activePage];
 
@@ -68,6 +69,7 @@ export function AppPreviewRenderer({ config, selectedComponent, onSelectComponen
               pageIndex={activePage}
               selectedComponent={selectedComponent}
               onSelectComponent={onSelectComponent}
+              onReorderComponents={onReorderComponents}
             />
           )}
         </div>
@@ -84,28 +86,91 @@ interface PageRendererProps {
   pageIndex: number;
   selectedComponent?: { pageIndex: number; componentIndex: number } | null;
   onSelectComponent?: (pageIndex: number, componentIndex: number) => void;
+  onReorderComponents?: (pageIndex: number, fromIndex: number, toIndex: number) => void;
 }
 
-function PageRenderer({ page, config, pageIndex, selectedComponent, onSelectComponent }: PageRendererProps) {
+function PageRenderer({ page, config, pageIndex, selectedComponent, onSelectComponent, onReorderComponents }: PageRendererProps) {
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dropIndex, setDropIndex] = useState<number | null>(null);
+  const dragCounter = useRef(0);
+
+  const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", String(index));
+    setDragIndex(index);
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    setDragIndex(null);
+    setDropIndex(null);
+    dragCounter.current = 0;
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  }, []);
+
+  const handleDragEnterZone = useCallback((index: number) => {
+    setDropIndex(index);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent, toIndex: number) => {
+    e.preventDefault();
+    const fromIndex = Number(e.dataTransfer.getData("text/plain"));
+    if (!isNaN(fromIndex) && fromIndex !== toIndex) {
+      onReorderComponents?.(pageIndex, fromIndex, toIndex);
+    }
+    setDragIndex(null);
+    setDropIndex(null);
+    dragCounter.current = 0;
+  }, [pageIndex, onReorderComponents]);
+
   const wrapComponent = (comp: ComponentConfig, i: number) => {
     const isSelected = selectedComponent?.pageIndex === pageIndex && selectedComponent?.componentIndex === i;
+    const isDragging = dragIndex === i;
+    const isDropTarget = dropIndex === i && dragIndex !== i;
+
     return (
-      <div
-        key={i}
-        onClick={(e) => { e.stopPropagation(); onSelectComponent?.(pageIndex, i); }}
-        className={cn(
-          "relative cursor-pointer transition-all",
-          isSelected
-            ? "ring-2 ring-primary ring-offset-2 ring-offset-background rounded-xl"
-            : "hover:ring-1 hover:ring-primary/30 hover:ring-offset-1 hover:ring-offset-background rounded-xl"
+      <div key={i} className="relative group">
+        {/* Drop indicator above */}
+        {isDropTarget && dragIndex !== null && dragIndex > i && (
+          <div className="absolute -top-1 left-0 right-0 h-0.5 bg-primary rounded-full z-20" />
         )}
-      >
-        {isSelected && (
-          <div className="absolute -top-2.5 left-2 z-10 px-1.5 py-0.5 rounded bg-primary text-primary-foreground text-[10px] font-medium">
-            {comp.type.replace(/_/g, " ")}
+        <div
+          draggable
+          onDragStart={(e) => handleDragStart(e, i)}
+          onDragEnd={handleDragEnd}
+          onDragOver={handleDragOver}
+          onDragEnter={() => handleDragEnterZone(i)}
+          onDrop={(e) => handleDrop(e, i)}
+          onClick={(e) => { e.stopPropagation(); onSelectComponent?.(pageIndex, i); }}
+          className={cn(
+            "relative cursor-pointer transition-all",
+            isDragging && "opacity-30 scale-[0.98]",
+            isSelected
+              ? "ring-2 ring-primary ring-offset-2 ring-offset-background rounded-xl"
+              : "hover:ring-1 hover:ring-primary/30 hover:ring-offset-1 hover:ring-offset-background rounded-xl"
+          )}
+        >
+          {/* Drag handle */}
+          <div className={cn(
+            "absolute left-1 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-6 h-8 rounded bg-card/80 border border-border shadow-sm cursor-grab active:cursor-grabbing transition-opacity",
+            "opacity-0 group-hover:opacity-100"
+          )}>
+            <GripVertical className="w-3.5 h-3.5 text-muted-foreground" />
           </div>
+          {isSelected && (
+            <div className="absolute -top-2.5 left-9 z-10 px-1.5 py-0.5 rounded bg-primary text-primary-foreground text-[10px] font-medium">
+              {comp.type.replace(/_/g, " ")}
+            </div>
+          )}
+          <ComponentRenderer component={comp} config={config} />
+        </div>
+        {/* Drop indicator below */}
+        {isDropTarget && dragIndex !== null && dragIndex < i && (
+          <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary rounded-full z-20" />
         )}
-        <ComponentRenderer component={comp} config={config} />
       </div>
     );
   };
