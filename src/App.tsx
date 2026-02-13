@@ -3,7 +3,10 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import LandingPage from "./pages/LandingPage";
+import AuthPage from "./pages/AuthPage";
 import DashboardOverview from "./pages/DashboardOverview";
 import SchemaPage from "./pages/SchemaPage";
 import AIBuilderPage from "./pages/AIBuilderPage";
@@ -22,18 +25,21 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/dashboard" element={<DashboardOverview />} />
-          <Route path="/dashboard/schema" element={<SchemaPage />} />
-          <Route path="/dashboard/ai" element={<AIBuilderPage />} />
-          <Route path="/dashboard/ai-integrations" element={<AIIntegrationPage />} />
-          <Route path="/dashboard/marketplace" element={<MarketplacePage />} />
-          <Route path="/dashboard/installer" element={<InstallerPage />} />
-          <Route path="/dashboard/plugins" element={<PluginsPage />} />
-          <Route path="/dashboard/settings" element={<SettingsPage />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/auth" element={<AuthPage />} />
+            <Route path="/dashboard" element={<ProtectedRoute><DashboardOverview /></ProtectedRoute>} />
+            <Route path="/dashboard/schema" element={<ProtectedRoute><SchemaPage /></ProtectedRoute>} />
+            <Route path="/dashboard/ai" element={<ProtectedRoute><AIBuilderPage /></ProtectedRoute>} />
+            <Route path="/dashboard/ai-integrations" element={<ProtectedRoute><AIIntegrationPage /></ProtectedRoute>} />
+            <Route path="/dashboard/marketplace" element={<ProtectedRoute><MarketplacePage /></ProtectedRoute>} />
+            <Route path="/dashboard/installer" element={<ProtectedRoute><InstallerPage /></ProtectedRoute>} />
+            <Route path="/dashboard/plugins" element={<ProtectedRoute><PluginsPage /></ProtectedRoute>} />
+            <Route path="/dashboard/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
