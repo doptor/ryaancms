@@ -128,13 +128,8 @@ serve(async (req) => {
       );
     } else {
       const errorText = await response.text();
-      let errorMessage = `HTTP ${response.status}`;
-      try {
-        const errorJson = JSON.parse(errorText);
-        errorMessage = errorJson.error?.message || errorJson.message || errorMessage;
-      } catch {
-        if (errorText.length < 200) errorMessage = errorText;
-      }
+      console.error(`API test failed [${response.status}]:`, errorText);
+      const errorMessage = `Connection failed with status ${response.status}`;
 
       return new Response(
         JSON.stringify({
