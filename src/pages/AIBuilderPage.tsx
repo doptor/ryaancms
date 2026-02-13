@@ -2,13 +2,14 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 import {
   Sparkles, Send, Database, FileText, CreditCard,
   Paperclip, Mic, Code, Palette, BarChart3, CheckCircle2,
   Circle, Loader2, ExternalLink, Rocket, AlertCircle,
   Table, Lock, LayoutGrid, Search, Bell,
   Calendar, Columns, Clock, MapPin, Download,
-  Shield, AlertTriangle, Info, Image, Upload,
+  Shield, AlertTriangle, Info, Image, Upload, FileCode2,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useLocation } from "react-router-dom";
@@ -31,6 +32,8 @@ import ReactMarkdown from "react-markdown";
 import { AppPreviewRenderer } from "@/components/ai-builder/AppPreviewRenderer";
 import { DeployPanel } from "@/components/ai-builder/DeployPanel";
 import { PropEditorSidebar } from "@/components/ai-builder/PropEditorSidebar";
+import { CodePanel, GeneratedFile } from "@/components/ai-builder/CodePanel";
+import { supabase } from "@/integrations/supabase/client";
 
 type Message = { role: "user" | "ai"; content: string };
 
@@ -92,6 +95,8 @@ export default function AIBuilderPage() {
   const [previewMode, setPreviewMode] = useState<"visual" | "schema">("visual");
   const [pipelineState, setPipelineState] = useState<PipelineState | null>(null);
   const [selectedComponent, setSelectedComponent] = useState<{ pageIndex: number; componentIndex: number } | null>(null);
+  const [generatedFiles, setGeneratedFiles] = useState<GeneratedFile[]>([]);
+  const [isGeneratingCode, setIsGeneratingCode] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const hasProcessedIncoming = useRef(false);
   const orchestrator = useMemo(() => new AIPipelineOrchestrator(), []);
@@ -307,6 +312,26 @@ export default function AIBuilderPage() {
   const selectedComp = selectedComponent && pipelineState?.config
     ? pipelineState.config.pages[selectedComponent.pageIndex]?.components[selectedComponent.componentIndex] || null
     : null;
+
+  const handleGenerateCode = async () => {
+    if (!pipelineState?.config) return;
+    setIsGeneratingCode(true);
+    setGeneratedFiles([]);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-code", {
+        body: { config: pipelineState.config },
+      });
+      if (error) throw new Error(error.message);
+      if (!data?.success) throw new Error(data?.error || "Code generation failed");
+      setGeneratedFiles(data.files || []);
+      setActiveTab("code");
+      toast({ title: "Code generated!", description: `${data.files?.length || 0} files created.` });
+    } catch (err: any) {
+      toast({ title: "Code generation failed", description: err.message, variant: "destructive" });
+    } finally {
+      setIsGeneratingCode(false);
+    }
+  };
 
   const StatusIcon = ({ status }: { status: ProgressStep["status"] }) => {
     if (status === "done") return <CheckCircle2 className="w-3.5 h-3.5 text-primary" />;
@@ -724,6 +749,10 @@ export default function AIBuilderPage() {
                         <TabsTrigger value="deploy" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 gap-1.5">
                           <Rocket className="w-3.5 h-3.5" /> Deploy
                         </TabsTrigger>
+                        <TabsTrigger value="code" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 gap-1.5">
+                          <FileCode2 className="w-3.5 h-3.5" /> Code
+                          {generatedFiles.length > 0 && <Badge variant="secondary" className="text-[10px] h-4 ml-1">{generatedFiles.length}</Badge>}
+                        </TabsTrigger>
                       </TabsList>
                     </Tabs>
                   </div>
@@ -790,6 +819,14 @@ export default function AIBuilderPage() {
                         onExportSQL={handleExportSQL}
                       />
                     )}
+                    {activeTab === "code" && (
+                      <CodePanel
+                        files={generatedFiles}
+                        isGenerating={isGeneratingCode}
+                        onGenerate={handleGenerateCode}
+                        hasConfig={!!pipelineState?.config}
+                      />
+                    )}
                   </div>
                 </div>
               </ResizablePanel>
@@ -816,6 +853,9 @@ export default function AIBuilderPage() {
                   <TabsTrigger value="deploy" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
                     <Rocket className="w-3.5 h-3.5" /> Deploy
                   </TabsTrigger>
+                  <TabsTrigger value="code" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
+                    <FileCode2 className="w-3.5 h-3.5" /> Code
+                  </TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
@@ -829,6 +869,14 @@ export default function AIBuilderPage() {
                   config={pipelineState?.config || null}
                   onExportJSON={handleExportJSON}
                   onExportSQL={handleExportSQL}
+                />
+              )}
+              {activeTab === "code" && (
+                <CodePanel
+                  files={generatedFiles}
+                  isGenerating={isGeneratingCode}
+                  onGenerate={handleGenerateCode}
+                  hasConfig={!!pipelineState?.config}
                 />
               )}
             </div>
