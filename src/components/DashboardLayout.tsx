@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Zap, LogOut, Menu, X, CircleDot, icons, User, ChevronRight } from "lucide-react";
+import { Zap, LogOut, Menu, X, CircleDot, icons, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,13 +39,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { signOut, user } = useAuth();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const [sidebarHovered, setSidebarHovered] = useState(false);
+  const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
   const [headerItems, setHeaderItems] = useState<DynamicMenuItem[]>([]);
   const [footerItems, setFooterItems] = useState<DynamicMenuItem[]>([]);
   const [displayName, setDisplayName] = useState<string>("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-
-  const collapsed = !sidebarExpanded;
 
   useEffect(() => {
     if (!user) return;
@@ -94,12 +93,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const IconComp = getIcon(item.icon);
     const color = ICON_COLORS[index % ICON_COLORS.length];
     const iconSize = isMobile ? "w-5 h-5" : "w-4 h-4";
+    const showLabel = isMobile || (sidebarHovered && hoveredItemId === item.id);
 
     const linkContent = (
       <Link
         key={item.id}
         to={item.url}
         onClick={isMobile ? () => setMobileOpen(false) : undefined}
+        onMouseEnter={!isMobile ? () => setHoveredItemId(item.id) : undefined}
+        onMouseLeave={!isMobile ? () => setHoveredItemId(null) : undefined}
         className={cn(
           "flex items-center gap-2 rounded-lg text-sm transition-colors",
           isMobile ? "px-4 py-2" : "px-3 py-1.5",
@@ -109,11 +111,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
       >
         <IconComp className={cn(iconSize, "shrink-0", active ? "text-primary" : color)} />
-        {(isMobile || !collapsed) && <span className="whitespace-nowrap">{item.label}</span>}
+        {showLabel && <span className="whitespace-nowrap">{item.label}</span>}
       </Link>
     );
 
-    if (!isMobile && collapsed) {
+    if (!isMobile && !sidebarHovered) {
       return (
         <Tooltip key={item.id}>
           <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
@@ -180,26 +182,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       <TooltipProvider delayDuration={0}>
       <aside
+        onMouseEnter={() => setSidebarHovered(true)}
+        onMouseLeave={() => { setSidebarHovered(false); setHoveredItemId(null); }}
         className={cn(
           "hidden md:flex flex-col border-r border-border bg-card transition-all duration-300 ease-in-out overflow-hidden",
-          collapsed ? "w-16" : "w-60"
+          sidebarHovered ? "w-60" : "w-16"
         )}
       >
         <div className="flex items-center gap-2 px-4 h-14 border-b border-border">
           <div className="w-7 h-7 rounded-lg bg-gradient-primary flex items-center justify-center shrink-0">
             <Zap className="w-3.5 h-3.5 text-primary-foreground" />
           </div>
-          {!collapsed && <span className="font-bold text-foreground whitespace-nowrap">RyaanCMS</span>}
-          <button
-            onClick={() => setSidebarExpanded(prev => !prev)}
-            className={cn(
-              "ml-auto text-muted-foreground hover:text-foreground transition-colors shrink-0",
-              collapsed && "ml-0 mx-auto mt-2"
-            )}
-            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            <ChevronRight className={cn("w-4 h-4 transition-transform", !collapsed && "rotate-180")} />
-          </button>
+          {sidebarHovered && <span className="font-bold text-foreground whitespace-nowrap">RyaanCMS</span>}
         </div>
         <nav className="flex-1 p-2 space-y-0.5">
           {headerItems.map((item, i) => renderItem(item, false, i))}
@@ -218,7 +212,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <User className="w-3.5 h-3.5 text-primary" />
               )}
             </div>
-            {!collapsed && (
+            {sidebarHovered && hoveredItemId === '__user__' && (
               <span className="text-sm font-medium text-foreground truncate flex-1">
                 {displayName || user?.email}
               </span>
@@ -227,6 +221,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               onClick={() => signOut()}
               title="Sign Out"
               className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
+              onMouseEnter={() => setHoveredItemId('__user__')}
+              onMouseLeave={() => setHoveredItemId(null)}
             >
               <LogOut className="w-4 h-4" />
             </button>
