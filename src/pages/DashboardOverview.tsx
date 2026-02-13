@@ -1,21 +1,75 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useRef } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Send, Plus, Pencil, Trash2, Clock } from "lucide-react";
+import { Send, Plus, Pencil, Trash2, Clock, Paperclip, Palette, Layout, Globe, ShoppingCart, FileText, X, Image } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
+const preDesignTemplates = [
+  {
+    label: "Portfolio Website",
+    icon: Layout,
+    prompt: "Create a modern portfolio website with hero section, about me, projects gallery, skills section, and contact form.",
+    colors: ["#6366f1", "#8b5cf6", "#a78bfa"],
+  },
+  {
+    label: "E-Commerce Store",
+    icon: ShoppingCart,
+    prompt: "Build an e-commerce store with product listing, cart, checkout flow, and order history.",
+    colors: ["#f59e0b", "#f97316", "#ef4444"],
+  },
+  {
+    label: "Blog / Magazine",
+    icon: FileText,
+    prompt: "Create a blog platform with article listing, categories, search, and rich text editor for posts.",
+    colors: ["#10b981", "#14b8a6", "#06b6d4"],
+  },
+  {
+    label: "Landing Page",
+    icon: Globe,
+    prompt: "Design a high-converting landing page with hero, features, testimonials, pricing, and CTA sections.",
+    colors: ["#ec4899", "#f43f5e", "#e11d48"],
+  },
+  {
+    label: "Dashboard App",
+    icon: Layout,
+    prompt: "Build an analytics dashboard with charts, KPI cards, data tables, and filter controls.",
+    colors: ["#3b82f6", "#2563eb", "#1d4ed8"],
+  },
+];
 
 export default function DashboardOverview() {
   const { user } = useAuth();
   const [prompt, setPrompt] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editPrompt, setEditPrompt] = useState("");
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [plusOpen, setPlusOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
-  const displayName = user?.email?.split("@")[0] || "User";
+  // Fetch display name from profiles
+  const { data: profile } = useQuery({
+    queryKey: ["profile", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("display_name")
+        .eq("user_id", user!.id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const displayName = profile?.display_name || user?.user_metadata?.display_name || user?.email?.split("@")[0] || "User";
 
   const { data: projects = [] } = useQuery({
     queryKey: ["projects"],
@@ -42,6 +96,7 @@ export default function DashboardOverview() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       setPrompt("");
+      setAttachments([]);
       toast({ title: "Project saved!" });
     },
     onError: () => toast({ title: "Failed to save", variant: "destructive" }),
@@ -78,6 +133,23 @@ export default function DashboardOverview() {
     createProject.mutate(prompt.trim());
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      setAttachments((prev) => [...prev, ...Array.from(files)]);
+    }
+    setPlusOpen(false);
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleTemplateSelect = (templatePrompt: string) => {
+    setPrompt(templatePrompt);
+    setPlusOpen(false);
+  };
+
   return (
     <DashboardLayout>
       <div className="flex flex-col items-center justify-center min-h-screen relative overflow-hidden">
@@ -107,8 +179,90 @@ export default function DashboardOverview() {
                 }
               }}
             />
+
+            {/* Attachments preview */}
+            {attachments.length > 0 && (
+              <div className="flex flex-wrap gap-2 px-4 pb-2">
+                {attachments.map((file, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-1.5 rounded-lg bg-muted px-2.5 py-1 text-xs text-muted-foreground"
+                  >
+                    {file.type.startsWith("image/") ? (
+                      <Image className="w-3 h-3 shrink-0" />
+                    ) : (
+                      <Paperclip className="w-3 h-3 shrink-0" />
+                    )}
+                    <span className="max-w-[120px] truncate">{file.name}</span>
+                    <button onClick={() => removeAttachment(i)} className="hover:text-foreground">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <div className="flex items-center justify-between px-4 pb-3">
-              <Plus className="w-5 h-5 text-muted-foreground" />
+              {/* + Button with Popover */}
+              <Popover open={plusOpen} onOpenChange={setPlusOpen}>
+                <PopoverTrigger asChild>
+                  <button className="w-8 h-8 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors">
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-72 p-2" sideOffset={8}>
+                  {/* Attachment option */}
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-foreground hover:bg-muted transition-colors"
+                  >
+                    <Paperclip className="w-4 h-4 text-muted-foreground" />
+                    <div className="text-left">
+                      <div className="font-medium">Attach File</div>
+                      <div className="text-xs text-muted-foreground">Upload images or documents</div>
+                    </div>
+                  </button>
+
+                  <div className="my-1 border-t border-border" />
+
+                  {/* Pre-designed templates */}
+                  <div className="px-3 py-1.5">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      Templates
+                    </span>
+                  </div>
+                  {preDesignTemplates.map((tpl, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleTemplateSelect(tpl.prompt)}
+                      className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-foreground hover:bg-muted transition-colors"
+                    >
+                      <div className="flex items-center gap-0.5 shrink-0">
+                        {tpl.colors.map((c, ci) => (
+                          <div
+                            key={ci}
+                            className="w-2 h-5 rounded-sm"
+                            style={{ backgroundColor: c }}
+                          />
+                        ))}
+                      </div>
+                      <div className="text-left">
+                        <div className="font-medium">{tpl.label}</div>
+                      </div>
+                    </button>
+                  ))}
+                </PopoverContent>
+              </Popover>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                multiple
+                accept="image/*,.pdf,.doc,.docx,.txt"
+                onChange={handleFileSelect}
+              />
+
               <button
                 onClick={handleSubmit}
                 disabled={!prompt.trim() || createProject.isPending}
