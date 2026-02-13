@@ -57,6 +57,17 @@ export interface PipelineState {
   riskScore: number;
   webhooks: any[];
   edgeFunctions: any[];
+  // Master Prompt enterprise additions
+  errorFixMemory: any[];
+  documentationPlan: string[];
+  documentationChecklist: Record<string, boolean>;
+  securityChecklist: Record<string, boolean>;
+  defaultAdminCredentials: { email: string; password: string };
+  installerSteps: string[];
+  pluginHooks: string[];
+  middlewareStack: string[];
+  reusableComponents: string[];
+  prismaSchemaHint: string;
 }
 
 export interface PipelineEvent {
@@ -94,6 +105,16 @@ const INITIAL_STATE: PipelineState = {
   riskScore: 0,
   webhooks: [],
   edgeFunctions: [],
+  errorFixMemory: [],
+  documentationPlan: ["README.md", "INSTALL.md", "API.md", "DB_SCHEMA.md"],
+  documentationChecklist: {},
+  securityChecklist: {},
+  defaultAdminCredentials: { email: "admin@admin.com", password: "admin123" },
+  installerSteps: [],
+  pluginHooks: [],
+  middlewareStack: [],
+  reusableComponents: [],
+  prismaSchemaHint: "",
 };
 
 export class AIPipelineOrchestrator {
@@ -272,6 +293,17 @@ export class AIPipelineOrchestrator {
           this.state.riskScore = c.risk_score || 0;
           this.state.webhooks = c.webhooks || [];
           this.state.edgeFunctions = c.edge_functions || [];
+          // Master Prompt enterprise data
+          this.state.errorFixMemory = c.error_fix_memory || [];
+          this.state.documentationPlan = c.documentation_plan || ["README.md", "INSTALL.md", "API.md", "DB_SCHEMA.md"];
+          this.state.documentationChecklist = c.documentation_checklist || {};
+          this.state.securityChecklist = c.security_checklist || {};
+          this.state.defaultAdminCredentials = c.default_admin_credentials || { email: "admin@admin.com", password: "admin123" };
+          this.state.installerSteps = c.installer_steps || [];
+          this.state.pluginHooks = c.plugin_hooks || [];
+          this.state.middlewareStack = c.middleware_stack || [];
+          this.state.reusableComponents = c.reusable_components || [];
+          this.state.prismaSchemaHint = c.prisma_schema_hint || "";
           this.emit("finalizing", "Assembling final configuration...");
         } else {
           this.state.error = data.error || "Pipeline failed";

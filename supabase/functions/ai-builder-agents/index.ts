@@ -7,11 +7,85 @@ const corsHeaders = {
 };
 
 // ============================================================
-// 10-Agent AI Builder Pipeline (Enterprise Grade)
-// Requirement → Product Manager → Task Planner → System Architect
-// → Database Agent → Backend Agent → Frontend/UI Agent
-// → Testing Agent → Debugger Agent → Quality Reviewer
+// RyaanCMS AI Builder — MASTER SYSTEM PROMPT + 10-Agent Pipeline
 // ============================================================
+
+const MASTER_SYSTEM_PREFIX = `You are RyaanCMS AI Builder, an autonomous senior full-stack engineer and product architect.
+
+GLOBAL RULES:
+1. Always create COMPLETE working projects, not partial snippets.
+2. Output must be production-grade: clean structure, reusable code, consistent naming.
+3. Every module must include: UI pages, backend API, database schema, validation, error handling.
+4. Follow the FIXED TECH STACK: React (Vite) + TailwindCSS + React Router for frontend; Node.js + Express.js + JWT Auth + RBAC + Prisma ORM + MySQL for backend.
+5. Never leave missing imports, undefined variables, or broken routes.
+6. Never generate fake/pseudo code that cannot run.
+7. Always generate seed demo data and default admin login credentials.
+8. Must include installer-like setup for environment config (.env.example, INSTALL.md).
+9. Store all progress into Project Memory JSON (PROJECT_STATE_JSON).
+10. Use service layer separation — avoid spaghetti code.
+11. Create reusable UI components; ensure responsive layouts.
+12. Implement pagination for large tables.
+13. Include audit logs table for enterprise apps.
+
+STANDARD API RESPONSE FORMAT (all endpoints MUST use):
+Success: { "success": true, "message": "ok", "data": {} }
+Error: { "success": false, "message": "error", "errors": [] }
+
+SMART REQUIREMENT MODE:
+- If user says "Build a CRM", auto-assume: contacts, leads, deals pipeline, notes, tasks, follow-ups, invoices, reporting.
+- If user says "Build an E-commerce", auto-assume: products, categories, cart, checkout, orders, inventory, reviews.
+- Only ask questions if user requires truly custom/unclear flows.
+
+SECURITY REQUIREMENTS:
+- bcrypt password hashing
+- JWT expiry 1 day
+- Role-based middleware
+- Input validation with zod
+- Prevent CORS issues
+- Store secrets only in env
+- Never expose API keys in frontend
+- Rate limiting (express-rate-limit)
+
+MODULE GENERATOR PATTERN (every feature module MUST follow):
+- Model → Migration → Controller → Service → Validator → Routes → Frontend Table Page → Frontend Create/Edit Form → API integration
+
+AUTO DOCUMENTATION (always generate):
+- README.md (overview + features)
+- INSTALL.md (setup guide)
+- API.md (API endpoint list)
+- DB_SCHEMA.md (database schema explanation)
+
+ERROR FIX MEMORY:
+- When a bug is found and fixed, record: error_signature, fix_applied, files_changed
+- Future projects should reference these fixes to avoid repeating mistakes
+
+QUALITY SCORE SYSTEM:
+- After completion, compute: UI completeness, Backend completeness, Security, Test coverage, Performance (each 0-100)
+- If overall < 90%, run improvement loop automatically
+
+PLUGIN-READY ARCHITECTURE:
+- Support plugin modules: payments, sms, whatsapp, email_marketing
+- Use event-driven hooks for extensibility
+
+TEMPLATE HYBRID MODE:
+- Use 20% stable boilerplate templates + 80% dynamic AI generation
+- This ensures marketplace stability
+
+UI STYLE SYSTEM (default):
+- Professional admin dashboard theme
+- Left sidebar navigation + top header
+- Dashboard cards + stats rows
+- Tables with search/filter/pagination
+- Modal forms or separate pages
+- Clean Tailwind design
+
+FORBIDDEN:
+- Do NOT generate incomplete projects
+- Do NOT leave TODO placeholders
+- Do NOT output pseudo code
+- Do NOT skip database integration
+- Do NOT skip authentication unless user explicitly says so
+`;
 
 interface AgentConfig {
   name: string;
@@ -23,9 +97,12 @@ const AGENT_CONFIGS: Record<string, AgentConfig> = {
   // Agent 1: Requirement Analyst
   requirements: {
     name: "Requirement Analyst",
-    system: `You are a Requirements Analyst AI Agent for RyaanCMS AI Builder.
-Your job: Analyze the user's prompt and extract a complete Software Requirements Specification (FRS/SRS).
+    system: `${MASTER_SYSTEM_PREFIX}
+
+AGENT ROLE: You are the Requirement Analyst (Agent 1/10).
+Your job: Analyze the user's prompt and extract a complete FRS/SRS.
 You MUST call the "extract_requirements" tool.
+
 Rules:
 - Identify project type (landing, blog, saas, ecommerce, portfolio, dashboard, marketplace, crm, custom)
 - Extract ALL functional requirements (what the app must do)
@@ -33,7 +110,9 @@ Rules:
 - Identify user roles needed
 - Identify required modules from: auth, blog, ecommerce, crm, analytics, payments, media, forms, api, marketplace, notifications, search, reports, settings
 - List key features (multi-tenant, realtime, i18n, etc.)
-- Be thorough — extract implicit requirements too (e.g. "CRM" implies contacts, leads, deals, pipeline)`,
+- Be thorough — extract implicit requirements too (e.g. "CRM" implies contacts, leads, deals, pipeline)
+- Use SMART REQUIREMENT MODE: auto-assume standard requirements for known app types
+- If unclear, identify max 5 essential clarification questions but still produce best-effort output`,
     tool: {
       name: "extract_requirements",
       description: "Extract structured requirements from the user prompt",
@@ -49,6 +128,8 @@ Rules:
           roles: { type: "array", items: { type: "object", properties: { name: { type: "string" }, permissions: { type: "array", items: { type: "string" } } }, required: ["name", "permissions"], additionalProperties: false } },
           features: { type: "array", items: { type: "string" } },
           suggested_modules_breakdown: { type: "array", items: { type: "object", properties: { module_name: { type: "string" }, description: { type: "string" }, priority: { type: "string", enum: ["critical", "high", "medium", "low"] } }, required: ["module_name", "description", "priority"], additionalProperties: false } },
+          default_admin_credentials: { type: "object", properties: { email: { type: "string" }, password: { type: "string" } }, additionalProperties: false },
+          clarification_questions: { type: "array", items: { type: "string" } },
         },
         required: ["title", "description", "project_type", "functional_requirements", "modules", "roles", "features", "suggested_modules_breakdown"],
         additionalProperties: false,
@@ -59,16 +140,20 @@ Rules:
   // Agent 2: Product Manager
   product_manager: {
     name: "Product Manager",
-    system: `You are a Product Manager AI Agent for RyaanCMS AI Builder.
+    system: `${MASTER_SYSTEM_PREFIX}
+
+AGENT ROLE: You are the Product Manager (Agent 2/10).
 You receive extracted requirements and define the product workflow, user journeys, and business logic.
 You MUST call the "define_product" tool.
+
 Rules:
 - Define user workflows for each role (what they do step by step)
 - Identify core business rules and validations
 - Define notification triggers (when to send emails/notifications)
 - Map permission matrices (which role can do what on which resource)
 - Identify integration points (payment gateways, email services, etc.)
-- Define data relationships and ownership rules`,
+- Define data relationships and ownership rules
+- Include installer/setup workflow for first-time users`,
     tool: {
       name: "define_product",
       description: "Define product workflows and business logic",
@@ -80,6 +165,7 @@ Rules:
           notification_triggers: { type: "array", items: { type: "object", properties: { event: { type: "string" }, channel: { type: "string" }, recipients: { type: "string" } }, required: ["event", "channel"], additionalProperties: false } },
           permission_matrix: { type: "array", items: { type: "object", properties: { role: { type: "string" }, resource: { type: "string" }, actions: { type: "array", items: { type: "string" } } }, required: ["role", "resource", "actions"], additionalProperties: false } },
           integrations: { type: "array", items: { type: "string" } },
+          installer_steps: { type: "array", items: { type: "string" } },
         },
         required: ["workflows", "business_rules", "permission_matrix"],
         additionalProperties: false,
@@ -90,16 +176,20 @@ Rules:
   // Agent 3: Task Planner
   planner: {
     name: "Task Planner",
-    system: `You are a Task Planner AI Agent for RyaanCMS AI Builder.
+    system: `${MASTER_SYSTEM_PREFIX}
+
+AGENT ROLE: You are the Task Planner (Agent 3/10).
 You receive requirements and product definition, then create a step-by-step build plan.
 You MUST call the "create_task_plan" tool.
+
 Rules:
-- Break the project into sequential, buildable tasks/modules
-- Each task should be a self-contained module (Auth, Dashboard, specific features)
+- Break the project into sequential, buildable tasks/modules following MODULE GENERATOR PATTERN
+- Each task should be self-contained (Auth, Dashboard, specific features)
 - Order tasks by dependency (auth first, then core modules, then advanced features)
-- Each task gets a name, description, estimated complexity
 - Include database setup as early tasks
-- Max 15 tasks for any project`,
+- Include documentation generation as final task
+- Max 15 tasks for any project
+- Each task produces: pages, components, collections`,
     tool: {
       name: "create_task_plan",
       description: "Create a sequential build plan with tasks",
@@ -129,6 +219,7 @@ Rules:
             type: "array",
             items: { type: "object", properties: { text: { type: "string" }, prompt: { type: "string" } }, required: ["text", "prompt"], additionalProperties: false },
           },
+          documentation_plan: { type: "array", items: { type: "string" } },
         },
         required: ["tasks", "total_estimated_complexity", "suggestions"],
         additionalProperties: false,
@@ -139,16 +230,18 @@ Rules:
   // Agent 4: System Architect
   architect: {
     name: "System Architect",
-    system: `You are a System Architect AI Agent for RyaanCMS AI Builder.
-You receive requirements, product definition, and task plan, then design the overall system architecture, folder structure, and technology decisions.
+    system: `${MASTER_SYSTEM_PREFIX}
+
+AGENT ROLE: You are the System Architect (Agent 4/10).
 You MUST call the "design_system" tool.
+
 Rules:
-- Define the folder structure for the project
+- Define the REQUIRED folder structure (frontend/src/components, pages, layouts, routes, services, hooks, utils + backend/src/config, controllers, middleware, routes, services, validators, utils, prisma)
 - Choose appropriate middleware and services
-- Design caching strategy
-- Define environment variables needed
+- Define environment variables needed (.env.example format)
 - Plan deployment architecture
-- Define module boundaries and interfaces`,
+- Define module boundaries and interfaces
+- Ensure plugin-ready architecture with event hooks`,
     tool: {
       name: "design_system",
       description: "Design overall system architecture",
@@ -160,6 +253,7 @@ Rules:
           services: { type: "array", items: { type: "object", properties: { name: { type: "string" }, purpose: { type: "string" } }, required: ["name", "purpose"], additionalProperties: false } },
           env_variables: { type: "array", items: { type: "object", properties: { name: { type: "string" }, description: { type: "string" }, required: { type: "boolean" } }, required: ["name", "description"], additionalProperties: false } },
           deployment_notes: { type: "array", items: { type: "string" } },
+          plugin_hooks: { type: "array", items: { type: "string" } },
         },
         required: ["folder_structure", "services", "env_variables"],
         additionalProperties: false,
@@ -170,18 +264,22 @@ Rules:
   // Agent 5: Database Agent
   database: {
     name: "Database Agent",
-    system: `You are a Database Design AI Agent for RyaanCMS AI Builder.
-You receive all prior context and design the complete database schema with tables, relationships, indexes, and RLS policies.
+    system: `${MASTER_SYSTEM_PREFIX}
+
+AGENT ROLE: You are the Database Engineer (Agent 5/10).
 You MUST call the "design_database" tool.
+
 Rules:
-- Design collections/tables with proper fields, types, and relationships
+- Design MySQL/Prisma schema with proper fields, types, and relationships
 - Field types: text, number, boolean, date, relation, json, media, enum, uuid, email, url, password, timestamp
 - Enable RLS on all user-facing tables
 - Mark tenant-isolated tables if multi-tenant
 - Add proper indexes for frequently queried fields
 - Every user-data table needs user_id or tenant_id
 - Include audit fields (created_at, updated_at) by default
-- Design seed data structure`,
+- Include audit_logs table for enterprise apps
+- Design seed data with default admin credentials
+- Generate Prisma schema and migration plan`,
     tool: {
       name: "design_database",
       description: "Design database schema with tables and relationships",
@@ -205,6 +303,7 @@ Rules:
             },
           },
           seed_data: { type: "array", items: { type: "object", properties: { collection: { type: "string" }, count: { type: "integer" }, sample: { type: "object" } }, required: ["collection", "count"], additionalProperties: false } },
+          prisma_schema_hint: { type: "string" },
         },
         required: ["collections"],
         additionalProperties: false,
@@ -215,16 +314,21 @@ Rules:
   // Agent 6: Backend Agent
   backend: {
     name: "Backend Agent",
-    system: `You are a Backend/API Design AI Agent for RyaanCMS AI Builder.
-You receive all context and design the REST API endpoints, edge functions, and server-side logic.
+    system: `${MASTER_SYSTEM_PREFIX}
+
+AGENT ROLE: You are the Backend Engineer (Agent 6/10).
 You MUST call the "design_backend" tool.
+
 Rules:
-- Design REST API endpoints for each module
+- Design REST API endpoints following STANDARD API RESPONSE FORMAT
+- Every endpoint must return { success, message, data } or { success, message, errors }
 - Define request/response schemas
-- Include authentication and authorization on each endpoint
+- Include authentication (JWT) and authorization (RBAC) on each endpoint
 - Design webhook endpoints where needed
-- Define rate limiting rules
-- Include file upload endpoints if media module exists`,
+- Define rate limiting rules (express-rate-limit)
+- Include file upload endpoints if media module exists
+- Follow service layer separation: routes → controllers → services → models
+- Include global error middleware`,
     tool: {
       name: "design_backend",
       description: "Design API endpoints and backend logic",
@@ -242,6 +346,8 @@ Rules:
                 auth_required: { type: "boolean" },
                 roles: { type: "array", items: { type: "string" } },
                 rate_limit: { type: "string" },
+                request_schema: { type: "object" },
+                response_format: { type: "string" },
               },
               required: ["method", "path", "description", "auth_required"],
               additionalProperties: false,
@@ -249,6 +355,7 @@ Rules:
           },
           webhooks: { type: "array", items: { type: "object", properties: { event: { type: "string" }, url: { type: "string" }, description: { type: "string" } }, required: ["event", "description"], additionalProperties: false } },
           edge_functions: { type: "array", items: { type: "object", properties: { name: { type: "string" }, description: { type: "string" }, trigger: { type: "string" } }, required: ["name", "description"], additionalProperties: false } },
+          middleware_stack: { type: "array", items: { type: "string" } },
         },
         required: ["api_endpoints"],
         additionalProperties: false,
@@ -256,20 +363,25 @@ Rules:
     },
   },
 
-  // Agent 7: Frontend/UI Agent
+  // Agent 7: UI/UX Designer
   uiux: {
     name: "UI/UX Designer",
-    system: `You are a UI/UX Designer AI Agent for RyaanCMS AI Builder.
-You receive all context and design page layouts with components.
+    system: `${MASTER_SYSTEM_PREFIX}
+
+AGENT ROLE: You are the Frontend Engineer & UI/UX Designer (Agent 7/10).
 You MUST call the "design_ui" tool.
+
 Rules:
-- Design pages with appropriate layouts: public, dashboard, auth, fullscreen, marketing
+- Design pages using professional admin dashboard theme (left sidebar, top header, dashboard cards)
 - Select components from: hero, navbar, footer, sidebar, crud_table, form, chart, card_grid, stats_row, auth_form, pricing_table, media_gallery, search_bar, notification_center, rich_text_editor, file_upload, calendar, kanban_board, timeline, map, role_manager, payment_page, dashboard_layout, data_import, settings_panel, api_docs
 - Provide sensible default props for each component
 - Mark pages that require authentication
 - Every dashboard page needs sidebar and navbar
 - Landing pages need hero, features, pricing, footer
-- Include responsive design considerations`,
+- All pages must be responsive
+- Include login/register flow + protected routes
+- Use reusable UI components (Card, Table, Modal, Form)
+- Include empty states, loading states, error states`,
     tool: {
       name: "design_ui",
       description: "Design page layouts with components",
@@ -302,6 +414,7 @@ Rules:
             },
             additionalProperties: false,
           },
+          reusable_components: { type: "array", items: { type: "string" } },
         },
         required: ["pages", "style"],
         additionalProperties: false,
@@ -312,16 +425,19 @@ Rules:
   // Agent 8: Testing Agent
   testing: {
     name: "Testing Agent",
-    system: `You are a Testing AI Agent for RyaanCMS AI Builder.
-You receive the complete project config and generate test scenarios, seed data, and validation checks.
+    system: `${MASTER_SYSTEM_PREFIX}
+
+AGENT ROLE: You are the QA/Test Engineer (Agent 8/10).
 You MUST call the "generate_tests" tool.
+
 Rules:
-- Generate test scenarios for each page/component
-- Include happy path and error path tests
-- Generate seed data for each collection
+- Generate test scenarios for each page/component (happy path + error path)
+- Generate seed data for each collection with realistic demo data
 - Define integration test scenarios
 - Check for edge cases (empty states, large data, concurrent access)
-- Validate all CRUD operations work correctly`,
+- Validate all CRUD operations
+- Generate Postman collection or API test scripts
+- Validate main auth flows (login, register, logout, token refresh)`,
     tool: {
       name: "generate_tests",
       description: "Generate test scenarios and seed data",
@@ -357,6 +473,7 @@ Rules:
             },
           },
           coverage_targets: { type: "object", properties: { unit: { type: "integer" }, integration: { type: "integer" }, e2e: { type: "integer" } }, additionalProperties: false },
+          postman_collection_hint: { type: "string" },
         },
         required: ["test_scenarios", "seed_data"],
         additionalProperties: false,
@@ -367,9 +484,11 @@ Rules:
   // Agent 9: Debugger Agent
   debugger: {
     name: "Debugger Agent",
-    system: `You are a Debugger AI Agent for RyaanCMS AI Builder.
-You receive the complete project config and analyze it for potential bugs, inconsistencies, and issues that would cause runtime errors.
+    system: `${MASTER_SYSTEM_PREFIX}
+
+AGENT ROLE: You are the Debugger/Auto-Fixer (Agent 9/10).
 You MUST call the "debug_analysis" tool.
+
 Rules:
 - Check for missing references (components referencing non-existent collections)
 - Check for circular dependencies
@@ -378,10 +497,13 @@ Rules:
 - Verify all required props are provided
 - Check for potential N+1 query issues
 - Identify missing error handling scenarios
-- Flag any security vulnerabilities`,
+- Flag any security vulnerabilities (SQL injection, XSS, CORS)
+- Apply ERROR FIX MEMORY: record error_signature + fix_applied + files_changed
+- Auto-retry fixes: if build fails, analyze logs, patch code, retry (max 5)
+- Verify password hashing, JWT expiry, env secrets not leaked`,
     tool: {
       name: "debug_analysis",
-      description: "Analyze project for bugs and issues",
+      description: "Analyze project for bugs and auto-fix",
       parameters: {
         type: "object",
         properties: {
@@ -395,6 +517,7 @@ Rules:
                 description: { type: "string" },
                 location: { type: "string" },
                 fix: { type: "string" },
+                error_signature: { type: "string" },
               },
               required: ["severity", "category", "description", "fix"],
               additionalProperties: false,
@@ -408,12 +531,14 @@ Rules:
                 description: { type: "string" },
                 applied: { type: "boolean" },
                 change: { type: "string" },
+                files_changed: { type: "array", items: { type: "string" } },
               },
               required: ["description", "applied"],
               additionalProperties: false,
             },
           },
           risk_score: { type: "integer" },
+          error_fix_memory: { type: "array", items: { type: "object", properties: { error_signature: { type: "string" }, fix_applied: { type: "string" }, files_changed: { type: "array", items: { type: "string" } } }, required: ["error_signature", "fix_applied"], additionalProperties: false } },
         },
         required: ["bugs", "auto_fixes", "risk_score"],
         additionalProperties: false,
@@ -424,17 +549,21 @@ Rules:
   // Agent 10: Quality Reviewer
   reviewer: {
     name: "Quality Reviewer",
-    system: `You are a Quality Reviewer AI Agent for RyaanCMS AI Builder.
-You receive the COMPLETE project configuration including all agent outputs and perform a thorough final review.
+    system: `${MASTER_SYSTEM_PREFIX}
+
+AGENT ROLE: You are the Security & Performance Reviewer + Quality Reviewer (Agent 10/10).
 You MUST call the "quality_review" tool.
+
 Rules:
 - Score the project on: ui_completeness, backend_completeness, security, test_coverage, performance (each 0-100)
-- Calculate overall_score as weighted average (security gets 25% weight, others 18.75%)
-- List specific issues found
+- Calculate overall_score as weighted average (security 25%, others 18.75%)
+- Check for: SQL injection risks, password hashing, JWT expiry, rate limiting, env secrets not leaked, CORS config
+- List specific issues found with severity
 - List specific improvements recommended
-- If overall_score < 80, flag critical improvements
-- Consider ALL previous agent outputs in your assessment
-- Be strict but fair — enterprise-grade means 90+`,
+- If overall_score < 90, flag critical improvements and recommend auto-improvement loop
+- Generate documentation checklist (README, INSTALL, API, DB_SCHEMA)
+- Provide final verdict: pass (90+), needs_improvement (70-89), fail (<70)
+- Be strict — enterprise-grade means 90+`,
     tool: {
       name: "quality_review",
       description: "Review and score the complete project",
@@ -457,6 +586,8 @@ Rules:
           issues: { type: "array", items: { type: "object", properties: { severity: { type: "string", enum: ["error", "warning", "info"] }, message: { type: "string" }, category: { type: "string" } }, required: ["severity", "message", "category"], additionalProperties: false } },
           improvements: { type: "array", items: { type: "string" } },
           verdict: { type: "string", enum: ["pass", "needs_improvement", "fail"] },
+          documentation_checklist: { type: "object", properties: { readme: { type: "boolean" }, install_guide: { type: "boolean" }, api_docs: { type: "boolean" }, db_schema_docs: { type: "boolean" } }, additionalProperties: false },
+          security_checklist: { type: "object", properties: { password_hashing: { type: "boolean" }, jwt_expiry: { type: "boolean" }, rate_limiting: { type: "boolean" }, input_validation: { type: "boolean" }, cors_configured: { type: "boolean" }, env_secrets_safe: { type: "boolean" } }, additionalProperties: false },
         },
         required: ["scores", "issues", "improvements", "verdict"],
         additionalProperties: false,
@@ -475,12 +606,10 @@ async function runAgent(
 ): Promise<{ success: boolean; data?: unknown; error?: string; agentName: string }> {
   const agent = AGENT_CONFIGS[agentName];
 
-  // Build context string (limit size to avoid token overflow)
   const contextEntries = Object.entries(context);
   let contextStr = "";
   for (const [k, v] of contextEntries) {
     const json = JSON.stringify(v, null, 2);
-    // Truncate large context entries
     contextStr += `## ${k}\n${json.length > 4000 ? json.slice(0, 4000) + "\n...(truncated)" : json}\n\n`;
   }
 
@@ -522,7 +651,6 @@ async function runAgent(
   }
 }
 
-// Agent pipeline definition with order and fatal flag
 const PIPELINE: { key: AgentName; fatal: boolean }[] = [
   { key: "requirements", fatal: true },
   { key: "product_manager", fatal: false },
@@ -564,7 +692,6 @@ serve(async (req) => {
         const context: Record<string, unknown> = {};
         const totalAgents = PIPELINE.length;
 
-        // Context key mapping for each agent's output
         const CONTEXT_KEYS: Record<string, string> = {
           requirements: "requirements",
           product_manager: "product_definition",
@@ -595,14 +722,12 @@ serve(async (req) => {
               controller.close();
               return;
             }
-            // Non-fatal: continue with empty data
             send("agent_done", { agent: agent.name, step, data: {}, skipped: true });
           } else {
             context[CONTEXT_KEYS[key]] = result.data;
             send("agent_done", { agent: agent.name, step, data: result.data });
           }
 
-          // Rate limit delay between agents
           if (i < PIPELINE.length - 1) {
             await new Promise(r => setTimeout(r, 250));
           }
@@ -633,28 +758,38 @@ serve(async (req) => {
           // Extended multi-agent data
           requirements: req_data.functional_requirements || [],
           non_functional_requirements: req_data.non_functional_requirements || [],
+          default_admin_credentials: req_data.default_admin_credentials || { email: "admin@admin.com", password: "admin123" },
           workflows: prod_data.workflows || [],
           business_rules: prod_data.business_rules || [],
           permission_matrix: prod_data.permission_matrix || [],
           notification_triggers: prod_data.notification_triggers || [],
+          installer_steps: prod_data.installer_steps || [],
           task_plan: plan_data.tasks || [],
           suggestions: plan_data.suggestions || [],
+          documentation_plan: plan_data.documentation_plan || ["README.md", "INSTALL.md", "API.md", "DB_SCHEMA.md"],
           folder_structure: sys_data.folder_structure || {},
           services: sys_data.services || [],
           env_variables: sys_data.env_variables || [],
+          plugin_hooks: sys_data.plugin_hooks || [],
           seed_data: db_data.seed_data || test_data.seed_data || [],
+          prisma_schema_hint: db_data.prisma_schema_hint || "",
           api_endpoints: api_data.api_endpoints || [],
           webhooks: api_data.webhooks || [],
           edge_functions: api_data.edge_functions || [],
+          middleware_stack: api_data.middleware_stack || [],
+          reusable_components: ui_data.reusable_components || [],
           test_scenarios: test_data.test_scenarios || [],
           coverage_targets: test_data.coverage_targets || {},
           bugs: debug_data.bugs || [],
           auto_fixes: debug_data.auto_fixes || [],
           risk_score: debug_data.risk_score || 0,
+          error_fix_memory: debug_data.error_fix_memory || [],
           quality_score: review_data.scores || {},
           quality_issues: review_data.issues || [],
           quality_improvements: review_data.improvements || [],
           quality_verdict: review_data.verdict || "pass",
+          documentation_checklist: review_data.documentation_checklist || {},
+          security_checklist: review_data.security_checklist || {},
           agent_log: agentLog,
         };
 
