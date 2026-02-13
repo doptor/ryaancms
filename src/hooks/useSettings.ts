@@ -80,6 +80,26 @@ export function useSettings() {
     }));
   }, []);
 
+  const saveSection = useCallback(async (section: string) => {
+    if (!user) return;
+    setSaving(true);
+
+    try {
+      const { error } = await supabase
+        .from("site_settings")
+        .upsert({ user_id: user.id, key: section, value: settings[section] }, { onConflict: "user_id,key" });
+      if (error) throw error;
+
+      toast({ title: "Settings saved", description: `${section.charAt(0).toUpperCase() + section.slice(1)} settings saved successfully.` });
+      window.dispatchEvent(new Event("branding-updated"));
+    } catch (err: any) {
+      console.error("Save error:", err);
+      toast({ title: "Error saving settings", description: err.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  }, [user, settings]);
+
   const saveAll = useCallback(async () => {
     if (!user) return;
     setSaving(true);
@@ -99,7 +119,6 @@ export function useSettings() {
       }
 
       toast({ title: "Settings saved", description: "Your changes have been saved successfully." });
-      // Notify branding context to re-apply
       window.dispatchEvent(new Event("branding-updated"));
     } catch (err: any) {
       console.error("Save error:", err);
@@ -109,5 +128,5 @@ export function useSettings() {
     }
   }, [user, settings]);
 
-  return { settings, updateSection, saveAll, loading, saving };
+  return { settings, updateSection, saveAll, saveSection, loading, saving };
 }
