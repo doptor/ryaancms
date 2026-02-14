@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
+import { useBranding } from "@/contexts/BrandingContext";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Send, Plus, Clock, Search, ChevronLeft, ChevronRight,
@@ -35,6 +36,7 @@ const preDesignTemplates = [
 
 export default function DashboardOverview() {
   const { user } = useAuth();
+  const { branding } = useBranding();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [prompt, setPrompt] = useState("");
@@ -198,13 +200,13 @@ export default function DashboardOverview() {
       <div className="flex flex-col min-h-screen relative overflow-hidden">
         {/* Multi-colorful gradient background */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute inset-0 bg-gradient-to-br from-[hsl(0,80%,60%)]/15 via-background to-[hsl(220,80%,55%)]/15" />
-          <div className="absolute top-0 left-0 w-[600px] h-[600px] rounded-full bg-[hsl(0,75%,55%)]/18 blur-[120px] -translate-x-1/2 -translate-y-1/2" />
-          <div className="absolute top-1/4 right-0 w-[500px] h-[500px] rounded-full bg-[hsl(220,80%,55%)]/18 blur-[100px] translate-x-1/3" />
-          <div className="absolute bottom-0 left-1/3 w-[400px] h-[400px] rounded-full bg-[hsl(30,90%,55%)]/18 blur-[100px] translate-y-1/3" />
-          <div className="absolute bottom-1/4 right-1/4 w-[350px] h-[350px] rounded-full bg-[hsl(280,70%,55%)]/15 blur-[80px]" />
-          <div className="absolute top-1/2 left-1/4 w-[300px] h-[300px] rounded-full bg-[hsl(160,70%,45%)]/12 blur-[90px]" />
-          <div className="absolute top-0 right-1/3 w-[250px] h-[250px] rounded-full bg-[hsl(45,90%,55%)]/15 blur-[80px]" />
+          <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${branding.primaryColor}22 0%, transparent 50%, ${branding.accentColor}22 100%)` }} />
+          <div className="absolute top-0 left-0 w-[600px] h-[600px] rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2" style={{ backgroundColor: `${branding.primaryColor}30` }} />
+          <div className="absolute top-1/4 right-0 w-[500px] h-[500px] rounded-full blur-[100px] translate-x-1/3" style={{ backgroundColor: `${branding.accentColor}30` }} />
+          <div className="absolute bottom-0 left-1/3 w-[400px] h-[400px] rounded-full blur-[100px] translate-y-1/3" style={{ backgroundColor: `${branding.primaryColor}25` }} />
+          <div className="absolute bottom-1/4 right-1/4 w-[350px] h-[350px] rounded-full blur-[80px]" style={{ backgroundColor: `${branding.accentColor}20` }} />
+          <div className="absolute top-1/2 left-1/4 w-[300px] h-[300px] rounded-full blur-[90px]" style={{ backgroundColor: `${branding.primaryColor}18` }} />
+          <div className="absolute top-0 right-1/3 w-[250px] h-[250px] rounded-full blur-[80px]" style={{ backgroundColor: `${branding.accentColor}22` }} />
         </div>
 
         <div className="relative z-10 w-full px-4 sm:px-6 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8">
