@@ -1,24 +1,51 @@
 import { useEffect, useState } from "react";
 import { AppPreviewRenderer } from "@/components/ai-builder/AppPreviewRenderer";
 import type { AppConfig } from "@/lib/engine/component-registry";
-import { Monitor, ArrowLeft, Smartphone, Tablet, ExternalLink } from "lucide-react";
+import { Monitor, ArrowLeft, Smartphone, Tablet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 type Viewport = "desktop" | "tablet" | "mobile";
 
 export default function PreviewPage() {
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [viewport, setViewport] = useState<Viewport>("desktop");
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
+    let found = false;
+
+    // 1. Try localStorage first (fastest)
     try {
       const stored = localStorage.getItem("ai-builder-preview-config");
       if (stored) {
         setConfig(JSON.parse(stored));
+        found = true;
       }
     } catch {}
+
+    // 2. If not in localStorage, fetch from database
+    if (!found) {
+      (async () => {
+        try {
+          const { data } = await supabase
+            .from("published_previews")
+            .select("config")
+            .order("updated_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (data?.config) {
+            setConfig(data.config as unknown as AppConfig);
+          }
+        } catch {}
+        setLoading(false);
+      })();
+    } else {
+      setLoading(false);
+    }
 
     const handler = (e: StorageEvent) => {
       if (e.key === "ai-builder-preview-config" && e.newValue) {
@@ -37,27 +64,31 @@ export default function PreviewPage() {
     mobile: "390px",
   };
 
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
   if (!config) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-background relative overflow-hidden">
-        {/* Background glow effects */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-primary/5 blur-[120px]" />
           <div className="absolute bottom-1/4 left-1/3 w-[400px] h-[400px] rounded-full bg-accent-foreground/5 blur-[100px]" />
         </div>
-
         <div className="relative z-10 text-center space-y-6 max-w-md px-6">
-          <div className="mx-auto w-20 h-20 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shadow-glow">
+          <div className="mx-auto w-20 h-20 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
             <Monitor className="w-9 h-9 text-primary" />
           </div>
-
           <div className="space-y-2">
             <h1 className="text-2xl font-bold text-foreground">No Preview Yet</h1>
             <p className="text-muted-foreground text-sm leading-relaxed">
               Build something amazing in the AI Builder first, then come back here to see your live preview.
             </p>
           </div>
-
           <Button
             onClick={() => navigate("/dashboard/ai-builder")}
             className="bg-gradient-primary text-primary-foreground px-6"
@@ -72,7 +103,6 @@ export default function PreviewPage() {
 
   return (
     <div className="h-screen flex flex-col bg-background">
-      {/* Top toolbar */}
       <div className="h-12 border-b border-border bg-card flex items-center justify-between px-3 sm:px-4 shrink-0">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <Button
@@ -89,8 +119,6 @@ export default function PreviewPage() {
             {config.title || "Untitled Project"}
           </span>
         </div>
-
-        {/* Viewport switcher */}
         <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
           {([
             { key: "desktop", icon: Monitor, label: "Desktop" },
@@ -111,15 +139,12 @@ export default function PreviewPage() {
             </button>
           ))}
         </div>
-
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground hidden sm:inline">
             {viewportWidths[viewport]}
           </span>
         </div>
       </div>
-
-      {/* Preview area */}
       <div className="flex-1 overflow-auto flex justify-center bg-muted/50 p-2 sm:p-4">
         <div
           className="bg-background rounded-lg border border-border shadow-sm overflow-auto transition-all duration-300"
