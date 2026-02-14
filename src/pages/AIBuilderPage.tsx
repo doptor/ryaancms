@@ -13,7 +13,7 @@ import {
   TrendingUp, Link2, X, Eye, ChevronDown, ChevronUp,
   ArrowUp, Plus, Layers, RefreshCw, Package,
   GitBranch, Settings, History, Book, Container,
-  Users, Activity,
+  Users, Activity, FolderOpen, Server,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useLocation } from "react-router-dom";
@@ -48,6 +48,9 @@ import { DocsGeneratorPanel } from "@/components/ai-builder/DocsGeneratorPanel";
 import { CICDExportPanel } from "@/components/ai-builder/CICDExportPanel";
 import { CollaborationPanel } from "@/components/ai-builder/CollaborationPanel";
 import { MonitoringPanel } from "@/components/ai-builder/MonitoringPanel";
+import { ProjectSelector } from "@/components/ai-builder/ProjectSelector";
+import { EnvironmentManagerPanel } from "@/components/ai-builder/EnvironmentManagerPanel";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getThemePreset } from "@/lib/engine/theme-generator";
 
@@ -141,7 +144,9 @@ const componentIcons: Record<string, any> = {
 
 export default function AIBuilderPage() {
   const location = useLocation();
+  const { user } = useAuth();
   const incomingPrompt = (location.state as any)?.prompt || "";
+  const incomingProjectId = (location.state as any)?.projectId || null;
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [progress, setProgress] = useState<ProgressStep[]>([]);
@@ -158,6 +163,7 @@ export default function AIBuilderPage() {
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [showAdvancedPipeline, setShowAdvancedPipeline] = useState(false);
   const [selectedThemeId, setSelectedThemeId] = useState<string | null>(null);
+  const [currentProject, setCurrentProject] = useState<{ id: string; title: string | null; prompt: string; status: string; created_at: string; updated_at: string } | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const hasProcessedIncoming = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -261,17 +267,34 @@ export default function AIBuilderPage() {
               duration_ms: duration,
             });
 
-            const { data: project } = await supabase.from("projects").insert({
-              user_id: currentUser.id,
-              prompt: text,
-              title: config.title || "Untitled",
-              status: "generated",
-            }).select("id").single();
+            let projectId = currentProject?.id;
 
-            if (project) {
+            if (currentProject) {
+              // Update existing project
+              await supabase.from("projects").update({
+                prompt: text,
+                title: config.title || currentProject.title || "Untitled",
+                status: "generated",
+              }).eq("id", currentProject.id);
+            } else {
+              // Create new project
+              const { data: project } = await supabase.from("projects").insert({
+                user_id: currentUser.id,
+                prompt: text,
+                title: config.title || "Untitled",
+                status: "generated",
+              }).select("*").single();
+
+              if (project) {
+                projectId = project.id;
+                setCurrentProject(project);
+              }
+            }
+
+            if (projectId) {
               await supabase.from("project_memory").insert({
                 user_id: currentUser.id,
-                project_id: project.id,
+                project_id: projectId,
                 requirements: result.requirements || [],
                 modules: config.modules || [],
                 db_schema: config.collections || [],
@@ -470,6 +493,55 @@ export default function AIBuilderPage() {
 
   const handleRestoreSnapshot = (snapshot: any) => {
     toast({ title: "Version selected", description: `"${snapshot.project_title}" — ${snapshot.page_count || 0} pages. Use Build History to fully reload.` });
+  };
+
+  const handleSelectProject = async (project: { id: string; title: string | null; prompt: string; status: string; created_at: string; updated_at: string } | null) => {
+    setCurrentProject(project);
+    if (project) {
+      // Load project memory if exists
+      try {
+        const { data: memory } = await supabase
+          .from("project_memory")
+          .select("*")
+          .eq("project_id", project.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
+        if (memory) {
+          handleLoadProjectMemory(memory);
+          setMessages([{ role: "ai", content: `📂 Loaded project **${project.title || "Untitled"}** with previous build data.` }]);
+        } else {
+          setMessages([{ role: "ai", content: `📂 Selected project **${project.title || "Untitled"}**. Send a prompt to start building.` }]);
+          setPipelineState(null);
+        }
+      } catch {
+        setMessages([{ role: "ai", content: `📂 Selected project **${project.title || "Untitled"}**. Send a prompt to start building.` }]);
+        setPipelineState(null);
+      }
+    } else {
+      setMessages([]);
+      setPipelineState(null);
+    }
+  };
+
+  const handleCreateProject = async (title: string) => {
+    if (!user) return;
+    try {
+      const { data: project } = await supabase.from("projects").insert({
+        user_id: user.id,
+        prompt: "",
+        title,
+        status: "draft",
+      }).select("*").single();
+      if (project) {
+        setCurrentProject(project);
+        setMessages([{ role: "ai", content: `📂 Created project **${title}**. Describe what you want to build!` }]);
+        setPipelineState(null);
+        toast({ title: "Project created", description: title });
+      }
+    } catch {
+      toast({ title: "Failed to create project", variant: "destructive" });
+    }
   };
 
   const handleScreenshotUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1000,13 +1072,19 @@ export default function AIBuilderPage() {
       <div className="flex flex-col h-[calc(100vh-3.5rem)] md:h-screen">
         {/* Top bar */}
         <div className="flex items-center justify-between px-4 h-12 border-b border-border bg-card shrink-0">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Sparkles className="w-3.5 h-3.5 text-primary" />
               </div>
-              <span className="text-sm font-semibold text-foreground">AI Builder</span>
+              <span className="text-sm font-semibold text-foreground hidden sm:inline">AI Builder</span>
             </div>
+            <div className="h-5 w-px bg-border" />
+            <ProjectSelector
+              selectedProject={currentProject}
+              onSelectProject={handleSelectProject}
+              onCreateProject={handleCreateProject}
+            />
             {isBuilding && (
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10">
                 <Loader2 className="w-3 h-3 text-primary animate-spin" />
@@ -1106,6 +1184,9 @@ export default function AIBuilderPage() {
                         </TabsTrigger>
                         <TabsTrigger value="monitor" className={tabTriggerClass}>
                           <Activity className="w-3.5 h-3.5" /> Monitor
+                        </TabsTrigger>
+                        <TabsTrigger value="envs" className={tabTriggerClass}>
+                          <Server className="w-3.5 h-3.5" /> Envs
                         </TabsTrigger>
                       </TabsList>
                     </Tabs>
@@ -1239,6 +1320,9 @@ export default function AIBuilderPage() {
                     {activeTab === "monitor" && (
                       <MonitoringPanel pipelineState={pipelineState} isBuilding={isBuilding} />
                     )}
+                    {activeTab === "envs" && (
+                      <EnvironmentManagerPanel pipelineState={pipelineState} />
+                    )}
                   </div>
                 </div>
               </ResizablePanel>
@@ -1306,6 +1390,9 @@ export default function AIBuilderPage() {
                   </TabsTrigger>
                   <TabsTrigger value="monitor" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
                     <Activity className="w-3.5 h-3.5" /> Monitor
+                  </TabsTrigger>
+                  <TabsTrigger value="envs" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
+                    <Server className="w-3.5 h-3.5" /> Envs
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -1387,6 +1474,9 @@ export default function AIBuilderPage() {
               )}
               {activeTab === "monitor" && (
                 <MonitoringPanel pipelineState={pipelineState} isBuilding={isBuilding} />
+              )}
+              {activeTab === "envs" && (
+                <EnvironmentManagerPanel pipelineState={pipelineState} />
               )}
             </div>
           </div>
