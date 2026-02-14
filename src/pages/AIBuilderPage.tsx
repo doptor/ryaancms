@@ -163,7 +163,9 @@ export default function AIBuilderPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [progress, setProgress] = useState<ProgressStep[]>([]);
   const [isBuilding, setIsBuilding] = useState(false);
-  const [activeTab, setActiveTab] = useState("preview");
+  const [activeTab, setActiveTab] = useState(() => {
+    try { return localStorage.getItem("ai-builder-active-tab") || "chat"; } catch { return "chat"; }
+  });
   const [previewMode, setPreviewMode] = useState<"visual" | "schema">("visual");
   const [pipelineState, setPipelineState] = useState<PipelineState | null>(null);
   const [selectedComponent, setSelectedComponent] = useState<{ pageIndex: number; componentIndex: number } | null>(null);
@@ -192,6 +194,7 @@ export default function AIBuilderPage() {
   const orchestrator = useMemo(() => new AIPipelineOrchestrator(), []);
   const currentProjectRef = useRef(currentProject);
   useEffect(() => { currentProjectRef.current = currentProject; }, [currentProject]);
+  useEffect(() => { try { localStorage.setItem("ai-builder-active-tab", activeTab); } catch {} }, [activeTab]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -261,7 +264,7 @@ export default function AIBuilderPage() {
             };
           }
           setPipelineState(restored);
-          setActiveTab("preview");
+          // Don't override activeTab — let localStorage persistence handle it
           const agentLog = memory.agent_log as any[] || [];
           const convEntry = agentLog.find((e: any) => e?.type === "conversation");
           if (convEntry?.messages?.length) {
