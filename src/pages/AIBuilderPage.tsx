@@ -63,6 +63,9 @@ import { ProjectBranchingPanel } from "@/components/ai-builder/ProjectBranchingP
 import { DragDropBuilderPanel } from "@/components/ai-builder/DragDropBuilderPanel";
 import { AIChatAssistantPanel } from "@/components/ai-builder/AIChatAssistantPanel";
 import { DatabaseDesignerPanel } from "@/components/ai-builder/DatabaseDesignerPanel";
+import { I18nGeneratorPanel } from "@/components/ai-builder/I18nGeneratorPanel";
+import { SEOOptimizerPanel } from "@/components/ai-builder/SEOOptimizerPanel";
+import { PerformancePanel } from "@/components/ai-builder/PerformancePanel";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getThemePreset } from "@/lib/engine/theme-generator";
@@ -2063,6 +2066,19 @@ export default function AIBuilderPage() {
                           <TabsTrigger value="webhooks" className={tabTriggerClass}>
                             <Webhook className="w-3.5 h-3.5" /> Hooks
                           </TabsTrigger>
+
+                          <div className="w-px h-5 bg-border mx-1 self-center shrink-0" />
+
+                          {/* Phase 11: i18n + SEO + Performance */}
+                          <TabsTrigger value="i18n" className={tabTriggerClass}>
+                            <Globe className="w-3.5 h-3.5" /> i18n
+                          </TabsTrigger>
+                          <TabsTrigger value="seo" className={tabTriggerClass}>
+                            <Search className="w-3.5 h-3.5" /> SEO
+                          </TabsTrigger>
+                          <TabsTrigger value="performance" className={tabTriggerClass}>
+                            <Activity className="w-3.5 h-3.5" /> Perf
+                          </TabsTrigger>
                         </TabsList>
                       </div>
                     </Tabs>
@@ -2243,6 +2259,15 @@ export default function AIBuilderPage() {
                         onForkProject={handleForkProject}
                       />
                     )}
+                    {desktopRightTab === "i18n" && (
+                      <I18nGeneratorPanel pipelineState={pipelineState} />
+                    )}
+                    {desktopRightTab === "seo" && (
+                      <SEOOptimizerPanel pipelineState={pipelineState} />
+                    )}
+                    {desktopRightTab === "performance" && (
+                      <PerformancePanel pipelineState={pipelineState} />
+                    )}
                   </div>
                 </div>
               </ResizablePanel>
@@ -2297,6 +2322,9 @@ export default function AIBuilderPage() {
                         { value: "envs", icon: Server, label: "Envs" },
                         { value: "webhooks", icon: Webhook, label: "Hooks" },
                         { value: "branches", icon: GitFork, label: "Branch" },
+                        { value: "i18n", icon: Globe, label: "i18n" },
+                        { value: "seo", icon: Search, label: "SEO" },
+                        { value: "performance", icon: Activity, label: "Perf" },
                       ].map((tab) => (
                         <DropdownMenuItem
                           key={tab.value}
@@ -2438,6 +2466,15 @@ export default function AIBuilderPage() {
                   currentProject={currentProject}
                   onForkProject={handleForkProject}
                 />
+              )}
+              {effectiveTab === "i18n" && (
+                <I18nGeneratorPanel pipelineState={pipelineState} />
+              )}
+              {effectiveTab === "seo" && (
+                <SEOOptimizerPanel pipelineState={pipelineState} />
+              )}
+              {effectiveTab === "performance" && (
+                <PerformancePanel pipelineState={pipelineState} />
               )}
             </div>
           </div>
