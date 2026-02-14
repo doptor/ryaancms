@@ -257,7 +257,7 @@ export default function AIBuilderPage() {
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 160) + "px";
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 300) + "px";
     }
   }, [input]);
 
@@ -1723,7 +1723,7 @@ export default function AIBuilderPage() {
             }}
             placeholder={isBuilding ? "Queue another prompt..." : `Describe your ${selectedContentType}...`}
             rows={1}
-            className="flex-1 resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none min-h-[36px] max-h-[160px] py-2"
+            className="flex-1 resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none min-h-[36px] max-h-[300px] py-2"
           />
           <Button
             size="icon"
