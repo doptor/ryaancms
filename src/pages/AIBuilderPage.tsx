@@ -209,7 +209,43 @@ export default function AIBuilderPage() {
     }
   }, [input]);
 
-  // Auto-restore removed — user should manually select projects from ProjectSelector
+  // Auto-restore last active project on mount (read-only, no creation)
+  useEffect(() => {
+    if (!user || currentProject || incomingProjectId || hasProcessedIncoming.current) return;
+    const restoreLastProject = async () => {
+      try {
+        const { data: projects } = await supabase
+          .from("projects")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("updated_at", { ascending: false })
+          .limit(1);
+        if (!projects || projects.length === 0) return;
+        const project = projects[0];
+        setCurrentProject(project);
+        const { data: memory } = await supabase
+          .from("project_memory")
+          .select("*")
+          .eq("project_id", project.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
+        if (memory) {
+          handleLoadProjectMemory(memory);
+          const agentLog = memory.agent_log as any[] || [];
+          const convEntry = agentLog.find((e: any) => e?.type === "conversation");
+          if (convEntry?.messages?.length) {
+            setMessages(convEntry.messages);
+          } else {
+            setMessages([{ role: "ai", content: `📂 Restored project **${project.title || "Untitled"}**. Continue building or start fresh!` }]);
+          }
+        } else {
+          setMessages([{ role: "ai", content: `📂 Loaded project **${project.title || "Untitled"}**. Send a prompt to start building!` }]);
+        }
+      } catch {}
+    };
+    restoreLastProject();
+  }, [user]);
 
   // Auto-save conversation to project memory
   const saveConversation = useCallback(async (msgs: Message[]) => {
