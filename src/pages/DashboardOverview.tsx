@@ -120,12 +120,23 @@ export default function DashboardOverview() {
     (p.title || p.prompt).toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const generateShortTitle = (text: string): string => {
+    let title = text.trim();
+    // Remove common prefixes
+    const prefixes = /^(create|build|make|design|develop|generate|i want|i need|please)\s+(a|an|me|the)?\s*/i;
+    title = title.replace(prefixes, "");
+    // Capitalize first letter
+    title = title.charAt(0).toUpperCase() + title.slice(1);
+    // Limit length
+    return title.slice(0, 50);
+  };
+
   const createProject = useMutation({
     mutationFn: async (promptText: string) => {
       const { data, error } = await supabase.from("projects").insert({
         user_id: user!.id,
         prompt: promptText,
-        title: promptText.slice(0, 60),
+        title: generateShortTitle(promptText),
       }).select().single();
       if (error) throw error;
       return data;
