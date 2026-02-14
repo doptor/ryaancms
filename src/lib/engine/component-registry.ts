@@ -13,7 +13,9 @@ export type ComponentType =
   | "rich_text_editor" | "file_upload" | "calendar"
   | "kanban_board" | "timeline" | "map"
   | "role_manager" | "payment_page" | "dashboard_layout"
-  | "data_import" | "settings_panel" | "api_docs";
+  | "data_import" | "settings_panel" | "api_docs"
+  | "trusted_by" | "features_grid" | "how_it_works"
+  | "testimonials" | "faq" | "final_cta";
 
 export type FieldType = "text" | "number" | "boolean" | "date" | "relation" | "json" | "media" | "enum" | "uuid" | "email" | "url" | "password" | "timestamp";
 
@@ -552,6 +554,107 @@ export const componentRegistry: ComponentMeta[] = [
     props_schema: [
       { name: "base_url", type: "string" },
       { name: "show_try_it", type: "boolean", default: true },
+    ],
+  },
+  // === Landing Page Section Library ===
+  {
+    type: "trusted_by",
+    label: "Trusted By / Logo Cloud",
+    category: "content",
+    description: "Logo cloud showing trusted brands/partners with optional label",
+    icon: "Award",
+    tenant_safe: true,
+    requires_auth: false,
+    requires_modules: [],
+    allowed_layouts: ["public", "marketing"],
+    props_schema: [
+      { name: "label", type: "string", default: "Trusted by leading companies", description: "Section label text" },
+      { name: "logos", type: "array", description: "Array of logo names/brands" },
+      { name: "style", type: "enum", enum_values: ["minimal", "cards", "marquee"], default: "minimal" },
+    ],
+  },
+  {
+    type: "features_grid",
+    label: "Features Grid",
+    category: "content",
+    description: "Feature cards grid with icons, titles, and descriptions",
+    icon: "LayoutGrid",
+    tenant_safe: true,
+    requires_auth: false,
+    requires_modules: [],
+    allowed_layouts: ["public", "marketing"],
+    props_schema: [
+      { name: "headline", type: "string", default: "Everything you need", description: "Section heading" },
+      { name: "subtitle", type: "string", default: "Powerful features to help you grow", description: "Section subtitle" },
+      { name: "columns", type: "number", default: 3, min: 2, max: 4 },
+      { name: "features", type: "array", description: "Array of feature objects with title, description, icon" },
+      { name: "style", type: "enum", enum_values: ["cards", "minimal", "bordered"], default: "cards" },
+    ],
+  },
+  {
+    type: "how_it_works",
+    label: "How It Works",
+    category: "content",
+    description: "Step-by-step process explanation with numbered steps",
+    icon: "ListOrdered",
+    tenant_safe: true,
+    requires_auth: false,
+    requires_modules: [],
+    allowed_layouts: ["public", "marketing"],
+    props_schema: [
+      { name: "headline", type: "string", default: "How it works" },
+      { name: "subtitle", type: "string", default: "Get started in 3 simple steps" },
+      { name: "steps", type: "array", description: "Array of step objects with title and description" },
+    ],
+  },
+  {
+    type: "testimonials",
+    label: "Testimonials",
+    category: "content",
+    description: "Customer testimonial cards with avatar, quote, name, and role",
+    icon: "MessageSquareQuote",
+    tenant_safe: true,
+    requires_auth: false,
+    requires_modules: [],
+    allowed_layouts: ["public", "marketing"],
+    props_schema: [
+      { name: "headline", type: "string", default: "What our customers say" },
+      { name: "subtitle", type: "string", default: "Don't just take our word for it" },
+      { name: "testimonials", type: "array", description: "Array of testimonial objects" },
+      { name: "columns", type: "number", default: 3, min: 1, max: 4 },
+    ],
+  },
+  {
+    type: "faq",
+    label: "FAQ Section",
+    category: "content",
+    description: "Frequently asked questions with expandable accordion",
+    icon: "HelpCircle",
+    tenant_safe: true,
+    requires_auth: false,
+    requires_modules: [],
+    allowed_layouts: ["public", "marketing"],
+    props_schema: [
+      { name: "headline", type: "string", default: "Frequently asked questions" },
+      { name: "subtitle", type: "string", default: "Everything you need to know" },
+      { name: "items", type: "array", description: "Array of FAQ objects with question and answer" },
+    ],
+  },
+  {
+    type: "final_cta",
+    label: "Final CTA Section",
+    category: "content",
+    description: "Bottom call-to-action section with headline, subtitle, and buttons",
+    icon: "Megaphone",
+    tenant_safe: true,
+    requires_auth: false,
+    requires_modules: [],
+    allowed_layouts: ["public", "marketing"],
+    props_schema: [
+      { name: "headline", type: "string", default: "Ready to get started?" },
+      { name: "subtitle", type: "string", default: "Join thousands of happy customers today" },
+      { name: "primary_cta", type: "string", default: "Get Started Free" },
+      { name: "secondary_cta", type: "string", default: "Talk to Sales" },
     ],
   },
 ];
