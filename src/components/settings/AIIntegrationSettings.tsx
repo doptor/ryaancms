@@ -317,6 +317,7 @@ export default function AIIntegrationSettings() {
   const [testingConnection, setTestingConnection] = useState(false);
   const [connectionResult, setConnectionResult] = useState<{ success: boolean; message: string } | null>(null);
   const [testingItemId, setTestingItemId] = useState<string | null>(null);
+  const [userModified, setUserModified] = useState(false);
   const { toast } = useToast();
 
   // Load AI integrations from site_settings
@@ -333,29 +334,34 @@ export default function AIIntegrationSettings() {
       if (!error && data?.value && Array.isArray((data.value as any).items)) {
         setItems((data.value as any).items);
       } else {
-        // Seed with defaults on first load
+        // Seed with defaults on first load and persist immediately
         setItems(seedData);
+        setUserModified(true);
       }
       setLoaded(true);
     };
     loadIntegrations();
   }, []);
 
-  // Persist AI integrations to site_settings whenever items change
+  // Persist AI integrations to site_settings ONLY when user makes changes
   useEffect(() => {
-    if (!loaded) return;
+    if (!loaded || !userModified) return;
     const persist = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      await supabase
+      const { error } = await supabase
         .from("site_settings")
         .upsert(
           { user_id: user.id, key: "ai_integrations", value: { items } as any },
           { onConflict: "user_id,key" }
         );
+      if (error) {
+        console.error("Failed to persist AI integrations:", error);
+      }
+      setUserModified(false);
     };
     persist();
-  }, [items, loaded]);
+  }, [items, loaded, userModified]);
 
   const testConnection = async (provider: string, apiEndpoint: string, apiKey: string, model: string, itemId?: string) => {
     if (itemId) {
@@ -387,6 +393,7 @@ export default function AIIntegrationSettings() {
               : i
           )
         );
+        setUserModified(true);
       }
 
       toast({
@@ -440,6 +447,7 @@ export default function AIIntegrationSettings() {
     } else if (editId) {
       setItems((prev) => prev.map((i) => (i.id === editId ? { ...i, ...form } : i)));
     }
+    setUserModified(true);
     setDialogOpen(false);
     toast({ title: "✅ Saved", description: "AI integration saved and synced." });
   };
@@ -447,6 +455,7 @@ export default function AIIntegrationSettings() {
   const handleDelete = () => {
     if (!deleteId) return;
     setItems((prev) => prev.filter((i) => i.id !== deleteId));
+    setUserModified(true);
     setDeleteId(null);
     toast({ title: "Deleted", description: "AI integration removed." });
   };
