@@ -1005,13 +1005,30 @@ export default function AIBuilderPage() {
     }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
       const chunks: Blob[] = [];
       mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-      mediaRecorder.onstop = () => {
+      mediaRecorder.onstop = async () => {
         stream.getTracks().forEach(t => t.stop());
-        // For now, show a message that audio was recorded
-        toast({ title: "🎤 Audio recorded!", description: "Audio-to-text feature will use AI transcription." });
+        const audioBlob = new Blob(chunks, { type: "audio/webm" });
+        toast({ title: "🎤 Transcribing...", description: "Converting your voice to text..." });
+        try {
+          const formData = new FormData();
+          formData.append("audio", audioBlob, "recording.webm");
+          const { data, error } = await supabase.functions.invoke("speech-to-text", {
+            body: formData,
+          });
+          if (error) throw error;
+          if (data?.transcript?.trim()) {
+            setInput((prev) => (prev ? prev + " " : "") + data.transcript.trim());
+            toast({ title: "🎤 Transcribed!", description: data.transcript.trim().slice(0, 60) + "..." });
+          } else {
+            toast({ title: "No speech detected", description: "Try speaking more clearly.", variant: "destructive" });
+          }
+        } catch (err: any) {
+          console.error("Transcription error:", err);
+          toast({ title: "Transcription failed", description: err.message || "Please try again.", variant: "destructive" });
+        }
       };
       mediaRecorderRef.current = mediaRecorder;
       mediaRecorder.start();
@@ -1705,7 +1722,7 @@ export default function AIBuilderPage() {
                       <CICDExportPanel pipelineState={pipelineState} />
                     )}
                     {activeTab === "collab" && (
-                      <CollaborationPanel pipelineState={pipelineState} isBuilding={isBuilding} />
+                      <CollaborationPanel pipelineState={pipelineState} isBuilding={isBuilding} projectId={currentProject?.id || null} />
                     )}
                     {activeTab === "monitor" && (
                       <MonitoringPanel pipelineState={pipelineState} isBuilding={isBuilding} />
@@ -1714,7 +1731,7 @@ export default function AIBuilderPage() {
                       <EnvironmentManagerPanel pipelineState={pipelineState} />
                     )}
                     {activeTab === "webhooks" && (
-                      <WebhookNotificationPanel pipelineState={pipelineState} isBuilding={isBuilding} />
+                      <WebhookNotificationPanel pipelineState={pipelineState} isBuilding={isBuilding} projectId={currentProject?.id || null} />
                     )}
                     {activeTab === "branches" && (
                       <ProjectBranchingPanel
@@ -1876,7 +1893,7 @@ export default function AIBuilderPage() {
                 <CICDExportPanel pipelineState={pipelineState} />
               )}
               {activeTab === "collab" && (
-                <CollaborationPanel pipelineState={pipelineState} isBuilding={isBuilding} />
+                <CollaborationPanel pipelineState={pipelineState} isBuilding={isBuilding} projectId={currentProject?.id || null} />
               )}
               {activeTab === "monitor" && (
                 <MonitoringPanel pipelineState={pipelineState} isBuilding={isBuilding} />
@@ -1885,7 +1902,7 @@ export default function AIBuilderPage() {
                 <EnvironmentManagerPanel pipelineState={pipelineState} />
               )}
               {activeTab === "webhooks" && (
-                <WebhookNotificationPanel pipelineState={pipelineState} isBuilding={isBuilding} />
+                <WebhookNotificationPanel pipelineState={pipelineState} isBuilding={isBuilding} projectId={currentProject?.id || null} />
               )}
               {activeTab === "branches" && (
                 <ProjectBranchingPanel
