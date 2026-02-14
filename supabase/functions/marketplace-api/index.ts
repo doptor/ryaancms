@@ -1,0 +1,112 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+};
+
+function jsonResponse(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  if (req.method !== "GET") {
+    return jsonResponse({ error: "Method not allowed" }, 405);
+  }
+
+  const url = new URL(req.url);
+  const path = url.pathname.replace(/^\/marketplace-api\/?/, "");
+  const params = url.searchParams;
+
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
+
+  try {
+    // GET /marketplace-api/products — list all approved products
+    if (!path || path === "products") {
+      let query = supabase
+        .from("plugins")
+        .select("id, name, slug, category, description, version, author, rating, install_count, tags, icon, is_official, price, is_free, demo_url, download_url, created_at")
+        .eq("approval_status", "approved")
+        .order("install_count", { ascending: false });
+
+      // Filter by category
+      const category = params.get("category");
+      if (category) query = query.eq("category", category);
+
+      // Filter by tag
+      const tag = params.get("tag");
+      if (tag) query = query.contains("tags", [tag]);
+
+      // Filter free only
+      const freeOnly = params.get("free");
+      if (freeOnly === "true") query = query.eq("is_free", true);
+
+      // Search
+      const search = params.get("q");
+      if (search) {
+        query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
+      }
+
+      // Pagination
+      const page = parseInt(params.get("page") || "1");
+      const limit = Math.min(parseInt(params.get("limit") || "50"), 100);
+      const from = (page - 1) * limit;
+      query = query.range(from, from + limit - 1);
+
+      const { data, error, count } = await query;
+      if (error) throw error;
+
+      return jsonResponse({
+        success: true,
+        data: data || [],
+        pagination: { page, limit },
+      });
+    }
+
+    // GET /marketplace-api/products/:slug — single product detail
+    const slugMatch = path.match(/^products\/(.+)$/);
+    if (slugMatch) {
+      const slug = slugMatch[1];
+      const { data, error } = await supabase
+        .from("plugins")
+        .select("id, name, slug, category, description, version, author, rating, install_count, tags, icon, is_official, price, is_free, demo_url, download_url, config_schema, created_at, updated_at")
+        .eq("slug", slug)
+        .eq("approval_status", "approved")
+        .single();
+
+      if (error || !data) {
+        return jsonResponse({ success: false, error: "Product not found" }, 404);
+      }
+
+      return jsonResponse({ success: true, data });
+    }
+
+    // GET /marketplace-api/categories — list available categories
+    if (path === "categories") {
+      const { data, error } = await supabase
+        .from("plugins")
+        .select("category")
+        .eq("approval_status", "approved");
+
+      if (error) throw error;
+
+      const categories = [...new Set((data || []).map((p: any) => p.category))];
+      return jsonResponse({ success: true, data: categories });
+    }
+
+    return jsonResponse({ error: "Not found" }, 404);
+  } catch (err: any) {
+    return jsonResponse({ error: err.message || "Internal error" }, 500);
+  }
+});
