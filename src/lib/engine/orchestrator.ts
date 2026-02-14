@@ -157,10 +157,41 @@ export class AIPipelineOrchestrator {
     this.themePreset = preset;
   }
 
-  async execute(prompt: string): Promise<PipelineState> {
+  async execute(prompt: string, scope?: "micro" | "light" | "moderate" | "full", stepsNeeded?: number[]): Promise<PipelineState> {
     this.state = { ...INITIAL_STATE };
+    const effectiveScope = scope || "full";
 
     try {
+      // For micro/light scope, skip the full AI agent pipeline
+      if (effectiveScope === "micro" || effectiveScope === "light") {
+        this.emit("understanding", "⚡ Quick update mode — skipping full pipeline...");
+        await this.delay(300);
+        this.emit("designing", "🎨 Applying changes...");
+        await this.delay(300);
+
+        // Build a minimal config from the prompt
+        this.state.config = {
+          project_type: "custom",
+          build_target: "application",
+          title: "Quick Update",
+          description: prompt,
+          modules: [],
+          roles: [],
+          features: [],
+          pages: [],
+          collections: [],
+          style: {},
+          multi_tenant: false,
+        };
+        this.state.requirements = [prompt];
+        this.state.qualityScore = { overall_score: 100 };
+        this.state.qualityVerdict = "Quick update — no full review needed";
+
+        this.emit("complete", "✅ Quick update complete!");
+        this.state.stage = "complete";
+        return this.state;
+      }
+
       this.emit("understanding", "🤖 Starting multi-agent pipeline...");
 
       // Call the multi-agent edge function with SSE streaming
@@ -173,7 +204,7 @@ export class AIPipelineOrchestrator {
           "Content-Type": "application/json",
           Authorization: `Bearer ${supabaseKey}`,
         },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({ prompt, scope: effectiveScope, stepsNeeded }),
       });
 
       if (!response.ok) {
@@ -369,6 +400,10 @@ export class AIPipelineOrchestrator {
         break;
       }
     }
+  }
+
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   exportConfig(): string {

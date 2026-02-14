@@ -203,12 +203,27 @@ export default function AIBuilderPage() {
     }
   }, [input]);
 
+  // Auto-save conversation to project memory
+  const saveConversation = useCallback(async (msgs: Message[]) => {
+    if (!currentProject?.id || !user) return;
+    try {
+      await supabase.from("project_memory").upsert({
+        user_id: user.id,
+        project_id: currentProject.id,
+        agent_log: [{ type: "conversation", messages: msgs }],
+        status: pipelineState?.stage === "complete" ? "complete" : "in_progress",
+      } as any, { onConflict: "project_id" });
+    } catch {}
+  }, [currentProject?.id, user, pipelineState?.stage]);
+
   const sendMessage = async (text: string) => {
     if (!text.trim() || isBuilding) return;
 
     setInput("");
     const newMessages: Message[] = [...messages, { role: "user", content: text }];
     setMessages(newMessages);
+    // Auto-save conversation after every user message
+    saveConversation(newMessages);
 
     // Check if user is confirming next phase
     const isPhaseConfirm = awaitingPhaseConfirm && /^(yes|sure|go|ok|okay|continue|next|proceed|start|let'?s?\s*(go|do|start|build)|build|phase)/i.test(text.trim());
@@ -265,7 +280,11 @@ export default function AIBuilderPage() {
         '_Type "yes" or "go" to begin, or tell me if you\'d like to adjust the plan!_',
       ].join("\n");
 
-      setMessages((prev) => [...prev, { role: "ai", content: conversationalMsg }]);
+      setMessages((prev) => {
+        const updated = [...prev, { role: "ai" as const, content: conversationalMsg }];
+        saveConversation(updated);
+        return updated;
+      });
       return;
     }
 
@@ -285,6 +304,14 @@ export default function AIBuilderPage() {
         status: relevantSteps.includes(i) ? "pending" as const : "done" as const,
       }));
     setProgress(steps);
+
+    // Show scope info in chat for transparency
+    if (analysis.scope === "micro" || analysis.scope === "light") {
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", content: `⚡ **${analysis.scope === "micro" ? "Quick Edit" : "Light Update"}** detected — running only ${relevantSteps.length} of 17 steps.\n_${analysis.reason}_` },
+      ]);
+    }
 
     // Listen to pipeline events
     const unsub = orchestrator.on((event) => {
@@ -317,7 +344,8 @@ export default function AIBuilderPage() {
         const preset = getThemePreset(selectedThemeId);
         if (preset) orchestrator.setThemePreset(preset);
       }
-      const result = await orchestrator.execute(buildPrompt);
+      // Pass scope and stepsNeeded to orchestrator
+      const result = await orchestrator.execute(buildPrompt, analysis.scope, analysis.stepsNeeded);
       const duration = Date.now() - startTime;
       setPipelineState(result);
 
