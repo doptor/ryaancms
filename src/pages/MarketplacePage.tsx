@@ -94,8 +94,8 @@ export default function MarketplacePage() {
     <DashboardLayout>
       <div className="p-6 lg:p-8 max-w-6xl">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-foreground mb-1">Plugin Marketplace</h1>
-          <p className="text-sm text-muted-foreground">Discover and install plugins to extend your CMS.</p>
+          <h1 className="text-2xl font-bold text-foreground mb-1">Marketplace</h1>
+          <p className="text-sm text-muted-foreground">Discover and install plugins, templates, and applications to extend your CMS.</p>
         </div>
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
@@ -104,8 +104,8 @@ export default function MarketplacePage() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search plugins..."
-              className="w-full pl-9 pr-4 py-2 rounded-lg border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              placeholder="Search marketplace..."
+              className="w-full pl-9 pr-4 py-2 rounded-lg border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
           <div className="flex gap-1 flex-wrap">
@@ -130,20 +130,20 @@ export default function MarketplacePage() {
             {filtered.map((plugin) => {
               const isInstalled = installedIds.has(plugin.id);
               return (
-                <div key={plugin.id} className="rounded-xl border border-border bg-card p-5 hover:border-primary/30 transition-all duration-300 cursor-pointer" onClick={() => navigate(`/dashboard/marketplace/${plugin.slug}`)}>
+                <div key={plugin.id} className="rounded-xl border border-border bg-card p-5 hover:shadow-sm hover:border-border/80 transition-all duration-200 cursor-pointer" onClick={() => navigate(`/dashboard/marketplace/${plugin.slug}`)}>
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex gap-1.5">
                       {plugin.is_official && <Badge variant="secondary" className="text-[10px]">Official</Badge>}
                       <Badge variant="outline" className="text-[10px]">v{plugin.version}</Badge>
                     </div>
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Star className="w-3 h-3 text-chart-5 fill-chart-5" />
+                      <Star className="w-3 h-3 text-muted-foreground" />
                       {plugin.rating}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 mb-2">
-                    <Puzzle className="w-4 h-4 text-primary" />
-                    <h3 className="font-semibold text-foreground">{plugin.name}</h3>
+                    <Puzzle className="w-4 h-4 text-muted-foreground" />
+                    <h3 className="font-semibold text-foreground text-sm">{plugin.name}</h3>
                   </div>
                   <p className="text-xs text-muted-foreground mb-4 leading-relaxed">{plugin.description}</p>
                   <div className="flex flex-wrap gap-1 mb-3">

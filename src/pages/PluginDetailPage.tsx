@@ -137,8 +137,8 @@ export default function MarketplaceDetailPage() {
           <div className="lg:col-span-2 space-y-6">
             <div>
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <IconComp className="w-6 h-6 text-primary" />
+                <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
+                  <IconComp className="w-6 h-6 text-muted-foreground" />
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold text-foreground">{item.name}</h1>
@@ -225,7 +225,7 @@ export default function MarketplaceDetailPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Rating</span>
                     <span className="flex items-center gap-1 font-medium text-foreground">
-                      <Star className="w-3.5 h-3.5 text-chart-5 fill-chart-5" /> {item.rating}
+                      <Star className="w-3.5 h-3.5 text-muted-foreground" /> {item.rating}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
