@@ -12,6 +12,7 @@ import {
   Shield, AlertTriangle, Info, Image, Upload, FileCode2,
   TrendingUp, Link2, X, Eye, ChevronDown, ChevronUp,
   ArrowUp, Plus, Layers, RefreshCw, Package,
+  GitBranch, Settings,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useLocation } from "react-router-dom";
@@ -38,6 +39,8 @@ import { ThemeSelector } from "@/components/ai-builder/ThemeSelector";
 import { BuildSummaryPanel } from "@/components/ai-builder/BuildSummaryPanel";
 import { AutoFixLoopPanel } from "@/components/ai-builder/AutoFixLoopPanel";
 import { PluginGeneratorWizard } from "@/components/ai-builder/PluginGeneratorWizard";
+import { WorkflowApiPanel } from "@/components/ai-builder/WorkflowApiPanel";
+import { InstallerArchitecturePanel } from "@/components/ai-builder/InstallerArchitecturePanel";
 import { supabase } from "@/integrations/supabase/client";
 import { getThemePreset } from "@/lib/engine/theme-generator";
 
@@ -1042,6 +1045,12 @@ export default function AIBuilderPage() {
                         <TabsTrigger value="plugin" className={tabTriggerClass}>
                           <Package className="w-3.5 h-3.5" /> Plugin
                         </TabsTrigger>
+                        <TabsTrigger value="workflow" className={tabTriggerClass}>
+                          <GitBranch className="w-3.5 h-3.5" /> Workflow
+                        </TabsTrigger>
+                        <TabsTrigger value="installer" className={tabTriggerClass}>
+                          <Settings className="w-3.5 h-3.5" /> Installer
+                        </TabsTrigger>
                       </TabsList>
                     </Tabs>
                   </div>
@@ -1150,6 +1159,12 @@ export default function AIBuilderPage() {
                         }}
                       />
                     )}
+                    {activeTab === "workflow" && (
+                      <WorkflowApiPanel pipelineState={pipelineState} />
+                    )}
+                    {activeTab === "installer" && (
+                      <InstallerArchitecturePanel pipelineState={pipelineState} />
+                    )}
                   </div>
                 </div>
               </ResizablePanel>
@@ -1193,6 +1208,12 @@ export default function AIBuilderPage() {
                   </TabsTrigger>
                   <TabsTrigger value="plugin" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
                     <Package className="w-3.5 h-3.5" /> Plugin
+                  </TabsTrigger>
+                  <TabsTrigger value="workflow" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
+                    <GitBranch className="w-3.5 h-3.5" /> API
+                  </TabsTrigger>
+                  <TabsTrigger value="installer" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
+                    <Settings className="w-3.5 h-3.5" /> Arch
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -1250,6 +1271,12 @@ export default function AIBuilderPage() {
                     toast({ title: "Plugin generation started!", description: `Building ${plugin.name} plugin...` });
                   }}
                 />
+              )}
+              {activeTab === "workflow" && (
+                <WorkflowApiPanel pipelineState={pipelineState} />
+              )}
+              {activeTab === "installer" && (
+                <InstallerArchitecturePanel pipelineState={pipelineState} />
               )}
             </div>
           </div>
