@@ -14,7 +14,7 @@ export type ComponentType =
   | "kanban_board" | "timeline" | "map"
   | "role_manager" | "payment_page" | "dashboard_layout"
   | "data_import" | "settings_panel" | "api_docs"
-  | "trusted_by" | "features_grid" | "how_it_works"
+  | "trusted_by" | "features_grid" | "feature_split" | "how_it_works"
   | "testimonials" | "faq" | "final_cta";
 
 export type FieldType = "text" | "number" | "boolean" | "date" | "relation" | "json" | "media" | "enum" | "uuid" | "email" | "url" | "password" | "timestamp";
@@ -589,6 +589,26 @@ export const componentRegistry: ComponentMeta[] = [
       { name: "columns", type: "number", default: 3, min: 2, max: 4 },
       { name: "features", type: "array", description: "Array of feature objects with title, description, icon" },
       { name: "style", type: "enum", enum_values: ["cards", "minimal", "bordered"], default: "cards" },
+    ],
+  },
+  {
+    type: "feature_split",
+    label: "Feature Split",
+    category: "content",
+    description: "Side-by-side feature section with image/visual on one side and text + CTA on the other",
+    icon: "Columns",
+    tenant_safe: true,
+    requires_auth: false,
+    requires_modules: [],
+    allowed_layouts: ["public", "marketing"],
+    props_schema: [
+      { name: "headline", type: "string", default: "Built for modern teams", description: "Section heading" },
+      { name: "description", type: "string", default: "Streamline your workflow with powerful automation, real-time collaboration, and deep integrations.", description: "Feature description" },
+      { name: "features", type: "array", description: "Array of bullet point features" },
+      { name: "image_side", type: "enum", enum_values: ["left", "right"], default: "right" },
+      { name: "cta_text", type: "string", default: "Learn More" },
+      { name: "cta_link", type: "string", default: "#" },
+      { name: "badge_text", type: "string", default: "Why Choose Us" },
     ],
   },
   {
