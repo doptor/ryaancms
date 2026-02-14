@@ -313,7 +313,7 @@ export default function DashboardOverview() {
                 }}
               />
               <div className="flex items-center justify-between px-3 sm:px-4 pb-3">
-                {/* Left: action buttons + website + colors */}
+                {/* Left: action buttons */}
                 <div className="flex items-center gap-0.5">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -349,9 +349,10 @@ export default function DashboardOverview() {
                   >
                     {isTranscribing ? <Loader2 className="w-4 h-4 animate-spin" /> : isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
                   </Button>
+                </div>
 
-                  <div className="w-px h-4 bg-border mx-1" />
-
+                {/* Center: Website + Colors */}
+                <div className="flex items-center gap-1.5">
                   {/* Content Type Selector */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -360,7 +361,7 @@ export default function DashboardOverview() {
                         <ChevronDown className="w-3 h-3" />
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="min-w-[180px]">
+                    <DropdownMenuContent align="center" className="min-w-[180px]">
                       {CONTENT_TYPES.map((ct) => (
                         <DropdownMenuItem
                           key={ct.value}
@@ -381,7 +382,7 @@ export default function DashboardOverview() {
                         <Palette className="w-3 h-3" /> Colors
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="p-2">
+                    <DropdownMenuContent align="center" className="p-2">
                       <div className="flex gap-1.5">
                         {COLOR_PRESETS.map((cp) => (
                           <button
