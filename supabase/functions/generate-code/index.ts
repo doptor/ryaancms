@@ -6,7 +6,42 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Component types that have pre-built templates (stable code)
+async function getUserApiConfig(req: Request) {
+  try {
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) return null;
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/site_settings?key=eq.ai_integrations&select=value`,
+      { headers: { Authorization: authHeader, apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" } }
+    );
+    if (!res.ok) return null;
+    const rows = await res.json();
+    const active = rows?.[0]?.value?.items?.find((i: any) => i.status === "active" && i.apiKey?.length > 5);
+    if (!active) return null;
+    return { provider: active.provider, endpoint: active.apiEndpoint, apiKey: active.apiKey, model: active.model };
+  } catch { return null; }
+}
+
+async function aiRequest(url: string, headers: Record<string, string>, body: string, userApiConfig: any) {
+  let response = await fetch(url, { method: "POST", headers, body });
+  if (response.status === 402 && userApiConfig) {
+    console.log("Lovable credits exhausted, falling back to user API key");
+    await response.text();
+    const parsed = JSON.parse(body);
+    parsed.model = userApiConfig.model;
+    const fallbackEndpoint = userApiConfig.endpoint.endsWith("/chat/completions")
+      ? userApiConfig.endpoint : `${userApiConfig.endpoint}/chat/completions`;
+    response = await fetch(fallbackEndpoint, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${userApiConfig.apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify(parsed),
+    });
+  }
+  return response;
+}
+
 const TEMPLATE_COMPONENTS = new Set([
   "auth_form", "hero", "crud_table", "pricing_table",
   "notification_center", "role_manager", "settings_panel", "dashboard_layout",
@@ -50,31 +85,24 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
+    const userApiConfig = await getUserApiConfig(req);
+
     const generatedFiles: { filename: string; pageName: string; route: string; code: string; isTemplate?: boolean }[] = [];
 
     for (const page of config.pages) {
-      // Check if this page only has template components
       const templateComponents = page.components.filter((c: any) => TEMPLATE_COMPONENTS.has(c.type));
-      const customComponents = page.components.filter((c: any) => !TEMPLATE_COMPONENTS.has(c.type));
-
-      // If ALL components are templates, we can skip AI generation for faster/stable output
-      // But we still want a cohesive page, so only skip for single-component template pages
       const isSingleTemplatePageSkippable = page.components.length === 1 && templateComponents.length === 1;
 
       if (isSingleTemplatePageSkippable) {
-        // Mark as template-based — the frontend will use the pre-built module template
         const filename = page.name.replace(/[^a-zA-Z0-9\s]/g, "").replace(/\s+/g, "") + "Page.tsx";
         generatedFiles.push({
-          filename,
-          pageName: page.name,
-          route: page.route,
-          code: `// Template: ${templateComponents[0].type}\n// This page uses a pre-built module template for stability.\n// The template will be automatically applied by the RyaanCMS engine.\n\n// Props: ${JSON.stringify(templateComponents[0].props || {})}\n`,
+          filename, pageName: page.name, route: page.route,
+          code: `// Template: ${templateComponents[0].type}\n// Props: ${JSON.stringify(templateComponents[0].props || {})}\n`,
           isTemplate: true,
         });
         continue;
       }
 
-      // AI-generate for complex/multi-component pages
       const prompt = `Generate a React component for this page:
 
 Page: "${page.name}"
@@ -89,31 +117,26 @@ ${page.components.map((c: any, i: number) => `${i + 1}. Type: "${c.type}" — Pr
 Generate a single React component that renders ALL these components together as a complete page.
 The component should be named "${page.name.replace(/[^a-zA-Z0-9]/g, "")}Page".`;
 
-      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
-          messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            { role: "user", content: prompt },
-          ],
-        }),
+      const requestBody = JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: prompt },
+        ],
       });
 
+      const response = await aiRequest(
+        "https://ai.gateway.lovable.dev/v1/chat/completions",
+        { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+        requestBody,
+        userApiConfig
+      );
+
       if (!response.ok) {
-        if (response.status === 429) {
-          console.warn("Rate limited, returning partial results");
-          break;
-        }
+        if (response.status === 429) { console.warn("Rate limited, returning partial results"); break; }
         if (response.status === 402) {
-          return new Response(
-            JSON.stringify({ error: "AI credits exhausted. Please add funds in workspace settings." }),
-            { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
+          return new Response(JSON.stringify({ error: "AI credits exhausted. Please configure your own API key in Settings → AI Integrations." }),
+            { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         }
         console.error(`Failed for ${page.name}:`, response.status);
         continue;
@@ -131,24 +154,18 @@ The component should be named "${page.name.replace(/[^a-zA-Z0-9]/g, "")}Page".`;
       }
     }
 
-    // Generate App.tsx router
     const appCode = generateAppRouter(config, generatedFiles);
     generatedFiles.push({ filename: "App.tsx", pageName: "App Router", route: "/", code: appCode });
 
-    // Generate scaffold files
     const scaffoldFiles = generateScaffold(config);
     generatedFiles.push(...scaffoldFiles);
 
-    return new Response(
-      JSON.stringify({ success: true, files: generatedFiles }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ success: true, files: generatedFiles }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
     console.error("Code generation error:", error);
-    return new Response(
-      JSON.stringify({ success: false, error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ success: false, error: error instanceof Error ? error.message : "Unknown error" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
 
@@ -177,222 +194,38 @@ ${routes}
 function generateScaffold(config: any): { filename: string; pageName: string; route: string; code: string }[] {
   const files: { filename: string; pageName: string; route: string; code: string }[] = [];
 
-  // package.json
   files.push({
-    filename: "_scaffold/package.json",
-    pageName: "Package Config",
-    route: "",
+    filename: "_scaffold/package.json", pageName: "Package Config", route: "",
     code: JSON.stringify({
       name: (config.title || "my-app").toLowerCase().replace(/\s+/g, "-"),
-      private: true,
-      version: "1.0.0",
-      type: "module",
-      scripts: {
-        dev: "vite",
-        build: "tsc && vite build",
-        preview: "vite preview",
-      },
-      dependencies: {
-        react: "^18.3.1",
-        "react-dom": "^18.3.1",
-        "react-router-dom": "^6.30.0",
-        recharts: "^2.15.0",
-        "lucide-react": "^0.460.0",
-        "tailwind-merge": "^2.6.0",
-        clsx: "^2.1.1",
-      },
-      devDependencies: {
-        "@types/react": "^18.3.0",
-        "@types/react-dom": "^18.3.0",
-        typescript: "^5.5.0",
-        vite: "^5.4.0",
-        "@vitejs/plugin-react": "^4.3.0",
-        tailwindcss: "^3.4.0",
-        postcss: "^8.4.0",
-        autoprefixer: "^10.4.0",
-      },
+      private: true, version: "1.0.0", type: "module",
+      scripts: { dev: "vite", build: "tsc && vite build", preview: "vite preview" },
+      dependencies: { react: "^18.3.1", "react-dom": "^18.3.1", "react-router-dom": "^6.30.0", recharts: "^2.15.0", "lucide-react": "^0.460.0", "tailwind-merge": "^2.6.0", clsx: "^2.1.1" },
+      devDependencies: { "@types/react": "^18.3.0", "@types/react-dom": "^18.3.0", typescript: "^5.5.0", vite: "^5.4.0", "@vitejs/plugin-react": "^4.3.0", tailwindcss: "^3.4.0", postcss: "^8.4.0", autoprefixer: "^10.4.0" },
     }, null, 2),
   });
 
-  // vite.config.ts
-  files.push({
-    filename: "_scaffold/vite.config.ts",
-    pageName: "Vite Config",
-    route: "",
-    code: `import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import path from 'path'
+  files.push({ filename: "_scaffold/vite.config.ts", pageName: "Vite Config", route: "",
+    code: `import { defineConfig } from 'vite'\nimport react from '@vitejs/plugin-react'\nimport path from 'path'\n\nexport default defineConfig({\n  plugins: [react()],\n  resolve: { alias: { '@': path.resolve(__dirname, './src') } },\n})\n` });
 
-export default defineConfig({
-  plugins: [react()],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
-  },
-})
-`,
-  });
-
-  // tailwind.config.js
   const primaryColor = config.style?.primary_color || "#6366f1";
-  files.push({
-    filename: "_scaffold/tailwind.config.js",
-    pageName: "Tailwind Config",
-    route: "",
-    code: `/** @type {import('tailwindcss').Config} */
-export default {
-  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
-  theme: {
-    extend: {
-      colors: {
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
-        primary: { DEFAULT: "hsl(var(--primary))", foreground: "hsl(var(--primary-foreground))" },
-        secondary: { DEFAULT: "hsl(var(--secondary))", foreground: "hsl(var(--secondary-foreground))" },
-        destructive: { DEFAULT: "hsl(var(--destructive))", foreground: "hsl(var(--destructive-foreground))" },
-        muted: { DEFAULT: "hsl(var(--muted))", foreground: "hsl(var(--muted-foreground))" },
-        accent: { DEFAULT: "hsl(var(--accent))", foreground: "hsl(var(--accent-foreground))" },
-        card: { DEFAULT: "hsl(var(--card))", foreground: "hsl(var(--card-foreground))" },
-      },
-      borderRadius: { lg: "var(--radius)", md: "calc(var(--radius) - 2px)", sm: "calc(var(--radius) - 4px)" },
-    },
-  },
-  plugins: [],
-}
-`,
-  });
+  files.push({ filename: "_scaffold/tailwind.config.js", pageName: "Tailwind Config", route: "",
+    code: `/** @type {import('tailwindcss').Config} */\nexport default {\n  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],\n  theme: {\n    extend: {\n      colors: {\n        border: "hsl(var(--border))", input: "hsl(var(--input))", ring: "hsl(var(--ring))",\n        background: "hsl(var(--background))", foreground: "hsl(var(--foreground))",\n        primary: { DEFAULT: "hsl(var(--primary))", foreground: "hsl(var(--primary-foreground))" },\n        secondary: { DEFAULT: "hsl(var(--secondary))", foreground: "hsl(var(--secondary-foreground))" },\n        destructive: { DEFAULT: "hsl(var(--destructive))", foreground: "hsl(var(--destructive-foreground))" },\n        muted: { DEFAULT: "hsl(var(--muted))", foreground: "hsl(var(--muted-foreground))" },\n        accent: { DEFAULT: "hsl(var(--accent))", foreground: "hsl(var(--accent-foreground))" },\n        card: { DEFAULT: "hsl(var(--card))", foreground: "hsl(var(--card-foreground))" },\n      },\n      borderRadius: { lg: "var(--radius)", md: "calc(var(--radius) - 2px)", sm: "calc(var(--radius) - 4px)" },\n    },\n  },\n  plugins: [],\n}\n` });
 
-  // index.html
-  files.push({
-    filename: "_scaffold/index.html",
-    pageName: "HTML Entry",
-    route: "",
-    code: `<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>${config.title || "My App"}</title>
-    <meta name="description" content="${config.description || ""}" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
-`,
-  });
+  files.push({ filename: "_scaffold/index.html", pageName: "HTML Entry", route: "",
+    code: `<!DOCTYPE html>\n<html lang="en">\n  <head>\n    <meta charset="UTF-8" />\n    <meta name="viewport" content="width=device-width, initial-scale=1.0" />\n    <title>${config.title || "My App"}</title>\n    <meta name="description" content="${config.description || ""}" />\n  </head>\n  <body>\n    <div id="root"></div>\n    <script type="module" src="/src/main.tsx"></script>\n  </body>\n</html>\n` });
 
-  // index.css with design tokens
-  files.push({
-    filename: "_scaffold/src/index.css",
-    pageName: "Global CSS",
-    route: "",
-    code: `@tailwind base;
-@tailwind components;
-@tailwind utilities;
+  files.push({ filename: "_scaffold/src/index.css", pageName: "Global CSS", route: "",
+    code: `@tailwind base;\n@tailwind components;\n@tailwind utilities;\n\n@layer base {\n  :root {\n    --background: 0 0% 100%;\n    --foreground: 222.2 84% 4.9%;\n    --card: 0 0% 100%;\n    --card-foreground: 222.2 84% 4.9%;\n    --primary: 243 75% 59%;\n    --primary-foreground: 210 40% 98%;\n    --secondary: 210 40% 96.1%;\n    --secondary-foreground: 222.2 47.4% 11.2%;\n    --muted: 210 40% 96.1%;\n    --muted-foreground: 215.4 16.3% 46.9%;\n    --accent: 210 40% 96.1%;\n    --accent-foreground: 222.2 47.4% 11.2%;\n    --destructive: 0 84.2% 60.2%;\n    --destructive-foreground: 210 40% 98%;\n    --border: 214.3 31.8% 91.4%;\n    --input: 214.3 31.8% 91.4%;\n    --ring: 243 75% 59%;\n    --radius: 0.75rem;\n  }\n  .dark {\n    --background: 222.2 84% 4.9%;\n    --foreground: 210 40% 98%;\n    --card: 222.2 84% 4.9%;\n    --card-foreground: 210 40% 98%;\n    --primary: 243 75% 59%;\n    --primary-foreground: 210 40% 98%;\n    --secondary: 217.2 32.6% 17.5%;\n    --secondary-foreground: 210 40% 98%;\n    --muted: 217.2 32.6% 17.5%;\n    --muted-foreground: 215 20.2% 65.1%;\n    --accent: 217.2 32.6% 17.5%;\n    --accent-foreground: 210 40% 98%;\n    --destructive: 0 62.8% 30.6%;\n    --destructive-foreground: 210 40% 98%;\n    --border: 217.2 32.6% 17.5%;\n    --input: 217.2 32.6% 17.5%;\n    --ring: 243 75% 59%;\n  }\n}\n\n@layer base {\n  * { @apply border-border; }\n  body { @apply bg-background text-foreground; }\n}\n` });
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 243 75% 59%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 243 75% 59%;
-    --radius: 0.75rem;
-  }
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --primary: 243 75% 59%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 243 75% 59%;
-  }
-}
+  files.push({ filename: "_scaffold/src/main.tsx", pageName: "App Entry", route: "",
+    code: `import React from "react";\nimport ReactDOM from "react-dom/client";\nimport App from "./App";\nimport "./index.css";\n\nReactDOM.createRoot(document.getElementById("root")!).render(\n  <React.StrictMode>\n    <App />\n  </React.StrictMode>\n);\n` });
 
-@layer base {
-  * { @apply border-border; }
-  body { @apply bg-background text-foreground; }
-}
-`,
-  });
-
-  // main.tsx
-  files.push({
-    filename: "_scaffold/src/main.tsx",
-    pageName: "App Entry",
-    route: "",
-    code: `import React from "react";
-import ReactDOM from "react-dom/client";
-import App from "./App";
-import "./index.css";
-
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
-`,
-  });
-
-  // tsconfig.json
-  files.push({
-    filename: "_scaffold/tsconfig.json",
-    pageName: "TS Config",
-    route: "",
+  files.push({ filename: "_scaffold/tsconfig.json", pageName: "TS Config", route: "",
     code: JSON.stringify({
-      compilerOptions: {
-        target: "ES2020",
-        useDefineForClassFields: true,
-        lib: ["ES2020", "DOM", "DOM.Iterable"],
-        module: "ESNext",
-        skipLibCheck: true,
-        moduleResolution: "bundler",
-        allowImportingTsExtensions: true,
-        resolveJsonModule: true,
-        isolatedModules: true,
-        noEmit: true,
-        jsx: "react-jsx",
-        strict: true,
-        noUnusedLocals: false,
-        noUnusedParameters: false,
-        noFallthroughCasesInSwitch: true,
-        baseUrl: ".",
-        paths: { "@/*": ["./src/*"] },
-      },
+      compilerOptions: { target: "ES2020", useDefineForClassFields: true, lib: ["ES2020", "DOM", "DOM.Iterable"], module: "ESNext", skipLibCheck: true, moduleResolution: "bundler", allowImportingTsExtensions: true, resolveJsonModule: true, isolatedModules: true, noEmit: true, jsx: "react-jsx", strict: true, noUnusedLocals: false, noUnusedParameters: false, noFallthroughCasesInSwitch: true, baseUrl: ".", paths: { "@/*": ["./src/*"] } },
       include: ["src"],
-    }, null, 2),
-  });
+    }, null, 2) });
 
   return files;
 }

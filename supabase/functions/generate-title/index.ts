@@ -2,8 +2,44 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+async function getUserApiConfig(req: Request) {
+  try {
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) return null;
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/site_settings?key=eq.ai_integrations&select=value`,
+      { headers: { Authorization: authHeader, apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" } }
+    );
+    if (!res.ok) return null;
+    const rows = await res.json();
+    const active = rows?.[0]?.value?.items?.find((i: any) => i.status === "active" && i.apiKey?.length > 5);
+    if (!active) return null;
+    return { provider: active.provider, endpoint: active.apiEndpoint, apiKey: active.apiKey, model: active.model };
+  } catch { return null; }
+}
+
+async function aiRequest(url: string, headers: Record<string, string>, body: string, userApiConfig: any) {
+  let response = await fetch(url, { method: "POST", headers, body });
+  if (response.status === 402 && userApiConfig) {
+    console.log("Lovable credits exhausted, falling back to user API key");
+    await response.text();
+    const parsed = JSON.parse(body);
+    parsed.model = userApiConfig.model;
+    const fallbackEndpoint = userApiConfig.endpoint.endsWith("/chat/completions")
+      ? userApiConfig.endpoint : `${userApiConfig.endpoint}/chat/completions`;
+    response = await fetch(fallbackEndpoint, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${userApiConfig.apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify(parsed),
+    });
+  }
+  return response;
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -13,28 +49,20 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    const userApiConfig = await getUserApiConfig(req);
+
+    const response = await aiRequest(
+      "https://ai.gateway.lovable.dev/v1/chat/completions",
+      { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+      JSON.stringify({
         model: "google/gemini-2.5-flash-lite",
         messages: [
-          {
-            role: "system",
-            content: `You are a project naming assistant. Given a user prompt describing what they want to build, return ONLY a short project name (1-3 words max). Rules:
-- Remove filler words like "professional", "modern", "beautiful", "amazing", "simple"
-- Keep only the core identity (e.g. "Freelancer Portfolio" → "Freelancer", "E-commerce Store for Shoes" → "ShoeStore")
-- If it's a specific brand/product name, keep it
-- No quotes, no explanation, just the name
-- CamelCase or single word preferred`
-          },
+          { role: "system", content: `You are a project naming assistant. Given a user prompt describing what they want to build, return ONLY a short project name (1-3 words max). Rules:\n- Remove filler words like "professional", "modern", "beautiful", "amazing", "simple"\n- Keep only the core identity (e.g. "Freelancer Portfolio" → "Freelancer", "E-commerce Store for Shoes" → "ShoeStore")\n- If it's a specific brand/product name, keep it\n- No quotes, no explanation, just the name\n- CamelCase or single word preferred` },
           { role: "user", content: prompt }
         ],
       }),
-    });
+      userApiConfig
+    );
 
     if (!response.ok) {
       const t = await response.text();
@@ -45,14 +73,11 @@ serve(async (req) => {
     const data = await response.json();
     const title = data.choices?.[0]?.message?.content?.trim() || "";
 
-    return new Response(JSON.stringify({ title }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({ title }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error("generate-title error:", e);
-    return new Response(JSON.stringify({ title: "" }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({ title: "" }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
