@@ -15,6 +15,7 @@ import {
   GitBranch, Settings, History, Book, Container,
   Users, Activity, FolderOpen, Server,
   Webhook, Bell as BellIcon, GitFork,
+  Globe, Link, MicOff,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useLocation } from "react-router-dom";
@@ -172,6 +173,11 @@ export default function AIBuilderPage() {
   const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
   const [awaitingPhaseConfirm, setAwaitingPhaseConfirm] = useState(false);
   const [originalPrompt, setOriginalPrompt] = useState("");
+  const [isRecording, setIsRecording] = useState(false);
+  const [showContentType, setShowContentType] = useState(false);
+  const [selectedContentType, setSelectedContentType] = useState<string>("website");
+  const [showColorPresets, setShowColorPresets] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const hasProcessedIncoming = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -930,13 +936,119 @@ export default function AIBuilderPage() {
     </ScrollArea>
   );
 
-  // === Chat input (Lovable-style) ===
+  const CONTENT_TYPES = [
+    { value: "website", label: "🌐 Website", icon: Globe },
+    { value: "application", label: "📱 Application", icon: LayoutGrid },
+    { value: "plugin", label: "🧩 Plugin", icon: Package },
+    { value: "website+application", label: "🌐+📱 Website + App", icon: Layers },
+    { value: "application+plugin", label: "📱+🧩 App + Plugin", icon: Layers },
+    { value: "full", label: "🌐+📱+🧩 Full Stack", icon: Layers },
+  ];
+
+  const COLOR_PRESETS = [
+    { name: "Blue", color: "hsl(221, 83%, 53%)" },
+    { name: "Purple", color: "hsl(271, 76%, 53%)" },
+    { name: "Green", color: "hsl(142, 71%, 45%)" },
+    { name: "Orange", color: "hsl(24, 95%, 53%)" },
+    { name: "Rose", color: "hsl(346, 77%, 50%)" },
+    { name: "Cyan", color: "hsl(189, 94%, 43%)" },
+  ];
+
+  const handleMicToggle = async () => {
+    if (isRecording) {
+      mediaRecorderRef.current?.stop();
+      setIsRecording(false);
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      const chunks: Blob[] = [];
+      mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+      mediaRecorder.onstop = () => {
+        stream.getTracks().forEach(t => t.stop());
+        // For now, show a message that audio was recorded
+        toast({ title: "🎤 Audio recorded!", description: "Audio-to-text feature will use AI transcription." });
+      };
+      mediaRecorderRef.current = mediaRecorder;
+      mediaRecorder.start();
+      setIsRecording(true);
+      toast({ title: "🎤 Recording...", description: "Click mic again to stop." });
+    } catch {
+      toast({ title: "Microphone access denied", variant: "destructive" });
+    }
+  };
+
   const renderChatInput = () => (
     <div className="border-t border-border bg-card p-3 shrink-0">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-3xl mx-auto space-y-2">
+        {/* Top toolbar: content type + color presets */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Content Type Selector */}
+          <div className="relative">
+            <button
+              onClick={() => { setShowContentType(!showContentType); setShowColorPresets(false); }}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
+            >
+              {CONTENT_TYPES.find(c => c.value === selectedContentType)?.label || "🌐 Website"}
+              <ChevronDown className="w-3 h-3" />
+            </button>
+            {showContentType && (
+              <div className="absolute bottom-full left-0 mb-1 bg-popover border border-border rounded-lg shadow-lg p-1 z-50 min-w-[180px]">
+                {CONTENT_TYPES.map((ct) => (
+                  <button
+                    key={ct.value}
+                    onClick={() => { setSelectedContentType(ct.value); setShowContentType(false); }}
+                    className={cn(
+                      "flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-xs text-left transition-colors",
+                      selectedContentType === ct.value ? "bg-primary/10 text-primary" : "text-foreground hover:bg-accent"
+                    )}
+                  >
+                    <ct.icon className="w-3.5 h-3.5" />
+                    {ct.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Color Presets */}
+          <div className="relative">
+            <button
+              onClick={() => { setShowColorPresets(!showColorPresets); setShowContentType(false); }}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
+            >
+              <Palette className="w-3 h-3" /> Colors
+            </button>
+            {showColorPresets && (
+              <div className="absolute bottom-full left-0 mb-1 bg-popover border border-border rounded-lg shadow-lg p-2 z-50">
+                <div className="flex gap-1.5">
+                  {COLOR_PRESETS.map((cp) => (
+                    <button
+                      key={cp.name}
+                      onClick={() => {
+                        setInput((prev) => prev + ` Use ${cp.name.toLowerCase()} as primary color.`);
+                        setShowColorPresets(false);
+                      }}
+                      className="group flex flex-col items-center gap-1"
+                      title={cp.name}
+                    >
+                      <div
+                        className="w-6 h-6 rounded-full border-2 border-border group-hover:border-foreground/50 transition-colors"
+                        style={{ backgroundColor: cp.color }}
+                      />
+                      <span className="text-[9px] text-muted-foreground">{cp.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* URL input for replication */}
         {showUrlInput && (
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2">
             <input
               value={screenshotUrl}
               onChange={(e) => setScreenshotUrl(e.target.value)}
@@ -952,6 +1064,7 @@ export default function AIBuilderPage() {
             </Button>
           </div>
         )}
+
         <input
           ref={fileInputRef}
           type="file"
@@ -961,12 +1074,41 @@ export default function AIBuilderPage() {
         />
         <div className="relative flex items-end gap-2 rounded-xl border border-input bg-background p-1.5 focus-within:ring-2 focus-within:ring-ring focus-within:border-transparent transition-all">
           <div className="flex items-center gap-0.5 pl-1">
+            {/* Add / Attachment */}
             <Button
               variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
               onClick={() => fileInputRef.current?.click()}
-              title="Upload screenshot"
+              title="Upload file"
             >
               <Plus className="w-4 h-4" />
+            </Button>
+            {/* Attachment button */}
+            <Button
+              variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
+              onClick={() => fileInputRef.current?.click()}
+              title="Attach content"
+            >
+              <Paperclip className="w-4 h-4" />
+            </Button>
+            {/* URL button */}
+            <Button
+              variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
+              onClick={() => setShowUrlInput(!showUrlInput)}
+              title="Add URL to replicate"
+            >
+              <Link2 className="w-4 h-4" />
+            </Button>
+            {/* Mic button */}
+            <Button
+              variant="ghost" size="icon"
+              className={cn(
+                "h-8 w-8 rounded-lg transition-colors",
+                isRecording ? "text-destructive bg-destructive/10 hover:bg-destructive/20" : "text-muted-foreground hover:text-foreground"
+              )}
+              onClick={handleMicToggle}
+              title={isRecording ? "Stop recording" : "Voice input"}
+            >
+              {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
             </Button>
           </div>
           <textarea
@@ -979,7 +1121,7 @@ export default function AIBuilderPage() {
                 sendMessage(input);
               }
             }}
-            placeholder={isBuilding ? "Building your app..." : "Describe what you want to build..."}
+            placeholder={isBuilding ? "Building your app..." : `Describe your ${selectedContentType}...`}
             rows={1}
             disabled={isBuilding}
             className="flex-1 resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none min-h-[36px] max-h-[160px] py-2 disabled:opacity-50"

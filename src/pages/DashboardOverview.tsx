@@ -149,8 +149,15 @@ export default function DashboardOverview() {
   return (
     <DashboardLayout>
       <div className="flex flex-col min-h-screen relative overflow-hidden">
-        {/* Gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-primary/20 pointer-events-none" />
+        {/* Multi-colorful gradient background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-background to-chart-2/10" />
+          <div className="absolute top-0 left-0 w-[600px] h-[600px] rounded-full bg-primary/8 blur-[120px] -translate-x-1/2 -translate-y-1/2" />
+          <div className="absolute top-1/3 right-0 w-[500px] h-[500px] rounded-full bg-chart-4/10 blur-[100px] translate-x-1/3" />
+          <div className="absolute bottom-0 left-1/3 w-[400px] h-[400px] rounded-full bg-chart-2/8 blur-[100px] translate-y-1/3" />
+          <div className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] rounded-full bg-chart-5/8 blur-[80px]" />
+          <div className="absolute top-1/2 left-1/4 w-[250px] h-[250px] rounded-full bg-chart-1/6 blur-[90px]" />
+        </div>
 
         <div className="relative z-10 w-full max-w-5xl mx-auto px-4 py-8 flex flex-col gap-8">
           {/* Greeting + Prompt */}
