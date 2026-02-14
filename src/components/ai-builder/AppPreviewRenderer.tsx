@@ -31,21 +31,70 @@ interface AppPreviewRendererProps {
   selectedComponent?: { pageIndex: number; componentIndex: number } | null;
   onSelectComponent?: (pageIndex: number, componentIndex: number) => void;
   onReorderComponents?: (pageIndex: number, fromIndex: number, toIndex: number) => void;
+  onDeleteComponent?: (pageIndex: number, componentIndex: number) => void;
+  onAddComponent?: (pageIndex: number, type: string) => void;
+  onAddPage?: (name: string, route: string, layout: string) => void;
+  onDeletePage?: (pageIndex: number) => void;
 }
 
-export function AppPreviewRenderer({ config, selectedComponent, onSelectComponent, onReorderComponents }: AppPreviewRendererProps) {
+export function AppPreviewRenderer({ config, selectedComponent, onSelectComponent, onReorderComponents, onDeleteComponent, onAddComponent, onAddPage, onDeletePage }: AppPreviewRendererProps) {
   const [activePage, setActivePage] = useState(0);
+  const [showAddComponent, setShowAddComponent] = useState(false);
   const currentPage = config.pages[activePage];
 
-  // Allow child components to navigate between pages
   const navigateToPage = useCallback((pageRoute: string) => {
     const idx = config.pages.findIndex(p => p.route === pageRoute || p.name.toLowerCase() === pageRoute.toLowerCase());
     if (idx >= 0) setActivePage(idx);
   }, [config.pages]);
 
+  const COMPONENT_TYPES = [
+    "hero", "navbar", "footer", "stats_row", "crud_table", "chart", "card_grid",
+    "auth_form", "pricing_table", "form", "search_bar", "kanban_board", "calendar",
+    "media_gallery", "timeline", "file_upload", "testimonials", "faq", "features_grid",
+    "contact_form", "newsletter_cta", "blog_preview", "team_section",
+  ];
+
   return (
     <div className="flex flex-col h-full">
-      {/* Page tabs removed — preview shows all content inline */}
+      {/* Page tabs */}
+      {config.pages.length > 1 && (
+        <div className="flex items-center gap-1 px-3 py-1.5 border-b border-border bg-card overflow-x-auto">
+          {config.pages.map((page, i) => (
+            <button
+              key={page.route}
+              onClick={() => setActivePage(i)}
+              className={cn(
+                "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors",
+                activePage === i ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent"
+              )}
+            >
+              {page.name}
+              {onDeletePage && config.pages.length > 1 && (
+                <span
+                  onClick={(e) => { e.stopPropagation(); onDeletePage(i); if (activePage >= config.pages.length - 1) setActivePage(Math.max(0, activePage - 1)); }}
+                  className="ml-1 p-0.5 rounded hover:bg-destructive/10 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="w-2.5 h-2.5" />
+                </span>
+              )}
+            </button>
+          ))}
+          {onAddPage && (
+            <button
+              onClick={() => {
+                const name = prompt("Page name:");
+                if (name) {
+                  const route = "/" + name.toLowerCase().replace(/\s+/g, "-");
+                  onAddPage(name, route, "public");
+                }
+              }}
+              className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            >
+              <Plus className="w-3 h-3" /> Page
+            </button>
+          )}
+        </div>
+      )}
 
       <ScrollArea className="flex-1">
         <div className="bg-background min-h-full">
@@ -57,8 +106,43 @@ export function AppPreviewRenderer({ config, selectedComponent, onSelectComponen
               selectedComponent={selectedComponent}
               onSelectComponent={onSelectComponent}
               onReorderComponents={onReorderComponents}
+              onDeleteComponent={onDeleteComponent}
               onNavigate={navigateToPage}
             />
+          )}
+
+          {/* Add component button */}
+          {onAddComponent && currentPage && (
+            <div className="p-4">
+              {showAddComponent ? (
+                <div className="rounded-xl border border-dashed border-primary/40 p-4 space-y-2 bg-primary/5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-foreground">Add Component</span>
+                    <button onClick={() => setShowAddComponent(false)} className="text-muted-foreground hover:text-foreground">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {COMPONENT_TYPES.map(type => (
+                      <button
+                        key={type}
+                        onClick={() => { onAddComponent(activePage, type); setShowAddComponent(false); }}
+                        className="px-2 py-1 rounded-md border border-border bg-card text-[10px] font-medium text-foreground hover:border-primary/40 hover:bg-primary/5 transition-all"
+                      >
+                        {type.replace(/_/g, " ")}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowAddComponent(true)}
+                  className="w-full py-2.5 rounded-xl border border-dashed border-border hover:border-primary/40 text-xs text-muted-foreground hover:text-primary flex items-center justify-center gap-1.5 transition-all"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add Component
+                </button>
+              )}
+            </div>
           )}
         </div>
       </ScrollArea>
@@ -75,10 +159,11 @@ interface PageRendererProps {
   selectedComponent?: { pageIndex: number; componentIndex: number } | null;
   onSelectComponent?: (pageIndex: number, componentIndex: number) => void;
   onReorderComponents?: (pageIndex: number, fromIndex: number, toIndex: number) => void;
+  onDeleteComponent?: (pageIndex: number, componentIndex: number) => void;
   onNavigate?: (pageRoute: string) => void;
 }
 
-function PageRenderer({ page, config, pageIndex, selectedComponent, onSelectComponent, onReorderComponents, onNavigate }: PageRendererProps) {
+function PageRenderer({ page, config, pageIndex, selectedComponent, onSelectComponent, onReorderComponents, onDeleteComponent, onNavigate }: PageRendererProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
   const dragCounter = useRef(0);
@@ -148,8 +233,18 @@ function PageRenderer({ page, config, pageIndex, selectedComponent, onSelectComp
             <GripVertical className="w-3.5 h-3.5 text-muted-foreground" />
           </div>
           {isSelected && (
-            <div className="absolute -top-2.5 left-9 z-10 px-1.5 py-0.5 rounded bg-primary text-primary-foreground text-[10px] font-medium shadow-sm">
-              {comp.type.replace(/_/g, " ")}
+            <div className="absolute -top-2.5 left-9 z-10 flex items-center gap-1">
+              <span className="px-1.5 py-0.5 rounded bg-primary text-primary-foreground text-[10px] font-medium shadow-sm">
+                {comp.type.replace(/_/g, " ")}
+              </span>
+              {onDeleteComponent && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onDeleteComponent(pageIndex, i); }}
+                  className="px-1.5 py-0.5 rounded bg-destructive text-destructive-foreground text-[10px] font-medium shadow-sm hover:opacity-90 transition-opacity"
+                >
+                  ✕
+                </button>
+              )}
             </div>
           )}
           <ComponentRenderer component={comp} config={config} onNavigate={onNavigate} />

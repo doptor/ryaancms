@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   FolderOpen, Plus, Search, Clock, ChevronDown,
-  Loader2, Sparkles, CheckCircle2, AlertCircle,
+  Loader2, Sparkles, CheckCircle2, AlertCircle, Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,9 +31,10 @@ interface ProjectSelectorProps {
   selectedProject: Project | null;
   onSelectProject: (project: Project | null) => void;
   onCreateProject: (title: string) => void;
+  onDeleteProject?: (projectId: string) => void;
 }
 
-export function ProjectSelector({ selectedProject, onSelectProject, onCreateProject }: ProjectSelectorProps) {
+export function ProjectSelector({ selectedProject, onSelectProject, onCreateProject, onDeleteProject }: ProjectSelectorProps) {
   const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -189,38 +190,55 @@ export function ProjectSelector({ selectedProject, onSelectProject, onCreateProj
               </p>
             ) : (
               filtered.map(project => (
-                <button
-                  key={project.id}
-                  onClick={() => handleSelect(project)}
-                  className={cn(
-                    "w-full flex items-start gap-2.5 px-2.5 py-2 rounded-md text-left transition-colors",
-                    selectedProject?.id === project.id ? "bg-primary/10" : "hover:bg-accent"
-                  )}
-                >
-                  {project.logo_url ? (
-                    <img src={project.logo_url} alt="" className="w-5 h-5 rounded object-cover shrink-0 mt-0.5" />
-                  ) : (
-                    <FolderOpen className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-medium text-foreground truncate">
-                        {project.brand_name || project.title || "Untitled"}
-                      </span>
-                      {getStatusBadge(project.status)}
+                <div key={project.id} className="group relative">
+                  <button
+                    onClick={() => handleSelect(project)}
+                    className={cn(
+                      "w-full flex items-start gap-2.5 px-2.5 py-2 rounded-md text-left transition-colors pr-8",
+                      selectedProject?.id === project.id ? "bg-primary/10" : "hover:bg-accent"
+                    )}
+                  >
+                    {project.logo_url ? (
+                      <img src={project.logo_url} alt="" className="w-5 h-5 rounded object-cover shrink-0 mt-0.5" />
+                    ) : (
+                      <FolderOpen className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-medium text-foreground truncate">
+                          {project.brand_name || project.title || "Untitled"}
+                        </span>
+                        {getStatusBadge(project.status)}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                        {project.prompt.slice(0, 60)}{project.prompt.length > 60 ? "..." : ""}
+                      </p>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <Clock className="w-2.5 h-2.5 text-muted-foreground" />
+                        <span className="text-[10px] text-muted-foreground">{formatDate(project.updated_at)}</span>
+                      </div>
                     </div>
-                    <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-                      {project.prompt.slice(0, 60)}{project.prompt.length > 60 ? "..." : ""}
-                    </p>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <Clock className="w-2.5 h-2.5 text-muted-foreground" />
-                      <span className="text-[10px] text-muted-foreground">{formatDate(project.updated_at)}</span>
-                    </div>
-                  </div>
-                  {selectedProject?.id === project.id && (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
+                    {selectedProject?.id === project.id && (
+                      <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
+                    )}
+                  </button>
+                  {onDeleteProject && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm("Delete this project? This cannot be undone.")) {
+                          onDeleteProject(project.id);
+                          setProjects(prev => prev.filter(p => p.id !== project.id));
+                          if (selectedProject?.id === project.id) onSelectProject(null);
+                        }
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md opacity-0 group-hover:opacity-100 hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
+                      title="Delete project"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
                   )}
-                </button>
+                </div>
               ))
             )}
           </div>
