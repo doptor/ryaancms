@@ -203,12 +203,13 @@ export default function DashboardOverview() {
       <div className="flex flex-col min-h-screen relative overflow-hidden">
         {/* Multi-colorful gradient background */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-background to-chart-2/10" />
-          <div className="absolute top-0 left-0 w-[600px] h-[600px] rounded-full bg-primary/8 blur-[120px] -translate-x-1/2 -translate-y-1/2" />
-          <div className="absolute top-1/3 right-0 w-[500px] h-[500px] rounded-full bg-chart-4/10 blur-[100px] translate-x-1/3" />
-          <div className="absolute bottom-0 left-1/3 w-[400px] h-[400px] rounded-full bg-chart-2/8 blur-[100px] translate-y-1/3" />
-          <div className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] rounded-full bg-chart-5/8 blur-[80px]" />
-          <div className="absolute top-1/2 left-1/4 w-[250px] h-[250px] rounded-full bg-chart-1/6 blur-[90px]" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[hsl(0,80%,60%)]/10 via-background to-[hsl(220,80%,55%)]/10" />
+          <div className="absolute top-0 left-0 w-[600px] h-[600px] rounded-full bg-[hsl(0,75%,55%)]/12 blur-[120px] -translate-x-1/2 -translate-y-1/2" />
+          <div className="absolute top-1/4 right-0 w-[500px] h-[500px] rounded-full bg-[hsl(220,80%,55%)]/12 blur-[100px] translate-x-1/3" />
+          <div className="absolute bottom-0 left-1/3 w-[400px] h-[400px] rounded-full bg-[hsl(30,90%,55%)]/12 blur-[100px] translate-y-1/3" />
+          <div className="absolute bottom-1/4 right-1/4 w-[350px] h-[350px] rounded-full bg-[hsl(280,70%,55%)]/10 blur-[80px]" />
+          <div className="absolute top-1/2 left-1/4 w-[300px] h-[300px] rounded-full bg-[hsl(160,70%,45%)]/8 blur-[90px]" />
+          <div className="absolute top-0 right-1/3 w-[250px] h-[250px] rounded-full bg-[hsl(45,90%,55%)]/10 blur-[80px]" />
         </div>
 
         <div className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8">
@@ -373,20 +374,25 @@ export default function DashboardOverview() {
                   </Button>
                 </div>
 
-                {/* Right: templates + send */}
+                {/* Right: templates dropdown + send */}
                 <div className="flex items-center gap-1.5">
-                  <div className="hidden sm:flex items-center gap-1.5 overflow-x-auto">
-                    {preDesignTemplates.map((tpl, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setPrompt(tpl.prompt)}
-                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors whitespace-nowrap shrink-0"
-                      >
-                        <tpl.icon className="w-3 h-3" />
-                        {tpl.label}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors whitespace-nowrap shrink-0">
+                        <Sparkles className="w-3 h-3" />
+                        Templates
+                        <ChevronDown className="w-3 h-3" />
                       </button>
-                    ))}
-                  </div>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="min-w-[220px]">
+                      {preDesignTemplates.map((tpl, i) => (
+                        <DropdownMenuItem key={i} onClick={() => setPrompt(tpl.prompt)} className="gap-2">
+                          <tpl.icon className="w-4 h-4" />
+                          {tpl.label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   <button
                     onClick={handleSubmit}
                     disabled={!prompt.trim() || createProject.isPending}
