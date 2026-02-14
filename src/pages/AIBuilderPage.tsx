@@ -2113,158 +2113,25 @@ export default function AIBuilderPage() {
                     <Tabs value={desktopRightTab} onValueChange={setActiveTab}>
                       <div className="overflow-x-auto scrollbar-hide">
                         <TabsList className="bg-transparent h-11 p-0 gap-0 w-max min-w-full px-4">
-                          {/* Core */}
+                          {/* Essential tabs only */}
                           <TabsTrigger value="preview" className={tabTriggerClass}>
                             <Eye className="w-3.5 h-3.5" /> Preview
-                          </TabsTrigger>
-                          <TabsTrigger value="builder" className={tabTriggerClass}>
-                            <Layers className="w-3.5 h-3.5" /> Builder
-                          </TabsTrigger>
-                          <TabsTrigger value="ai-assistant" className={tabTriggerClass}>
-                            <MessageSquare className="w-3.5 h-3.5" /> Assistant
-                          </TabsTrigger>
-                          <TabsTrigger value="db-designer" className={tabTriggerClass}>
-                            <Database className="w-3.5 h-3.5" /> DB Design
                           </TabsTrigger>
                           <TabsTrigger value="code" className={tabTriggerClass}>
                             <FileCode2 className="w-3.5 h-3.5" /> Code
                             {generatedFiles.length > 0 && <Badge variant="secondary" className="text-[10px] h-4 ml-1">{generatedFiles.length}</Badge>}
                           </TabsTrigger>
-                          <TabsTrigger value="live" className={tabTriggerClass}>
-                            <Eye className="w-3.5 h-3.5" /> Live
-                            {generatedFiles.length > 0 && <Badge variant="secondary" className="text-[10px] h-4 ml-1">⚡</Badge>}
-                          </TabsTrigger>
                           <TabsTrigger value="deploy" className={tabTriggerClass}>
                             <Rocket className="w-3.5 h-3.5" /> Deploy
                           </TabsTrigger>
-
-                          <div className="w-px h-5 bg-border mx-1 self-center shrink-0" />
-
-                          {/* Data & Security */}
-                          <TabsTrigger value="config" className={tabTriggerClass}>
-                            <Code className="w-3.5 h-3.5" /> Config
-                          </TabsTrigger>
-                          <TabsTrigger value="sql" className={tabTriggerClass}>
-                            <Database className="w-3.5 h-3.5" /> SQL
-                          </TabsTrigger>
-                          <TabsTrigger value="security" className={tabTriggerClass}>
-                            <Shield className="w-3.5 h-3.5" /> Security
+                          <TabsTrigger value="db-designer" className={tabTriggerClass}>
+                            <Database className="w-3.5 h-3.5" /> Database
                           </TabsTrigger>
                           <TabsTrigger value="quality" className={tabTriggerClass}>
                             <TrendingUp className="w-3.5 h-3.5" /> Quality
                           </TabsTrigger>
-                          <TabsTrigger value="summary" className={tabTriggerClass}>
-                            <Layers className="w-3.5 h-3.5" /> Summary
-                          </TabsTrigger>
-
-                          <div className="w-px h-5 bg-border mx-1 self-center shrink-0" />
-
-                          {/* Tools */}
-                          <TabsTrigger value="autofix" className={tabTriggerClass}>
-                            <RefreshCw className="w-3.5 h-3.5" /> Auto-Fix
-                          </TabsTrigger>
-                          <TabsTrigger value="plugin" className={tabTriggerClass}>
-                            <Package className="w-3.5 h-3.5" /> Plugin
-                          </TabsTrigger>
-                          <TabsTrigger value="workflow" className={tabTriggerClass}>
-                            <GitBranch className="w-3.5 h-3.5" /> Workflow
-                          </TabsTrigger>
-                          <TabsTrigger value="installer" className={tabTriggerClass}>
-                            <Settings className="w-3.5 h-3.5" /> Installer
-                          </TabsTrigger>
-                          <TabsTrigger value="docs" className={tabTriggerClass}>
-                            <Book className="w-3.5 h-3.5" /> Docs
-                          </TabsTrigger>
-                          <TabsTrigger value="cicd" className={tabTriggerClass}>
-                            <Container className="w-3.5 h-3.5" /> CI/CD
-                          </TabsTrigger>
-
-                          <div className="w-px h-5 bg-border mx-1 self-center shrink-0" />
-
-                          {/* History & Team */}
-                          <TabsTrigger value="history" className={tabTriggerClass}>
-                            <History className="w-3.5 h-3.5" /> History
-                          </TabsTrigger>
-                          <TabsTrigger value="timemachine" className={tabTriggerClass}>
-                            <Clock className="w-3.5 h-3.5" /> Versions
-                          </TabsTrigger>
-                          <TabsTrigger value="branches" className={tabTriggerClass}>
-                            <GitFork className="w-3.5 h-3.5" /> Branch
-                          </TabsTrigger>
-                          <TabsTrigger value="collab" className={tabTriggerClass}>
-                            <Users className="w-3.5 h-3.5" /> Team
-                          </TabsTrigger>
-                          <TabsTrigger value="monitor" className={tabTriggerClass}>
-                            <Activity className="w-3.5 h-3.5" /> Monitor
-                          </TabsTrigger>
-                          <TabsTrigger value="envs" className={tabTriggerClass}>
-                            <Server className="w-3.5 h-3.5" /> Envs
-                          </TabsTrigger>
-                          <TabsTrigger value="webhooks" className={tabTriggerClass}>
-                            <Webhook className="w-3.5 h-3.5" /> Hooks
-                          </TabsTrigger>
-
-                          <div className="w-px h-5 bg-border mx-1 self-center shrink-0" />
-
-                          {/* Phase 11: i18n + SEO + Performance */}
-                          <TabsTrigger value="i18n" className={tabTriggerClass}>
-                            <Globe className="w-3.5 h-3.5" /> i18n
-                          </TabsTrigger>
-                          <TabsTrigger value="seo" className={tabTriggerClass}>
-                            <Search className="w-3.5 h-3.5" /> SEO
-                          </TabsTrigger>
-                          <TabsTrigger value="performance" className={tabTriggerClass}>
-                            <Activity className="w-3.5 h-3.5" /> Perf
-                          </TabsTrigger>
-
-                          <div className="w-px h-5 bg-border mx-1 self-center shrink-0" />
-
-                          {/* Phase 12: Mobile Export + Payment + Cron */}
-                          <TabsTrigger value="mobile-export" className={tabTriggerClass}>
-                            <Smartphone className="w-3.5 h-3.5" /> Mobile
-                          </TabsTrigger>
-                          <TabsTrigger value="payments" className={tabTriggerClass}>
-                            <CreditCard className="w-3.5 h-3.5" /> Payment
-                          </TabsTrigger>
-                          <TabsTrigger value="cron" className={tabTriggerClass}>
-                            <Clock className="w-3.5 h-3.5" /> Cron
-                          </TabsTrigger>
-
-                          <div className="w-px h-5 bg-border mx-1 self-center shrink-0" />
-
-                          {/* Phase 13: Marketplace + Team */}
-                          <TabsTrigger value="marketplace" className={tabTriggerClass}>
-                            <Package className="w-3.5 h-3.5" /> Market
-                          </TabsTrigger>
-                          <TabsTrigger value="team" className={tabTriggerClass}>
-                            <Users className="w-3.5 h-3.5" /> Team
-                          </TabsTrigger>
-
-                          <div className="w-px h-5 bg-border mx-1 self-center shrink-0" />
-
-                          {/* Phase 14: API Docs + Workflow */}
-                          <TabsTrigger value="api-docs" className={tabTriggerClass}>
-                            <FileText className="w-3.5 h-3.5" /> API
-                          </TabsTrigger>
-                          <TabsTrigger value="automation" className={tabTriggerClass}>
-                            <GitBranch className="w-3.5 h-3.5" /> Automate
-                          </TabsTrigger>
-
-                          <div className="w-px h-5 bg-border mx-1 self-center shrink-0" />
-
-                          {/* Phase 15: Analytics */}
-                          <TabsTrigger value="analytics" className={tabTriggerClass}>
-                            <BarChart3 className="w-3.5 h-3.5" /> Analytics
-                          </TabsTrigger>
-
-                          <div className="w-px h-5 bg-border mx-1 self-center shrink-0" />
-
-                          {/* Phase 16: Error Boundary + A11y */}
-                          <TabsTrigger value="errors" className={tabTriggerClass}>
-                            <Bug className="w-3.5 h-3.5" /> Errors
-                          </TabsTrigger>
-                          <TabsTrigger value="a11y" className={tabTriggerClass}>
-                            <Eye className="w-3.5 h-3.5" /> A11y
+                          <TabsTrigger value="ai-assistant" className={tabTriggerClass}>
+                            <MessageSquare className="w-3.5 h-3.5" /> Assistant
                           </TabsTrigger>
                         </TabsList>
                       </div>
@@ -2519,42 +2386,11 @@ export default function AIBuilderPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="min-w-[160px] max-h-[300px] overflow-y-auto">
                       {[
-                        { value: "builder", icon: Layers, label: "Builder" },
-                        { value: "ai-assistant", icon: MessageSquare, label: "Assistant" },
-                        { value: "db-designer", icon: Database, label: "DB Design" },
                         { value: "code", icon: FileCode2, label: "Code" },
                         { value: "deploy", icon: Rocket, label: "Deploy" },
+                        { value: "db-designer", icon: Database, label: "Database" },
                         { value: "quality", icon: TrendingUp, label: "Quality" },
-                        { value: "config", icon: Code, label: "Config" },
-                        { value: "security", icon: Shield, label: "Security" },
-                        { value: "summary", icon: Layers, label: "Summary" },
-                        { value: "live", icon: Eye, label: "Live" },
-                        { value: "autofix", icon: RefreshCw, label: "Auto-Fix" },
-                        { value: "plugin", icon: Package, label: "Plugin" },
-                        { value: "workflow", icon: GitBranch, label: "Workflow" },
-                        { value: "installer", icon: Settings, label: "Installer" },
-                        { value: "history", icon: History, label: "History" },
-                        { value: "timemachine", icon: Clock, label: "Versions" },
-                        { value: "docs", icon: Book, label: "Docs" },
-                        { value: "cicd", icon: Container, label: "CI/CD" },
-                        { value: "collab", icon: Users, label: "Team" },
-                        { value: "monitor", icon: Activity, label: "Monitor" },
-                        { value: "envs", icon: Server, label: "Envs" },
-                        { value: "webhooks", icon: Webhook, label: "Hooks" },
-                        { value: "branches", icon: GitFork, label: "Branch" },
-                        { value: "i18n", icon: Globe, label: "i18n" },
-                        { value: "seo", icon: Search, label: "SEO" },
-                        { value: "performance", icon: Activity, label: "Perf" },
-                        { value: "mobile-export", icon: Smartphone, label: "Mobile" },
-                        { value: "payments", icon: CreditCard, label: "Payment" },
-                        { value: "cron", icon: Clock, label: "Cron" },
-                        { value: "marketplace", icon: Package, label: "Market" },
-                        { value: "team", icon: Users, label: "Team" },
-                        { value: "api-docs", icon: FileText, label: "API" },
-                        { value: "automation", icon: GitBranch, label: "Automate" },
-                        { value: "analytics", icon: BarChart3, label: "Analytics" },
-                        { value: "errors", icon: Bug, label: "Errors" },
-                        { value: "a11y", icon: Eye, label: "A11y" },
+                        { value: "ai-assistant", icon: MessageSquare, label: "Assistant" },
                       ].map((tab) => (
                         <DropdownMenuItem
                           key={tab.value}
