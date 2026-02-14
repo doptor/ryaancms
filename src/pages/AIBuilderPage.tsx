@@ -21,7 +21,7 @@ import {
   GitBranch, Settings, History, Book, Container,
   Users, Activity, FolderOpen, Server,
   Webhook, Bell as BellIcon, GitFork,
-  Globe, Link, MicOff,
+  Globe, Link, MicOff, MessageSquare,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useLocation } from "react-router-dom";
@@ -61,6 +61,8 @@ import { EnvironmentManagerPanel } from "@/components/ai-builder/EnvironmentMana
 import { WebhookNotificationPanel } from "@/components/ai-builder/WebhookNotificationPanel";
 import { ProjectBranchingPanel } from "@/components/ai-builder/ProjectBranchingPanel";
 import { DragDropBuilderPanel } from "@/components/ai-builder/DragDropBuilderPanel";
+import { AIChatAssistantPanel } from "@/components/ai-builder/AIChatAssistantPanel";
+import { DatabaseDesignerPanel } from "@/components/ai-builder/DatabaseDesignerPanel";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getThemePreset } from "@/lib/engine/theme-generator";
@@ -1885,6 +1887,12 @@ export default function AIBuilderPage() {
                           <TabsTrigger value="builder" className={tabTriggerClass}>
                             <Layers className="w-3.5 h-3.5" /> Builder
                           </TabsTrigger>
+                          <TabsTrigger value="ai-assistant" className={tabTriggerClass}>
+                            <MessageSquare className="w-3.5 h-3.5" /> Assistant
+                          </TabsTrigger>
+                          <TabsTrigger value="db-designer" className={tabTriggerClass}>
+                            <Database className="w-3.5 h-3.5" /> DB Design
+                          </TabsTrigger>
                           <TabsTrigger value="code" className={tabTriggerClass}>
                             <FileCode2 className="w-3.5 h-3.5" /> Code
                             {generatedFiles.length > 0 && <Badge variant="secondary" className="text-[10px] h-4 ml-1">{generatedFiles.length}</Badge>}
@@ -1979,6 +1987,26 @@ export default function AIBuilderPage() {
                         onSelectComponent={(pi, ci) => setSelectedComponent({ pageIndex: pi, componentIndex: ci })}
                         onClearSelection={() => setSelectedComponent(null)}
                         onPropUpdate={handlePropUpdate}
+                      />
+                    )}
+                    {desktopRightTab === "ai-assistant" && (
+                      <AIChatAssistantPanel
+                        config={pipelineState?.config || null}
+                        onConfigUpdate={(newConfig) => {
+                          if (!pipelineState) return;
+                          setPipelineState({ ...pipelineState, config: newConfig });
+                        }}
+                        onSendToBuild={(prompt) => sendMessage(prompt)}
+                        isBuilding={isBuilding}
+                      />
+                    )}
+                    {desktopRightTab === "db-designer" && (
+                      <DatabaseDesignerPanel
+                        config={pipelineState?.config || null}
+                        onConfigUpdate={(newConfig) => {
+                          if (!pipelineState) return;
+                          setPipelineState({ ...pipelineState, config: newConfig });
+                        }}
                       />
                     )}
                     {desktopRightTab === "config" && renderConfig()}
@@ -2154,6 +2182,8 @@ export default function AIBuilderPage() {
                     <DropdownMenuContent align="end" className="min-w-[160px] max-h-[300px] overflow-y-auto">
                       {[
                         { value: "builder", icon: Layers, label: "Builder" },
+                        { value: "ai-assistant", icon: MessageSquare, label: "Assistant" },
+                        { value: "db-designer", icon: Database, label: "DB Design" },
                         { value: "code", icon: FileCode2, label: "Code" },
                         { value: "deploy", icon: Rocket, label: "Deploy" },
                         { value: "quality", icon: TrendingUp, label: "Quality" },
@@ -2205,6 +2235,26 @@ export default function AIBuilderPage() {
                   onSelectComponent={(pi, ci) => setSelectedComponent({ pageIndex: pi, componentIndex: ci })}
                   onClearSelection={() => setSelectedComponent(null)}
                   onPropUpdate={handlePropUpdate}
+                />
+              )}
+              {effectiveTab === "ai-assistant" && (
+                <AIChatAssistantPanel
+                  config={pipelineState?.config || null}
+                  onConfigUpdate={(newConfig) => {
+                    if (!pipelineState) return;
+                    setPipelineState({ ...pipelineState, config: newConfig });
+                  }}
+                  onSendToBuild={(prompt) => sendMessage(prompt)}
+                  isBuilding={isBuilding}
+                />
+              )}
+              {effectiveTab === "db-designer" && (
+                <DatabaseDesignerPanel
+                  config={pipelineState?.config || null}
+                  onConfigUpdate={(newConfig) => {
+                    if (!pipelineState) return;
+                    setPipelineState({ ...pipelineState, config: newConfig });
+                  }}
                 />
               )}
               {effectiveTab === "config" && renderConfig()}
