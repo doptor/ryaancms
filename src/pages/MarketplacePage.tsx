@@ -85,7 +85,7 @@ export default function MarketplacePage() {
   };
 
   const filtered = plugins.filter((p) => {
-    const matchTab = activeTab === "All" || p.tags.some((t) => TAG_TO_TAB[t] === activeTab);
+    const matchTab = activeTab === "All" || (p.tags || []).some((t) => TAG_TO_TAB[t] === activeTab);
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.description?.toLowerCase().includes(search.toLowerCase());
     return matchTab && matchSearch;
   });
@@ -147,7 +147,7 @@ export default function MarketplacePage() {
                   </div>
                   <p className="text-xs text-muted-foreground mb-4 leading-relaxed">{plugin.description}</p>
                   <div className="flex flex-wrap gap-1 mb-3">
-                    {plugin.tags.slice(0, 3).map((tag) => (
+                    {(plugin.tags || []).slice(0, 3).map((tag) => (
                       <span key={tag} className="px-1.5 py-0.5 rounded text-[10px] bg-muted text-muted-foreground">{tag}</span>
                     ))}
                   </div>
