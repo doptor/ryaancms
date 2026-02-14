@@ -69,6 +69,8 @@ import { PerformancePanel } from "@/components/ai-builder/PerformancePanel";
 import { MobileExportPanel } from "@/components/ai-builder/MobileExportPanel";
 import { PaymentIntegrationPanel } from "@/components/ai-builder/PaymentIntegrationPanel";
 import { CronJobPanel } from "@/components/ai-builder/CronJobPanel";
+import { ComponentMarketplacePanel } from "@/components/ai-builder/ComponentMarketplacePanel";
+import { TeamWorkspacePanel } from "@/components/ai-builder/TeamWorkspacePanel";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getThemePreset } from "@/lib/engine/theme-generator";
@@ -2095,6 +2097,16 @@ export default function AIBuilderPage() {
                           <TabsTrigger value="cron" className={tabTriggerClass}>
                             <Clock className="w-3.5 h-3.5" /> Cron
                           </TabsTrigger>
+
+                          <div className="w-px h-5 bg-border mx-1 self-center shrink-0" />
+
+                          {/* Phase 13: Marketplace + Team */}
+                          <TabsTrigger value="marketplace" className={tabTriggerClass}>
+                            <Package className="w-3.5 h-3.5" /> Market
+                          </TabsTrigger>
+                          <TabsTrigger value="team" className={tabTriggerClass}>
+                            <Users className="w-3.5 h-3.5" /> Team
+                          </TabsTrigger>
                         </TabsList>
                       </div>
                     </Tabs>
@@ -2293,6 +2305,12 @@ export default function AIBuilderPage() {
                     {desktopRightTab === "cron" && (
                       <CronJobPanel pipelineState={pipelineState} />
                     )}
+                    {desktopRightTab === "marketplace" && (
+                      <ComponentMarketplacePanel pipelineState={pipelineState} />
+                    )}
+                    {desktopRightTab === "team" && (
+                      <TeamWorkspacePanel pipelineState={pipelineState} />
+                    )}
                   </div>
                 </div>
               </ResizablePanel>
@@ -2353,6 +2371,8 @@ export default function AIBuilderPage() {
                         { value: "mobile-export", icon: Smartphone, label: "Mobile" },
                         { value: "payments", icon: CreditCard, label: "Payment" },
                         { value: "cron", icon: Clock, label: "Cron" },
+                        { value: "marketplace", icon: Package, label: "Market" },
+                        { value: "team", icon: Users, label: "Team" },
                       ].map((tab) => (
                         <DropdownMenuItem
                           key={tab.value}
@@ -2512,6 +2532,12 @@ export default function AIBuilderPage() {
               )}
               {effectiveTab === "cron" && (
                 <CronJobPanel pipelineState={pipelineState} />
+              )}
+              {effectiveTab === "marketplace" && (
+                <ComponentMarketplacePanel pipelineState={pipelineState} />
+              )}
+              {effectiveTab === "team" && (
+                <TeamWorkspacePanel pipelineState={pipelineState} />
               )}
             </div>
           </div>
