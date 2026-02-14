@@ -280,6 +280,12 @@ function ComponentRenderer({ component, config }: { component: ComponentConfig; 
     case "api_docs": return <ApiDocsPreview props={props} />;
     case "rich_text_editor": return <RichTextEditorPreview props={props} />;
     case "map": return <MapPreview props={props} />;
+    case "trusted_by": return <TrustedByPreview props={props} />;
+    case "features_grid": return <FeaturesGridPreview props={props} />;
+    case "how_it_works": return <HowItWorksPreview props={props} />;
+    case "testimonials": return <TestimonialsPreview props={props} />;
+    case "faq": return <FaqPreview props={props} />;
+    case "final_cta": return <FinalCtaPreview props={props} />;
     case "sidebar": return null;
     case "dashboard_layout": return null;
     default:
@@ -1481,6 +1487,232 @@ function ApiDocsPreview({ props }: { props: Record<string, any> }) {
             )}
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// === New Landing Page Section Previews ===
+
+function TrustedByPreview({ props }: { props: Record<string, any> }) {
+  const brands = props.logos || ["Vercel", "Stripe", "Notion", "Linear", "Figma", "Supabase"];
+  return (
+    <div className="px-6 py-14 border-y border-border/50 bg-muted/20">
+      <div className="max-w-5xl mx-auto">
+        <p className="text-center text-xs font-medium text-muted-foreground uppercase tracking-widest mb-8">
+          {props.label || "Trusted by leading companies"}
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
+          {brands.map((brand: string, i: number) => (
+            <div key={i} className="flex items-center gap-2 text-muted-foreground/50 hover:text-muted-foreground transition-colors">
+              <div className="w-7 h-7 rounded-lg bg-foreground/5 flex items-center justify-center">
+                <Globe className="w-4 h-4" />
+              </div>
+              <span className="text-sm font-semibold tracking-tight">{brand}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FeaturesGridPreview({ props }: { props: Record<string, any> }) {
+  const cols = props.columns || 3;
+  const defaultFeatures = [
+    { title: "Lightning Fast", description: "Optimized for speed with sub-second load times and instant interactions.", icon: Zap },
+    { title: "Enterprise Security", description: "Bank-grade encryption, SOC 2 compliance, and role-based access control.", icon: Shield },
+    { title: "Advanced Analytics", description: "Real-time dashboards with custom reports and data export capabilities.", icon: BarChart3 },
+    { title: "Seamless Integration", description: "Connect with 100+ tools including Slack, Zapier, and custom webhooks.", icon: Globe },
+    { title: "Team Collaboration", description: "Real-time editing, comments, and shared workspaces for your entire team.", icon: Users },
+    { title: "24/7 Support", description: "Dedicated support team available around the clock via chat and email.", icon: Heart },
+  ];
+
+  return (
+    <div className="px-6 py-20">
+      <div className="max-w-5xl mx-auto">
+        <div className="text-center mb-14 space-y-3">
+          <Badge variant="secondary" className="text-xs px-3 py-1 gap-1.5 font-medium">
+            <Sparkles className="w-3 h-3" /> Features
+          </Badge>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight leading-tight">
+            {props.headline || "Everything you need to succeed"}
+          </h2>
+          <p className="text-base text-muted-foreground max-w-xl mx-auto leading-relaxed">
+            {props.subtitle || "Powerful features designed to help you build, launch, and scale faster than ever."}
+          </p>
+        </div>
+        <div className={cn("grid gap-6", `grid-cols-1 sm:grid-cols-2 lg:grid-cols-${Math.min(cols, 3)}`)}>
+          {defaultFeatures.slice(0, cols * 2).map((feature, i) => {
+            const Icon = feature.icon;
+            return (
+              <div key={i} className="group rounded-2xl border border-border bg-card p-6 space-y-3 hover:shadow-lg hover:border-primary/20 hover:-translate-y-1 transition-all duration-300">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
+                  <Icon className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="text-base font-bold text-foreground tracking-tight">{feature.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HowItWorksPreview({ props }: { props: Record<string, any> }) {
+  const defaultSteps = [
+    { title: "Create your account", description: "Sign up in seconds with just your email. No credit card required to get started." },
+    { title: "Configure your workspace", description: "Set up your team, customize your dashboard, and connect your favorite tools." },
+    { title: "Launch and grow", description: "Start using powerful features to build, measure, and scale your business." },
+  ];
+  const steps = props.steps || defaultSteps;
+
+  return (
+    <div className="px-6 py-20 bg-muted/30">
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-14 space-y-3">
+          <Badge variant="secondary" className="text-xs px-3 py-1 font-medium">How it works</Badge>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
+            {props.headline || "Get started in minutes"}
+          </h2>
+          <p className="text-base text-muted-foreground max-w-lg mx-auto leading-relaxed">
+            {props.subtitle || "Three simple steps to transform the way you work."}
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {steps.map((step: any, i: number) => (
+            <div key={i} className="relative text-center space-y-4">
+              <div className="w-14 h-14 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center mx-auto text-lg font-extrabold shadow-lg">
+                {i + 1}
+              </div>
+              {i < steps.length - 1 && (
+                <div className="hidden md:block absolute top-7 left-[60%] w-[80%] border-t-2 border-dashed border-border" />
+              )}
+              <h3 className="text-base font-bold text-foreground tracking-tight">{step.title}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-xs mx-auto">{step.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TestimonialsPreview({ props }: { props: Record<string, any> }) {
+  const defaultTestimonials = [
+    { quote: "This platform completely transformed how we manage our business. The analytics alone saved us 20 hours per week.", name: "Sarah Johnson", role: "CEO at TechFlow", avatar: "S" },
+    { quote: "Best investment we've made this year. The team collaboration features are incredibly intuitive and powerful.", name: "Michael Chen", role: "CTO at ScaleUp", avatar: "M" },
+    { quote: "We migrated from three different tools to this one platform. Couldn't be happier with the results.", name: "Emma Williams", role: "VP Product at DataCo", avatar: "E" },
+  ];
+  const testimonials = props.testimonials || defaultTestimonials;
+
+  return (
+    <div className="px-6 py-20">
+      <div className="max-w-5xl mx-auto">
+        <div className="text-center mb-14 space-y-3">
+          <Badge variant="secondary" className="text-xs px-3 py-1 font-medium">Testimonials</Badge>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
+            {props.headline || "Loved by thousands of teams"}
+          </h2>
+          <p className="text-base text-muted-foreground max-w-lg mx-auto leading-relaxed">
+            {props.subtitle || "See why leading companies choose us to power their business."}
+          </p>
+        </div>
+        <div className={cn("grid gap-6", `grid-cols-1 md:grid-cols-${Math.min(props.columns || 3, 3)}`)}>
+          {testimonials.map((t: any, i: number) => (
+            <div key={i} className="rounded-2xl border border-border bg-card p-6 space-y-4 hover:shadow-md hover:border-primary/20 transition-all duration-300">
+              <div className="flex gap-0.5">
+                {[...Array(5)].map((_, j) => (
+                  <Star key={j} className="w-4 h-4 fill-primary text-primary" />
+                ))}
+              </div>
+              <p className="text-sm text-foreground leading-relaxed italic">"{t.quote}"</p>
+              <div className="flex items-center gap-3 pt-2">
+                <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center">
+                  <span className="text-sm font-bold text-primary-foreground">{t.avatar || t.name?.charAt(0)}</span>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{t.name}</p>
+                  <p className="text-xs text-muted-foreground">{t.role}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FaqPreview({ props }: { props: Record<string, any> }) {
+  const defaultFaqs = [
+    { question: "How do I get started?", answer: "Simply create a free account and follow the guided setup wizard. You'll be up and running in under 5 minutes." },
+    { question: "Is there a free trial?", answer: "Yes! We offer a 14-day free trial with full access to all features. No credit card required." },
+    { question: "Can I cancel anytime?", answer: "Absolutely. You can cancel your subscription at any time with no penalties or hidden fees." },
+    { question: "Do you offer team pricing?", answer: "Yes, we have special pricing for teams of 5+. Contact our sales team for a custom quote." },
+    { question: "What kind of support do you offer?", answer: "We provide 24/7 support via live chat, email, and phone for all paid plans." },
+  ];
+  const faqs = props.items || defaultFaqs;
+
+  return (
+    <div className="px-6 py-20 bg-muted/30">
+      <div className="max-w-2xl mx-auto">
+        <div className="text-center mb-14 space-y-3">
+          <Badge variant="secondary" className="text-xs px-3 py-1 font-medium">FAQ</Badge>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
+            {props.headline || "Frequently asked questions"}
+          </h2>
+          <p className="text-base text-muted-foreground max-w-md mx-auto leading-relaxed">
+            {props.subtitle || "Everything you need to know. Can't find what you're looking for? Contact us."}
+          </p>
+        </div>
+        <div className="space-y-3">
+          {faqs.map((faq: any, i: number) => (
+            <div key={i} className="rounded-xl border border-border bg-card overflow-hidden hover:border-primary/20 transition-colors">
+              <div className="flex items-center justify-between px-5 py-4 cursor-pointer">
+                <span className="text-sm font-semibold text-foreground pr-4">{faq.question}</span>
+                <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+              </div>
+              {i === 0 && (
+                <div className="px-5 pb-4">
+                  <p className="text-sm text-muted-foreground leading-relaxed">{faq.answer}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FinalCtaPreview({ props }: { props: Record<string, any> }) {
+  return (
+    <div className="px-6 py-20">
+      <div className="max-w-3xl mx-auto">
+        <div className="relative rounded-3xl overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-primary/80" />
+          <div className="absolute top-0 right-0 w-96 h-96 bg-primary-foreground/5 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl" />
+          <div className="relative text-center py-16 px-8 space-y-6">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-primary-foreground tracking-tight leading-tight">
+              {props.headline || "Ready to transform your business?"}
+            </h2>
+            <p className="text-base text-primary-foreground/80 max-w-lg mx-auto leading-relaxed">
+              {props.subtitle || "Join thousands of companies already using our platform to grow faster and work smarter."}
+            </p>
+            <div className="flex flex-wrap gap-3 justify-center pt-2">
+              <Button size="lg" className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 text-sm font-semibold gap-2 shadow-lg">
+                {props.primary_cta || "Get Started Free"} <ArrowRight className="w-4 h-4" />
+              </Button>
+              <Button variant="outline" size="lg" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 text-sm">
+                {props.secondary_cta || "Talk to Sales"}
+              </Button>
+            </div>
+            <p className="text-xs text-primary-foreground/60">No credit card required · Free 14-day trial · Cancel anytime</p>
+          </div>
+        </div>
       </div>
     </div>
   );

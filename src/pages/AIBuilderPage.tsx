@@ -111,6 +111,8 @@ const componentIcons: Record<string, any> = {
   kanban_board: Columns, timeline: Clock, map: MapPin,
   role_manager: Shield, payment_page: CreditCard, dashboard_layout: LayoutGrid,
   data_import: Image, settings_panel: BarChart3, api_docs: Code,
+  trusted_by: TrendingUp, features_grid: LayoutGrid, how_it_works: FileText,
+  testimonials: Sparkles, faq: FileText, final_cta: Rocket,
 };
 
 export default function AIBuilderPage() {
