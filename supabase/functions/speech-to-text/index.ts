@@ -76,63 +76,61 @@ serve(async (req) => {
       ],
     });
 
-    // Try Lovable AI Gateway first
-    let response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: geminiBody,
-    });
-
-    // If 402 (credits exhausted), fallback to user's own API key
-    if (response.status === 402 && userApiConfig) {
-      console.log(`Lovable AI credits exhausted, falling back to user's ${userApiConfig.provider} key`);
-      await response.text(); // consume body
-
-      // For OpenAI Whisper-compatible providers, use /audio/transcriptions
+    // Try user's own API key FIRST if available
+    let response: Response;
+    if (userApiConfig) {
+      console.log(`Using user's ${userApiConfig.provider} API key as primary for speech-to-text`);
       if (userApiConfig.provider === "openai") {
+        // Use Whisper API for OpenAI
         const whisperForm = new FormData();
         whisperForm.append("file", audioFile, "recording.webm");
         whisperForm.append("model", "whisper-1");
-
         const whisperEndpoint = userApiConfig.endpoint.endsWith("/v1")
           ? `${userApiConfig.endpoint}/audio/transcriptions`
           : `${userApiConfig.endpoint}/v1/audio/transcriptions`;
-
         response = await fetch(whisperEndpoint, {
           method: "POST",
           headers: { Authorization: `Bearer ${userApiConfig.apiKey}` },
           body: whisperForm,
         });
-
         if (response.ok) {
           const whisperData = await response.json();
           return new Response(JSON.stringify({ success: true, transcript: whisperData.text || "" }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
+        console.log(`User Whisper API failed (${response.status}), falling back to Lovable AI`);
+        await response.text();
       } else {
-        // For other providers, try chat completions with the audio
+        // For other providers, try chat completions with audio
         const fallbackBody = JSON.stringify({
           ...JSON.parse(geminiBody),
           model: userApiConfig.model,
         });
         const fallbackEndpoint = userApiConfig.endpoint.endsWith("/chat/completions")
-          ? userApiConfig.endpoint
-          : `${userApiConfig.endpoint}/chat/completions`;
-
+          ? userApiConfig.endpoint : `${userApiConfig.endpoint}/chat/completions`;
         response = await fetch(fallbackEndpoint, {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${userApiConfig.apiKey}`,
-            "Content-Type": "application/json",
-          },
+          headers: { Authorization: `Bearer ${userApiConfig.apiKey}`, "Content-Type": "application/json" },
           body: fallbackBody,
         });
+        if (response.ok) {
+          const data = await response.json();
+          const transcript = data.choices?.[0]?.message?.content?.trim() || "";
+          return new Response(JSON.stringify({ success: true, transcript }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        console.log(`User API failed (${response.status}), falling back to Lovable AI`);
+        await response.text();
       }
     }
+    // Fallback to Lovable AI Gateway
+    response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+      body: geminiBody,
+    });
 
     if (!response.ok) {
       const errText = await response.text();

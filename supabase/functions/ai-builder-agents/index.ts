@@ -837,26 +837,28 @@ async function runAgent(
   }
 
   try {
-    // Try Lovable AI Gateway first
-    let response = await callAI("https://ai.gateway.lovable.dev/v1/chat/completions", apiKey, requestBody);
-
-    // If 402 (credits exhausted), try user's own API key
-    if (response.status === 402 && userApiConfig) {
-      console.log(`Lovable AI credits exhausted, falling back to user's ${userApiConfig.provider} key`);
-      await response.text(); // consume body
-      
-      // Map the model for the user's provider
-      const fallbackBody = JSON.stringify({
+    // Try user's own API key FIRST if available
+    let response: Response;
+    if (userApiConfig) {
+      console.log(`Using user's ${userApiConfig.provider} API key as primary for agent: ${agent.name}`);
+      const userBody = JSON.stringify({
         ...JSON.parse(requestBody),
-        model: userApiConfig.model || "gpt-4o",
+        model: userApiConfig.model || "gpt-5",
       });
       response = await callAI(
         userApiConfig.endpoint.endsWith("/chat/completions")
           ? userApiConfig.endpoint
           : `${userApiConfig.endpoint}/chat/completions`,
         userApiConfig.apiKey,
-        fallbackBody
+        userBody
       );
+      if (!response.ok) {
+        console.log(`User API failed (${response.status}), falling back to Lovable AI`);
+        await response.text();
+        response = await callAI("https://ai.gateway.lovable.dev/v1/chat/completions", apiKey, requestBody);
+      }
+    } else {
+      response = await callAI("https://ai.gateway.lovable.dev/v1/chat/completions", apiKey, requestBody);
     }
 
     if (!response.ok) {

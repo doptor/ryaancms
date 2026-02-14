@@ -30,21 +30,22 @@ async function getUserApiConfig(req: Request, taskType = "general") {
 }
 
 async function aiRequest(url: string, headers: Record<string, string>, body: string, userApiConfig: any) {
-  let response = await fetch(url, { method: "POST", headers, body });
-  if (response.status === 402 && userApiConfig) {
-    console.log("Lovable credits exhausted, falling back to user API key");
-    await response.text();
+  if (userApiConfig) {
+    console.log(`Using user's ${userApiConfig.provider} API key as primary`);
     const parsed = JSON.parse(body);
-    parsed.model = userApiConfig.model;
-    const fallbackEndpoint = userApiConfig.endpoint.endsWith("/chat/completions")
+    parsed.model = userApiConfig.model || "gpt-5";
+    const userEndpoint = userApiConfig.endpoint.endsWith("/chat/completions")
       ? userApiConfig.endpoint : `${userApiConfig.endpoint}/chat/completions`;
-    response = await fetch(fallbackEndpoint, {
+    const userResponse = await fetch(userEndpoint, {
       method: "POST",
       headers: { Authorization: `Bearer ${userApiConfig.apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify(parsed),
     });
+    if (userResponse.ok) return userResponse;
+    console.log(`User API failed (${userResponse.status}), falling back to Lovable AI`);
+    await userResponse.text();
   }
-  return response;
+  return await fetch(url, { method: "POST", headers, body });
 }
 
 const TEMPLATE_COMPONENTS = new Set([
