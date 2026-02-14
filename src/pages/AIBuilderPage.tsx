@@ -13,6 +13,7 @@ import {
   TrendingUp, Link2, X, Eye, ChevronDown, ChevronUp,
   ArrowUp, Plus, Layers, RefreshCw, Package,
   GitBranch, Settings, History, Book, Container,
+  Users, Activity,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useLocation } from "react-router-dom";
@@ -45,6 +46,8 @@ import { ProjectHistoryPanel } from "@/components/ai-builder/ProjectHistoryPanel
 import { TimeMachinePanel } from "@/components/ai-builder/TimeMachinePanel";
 import { DocsGeneratorPanel } from "@/components/ai-builder/DocsGeneratorPanel";
 import { CICDExportPanel } from "@/components/ai-builder/CICDExportPanel";
+import { CollaborationPanel } from "@/components/ai-builder/CollaborationPanel";
+import { MonitoringPanel } from "@/components/ai-builder/MonitoringPanel";
 import { supabase } from "@/integrations/supabase/client";
 import { getThemePreset } from "@/lib/engine/theme-generator";
 
@@ -1098,6 +1101,12 @@ export default function AIBuilderPage() {
                         <TabsTrigger value="cicd" className={tabTriggerClass}>
                           <Container className="w-3.5 h-3.5" /> CI/CD
                         </TabsTrigger>
+                        <TabsTrigger value="collab" className={tabTriggerClass}>
+                          <Users className="w-3.5 h-3.5" /> Team
+                        </TabsTrigger>
+                        <TabsTrigger value="monitor" className={tabTriggerClass}>
+                          <Activity className="w-3.5 h-3.5" /> Monitor
+                        </TabsTrigger>
                       </TabsList>
                     </Tabs>
                   </div>
@@ -1224,6 +1233,12 @@ export default function AIBuilderPage() {
                     {activeTab === "cicd" && (
                       <CICDExportPanel pipelineState={pipelineState} />
                     )}
+                    {activeTab === "collab" && (
+                      <CollaborationPanel pipelineState={pipelineState} isBuilding={isBuilding} />
+                    )}
+                    {activeTab === "monitor" && (
+                      <MonitoringPanel pipelineState={pipelineState} isBuilding={isBuilding} />
+                    )}
                   </div>
                 </div>
               </ResizablePanel>
@@ -1285,6 +1300,12 @@ export default function AIBuilderPage() {
                   </TabsTrigger>
                   <TabsTrigger value="cicd" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
                     <Container className="w-3.5 h-3.5" /> CI/CD
+                  </TabsTrigger>
+                  <TabsTrigger value="collab" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
+                    <Users className="w-3.5 h-3.5" /> Team
+                  </TabsTrigger>
+                  <TabsTrigger value="monitor" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
+                    <Activity className="w-3.5 h-3.5" /> Monitor
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -1360,6 +1381,12 @@ export default function AIBuilderPage() {
               )}
               {activeTab === "cicd" && (
                 <CICDExportPanel pipelineState={pipelineState} />
+              )}
+              {activeTab === "collab" && (
+                <CollaborationPanel pipelineState={pipelineState} isBuilding={isBuilding} />
+              )}
+              {activeTab === "monitor" && (
+                <MonitoringPanel pipelineState={pipelineState} isBuilding={isBuilding} />
               )}
             </div>
           </div>
