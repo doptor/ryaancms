@@ -11,7 +11,7 @@ import {
   Calendar, Columns, Clock, MapPin, Download,
   Shield, AlertTriangle, Info, Image, Upload, FileCode2,
   TrendingUp, Link2, X, Eye, ChevronDown, ChevronUp,
-  ArrowUp, Plus,
+  ArrowUp, Plus, Layers,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useLocation } from "react-router-dom";
@@ -34,7 +34,10 @@ import { PropEditorSidebar } from "@/components/ai-builder/PropEditorSidebar";
 import { CodePanel, GeneratedFile } from "@/components/ai-builder/CodePanel";
 import { QualityScorePanel } from "@/components/ai-builder/QualityScorePanel";
 import { LivePreviewPanel } from "@/components/ai-builder/LivePreviewPanel";
+import { ThemeSelector } from "@/components/ai-builder/ThemeSelector";
+import { BuildSummaryPanel } from "@/components/ai-builder/BuildSummaryPanel";
 import { supabase } from "@/integrations/supabase/client";
+import { getThemePreset } from "@/lib/engine/theme-generator";
 
 type Message = { role: "user" | "ai"; content: string };
 
@@ -142,6 +145,7 @@ export default function AIBuilderPage() {
   const [screenshotUrl, setScreenshotUrl] = useState("");
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [showAdvancedPipeline, setShowAdvancedPipeline] = useState(false);
+  const [selectedThemeId, setSelectedThemeId] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const hasProcessedIncoming = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -206,6 +210,13 @@ export default function AIBuilderPage() {
 
     try {
       const startTime = Date.now();
+      // Apply selected theme preset to orchestrator
+      if (selectedThemeId) {
+        const preset = getThemePreset(selectedThemeId);
+        if (preset) {
+          orchestrator.setThemePreset(preset);
+        }
+      }
       const result = await orchestrator.execute(text);
       const duration = Date.now() - startTime;
       setPipelineState(result);
@@ -967,6 +978,7 @@ export default function AIBuilderPage() {
             )}
           </div>
           <div className="flex items-center gap-2">
+            <ThemeSelector selectedTheme={selectedThemeId} onSelect={setSelectedThemeId} />
             {buildComplete && (
               <>
                 <Button variant="ghost" size="sm" onClick={handleExportJSON} className="gap-1.5 text-xs text-muted-foreground hidden sm:flex">
@@ -1010,6 +1022,9 @@ export default function AIBuilderPage() {
                         </TabsTrigger>
                         <TabsTrigger value="deploy" className={tabTriggerClass}>
                           <Rocket className="w-3.5 h-3.5" /> Deploy
+                        </TabsTrigger>
+                        <TabsTrigger value="summary" className={tabTriggerClass}>
+                          <Layers className="w-3.5 h-3.5" /> Summary
                         </TabsTrigger>
                         <TabsTrigger value="code" className={tabTriggerClass}>
                           <FileCode2 className="w-3.5 h-3.5" /> Code
@@ -1092,6 +1107,9 @@ export default function AIBuilderPage() {
                         onExportSQL={handleExportSQL}
                       />
                     )}
+                    {activeTab === "summary" && (
+                      <BuildSummaryPanel pipelineState={pipelineState} />
+                    )}
                     {activeTab === "code" && (
                       <CodePanel
                         files={generatedFiles}
@@ -1137,6 +1155,9 @@ export default function AIBuilderPage() {
                   <TabsTrigger value="deploy" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
                     <Rocket className="w-3.5 h-3.5" /> Deploy
                   </TabsTrigger>
+                  <TabsTrigger value="summary" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
+                    <Layers className="w-3.5 h-3.5" /> Summary
+                  </TabsTrigger>
                   <TabsTrigger value="code" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
                     <FileCode2 className="w-3.5 h-3.5" /> Code
                   </TabsTrigger>
@@ -1164,6 +1185,9 @@ export default function AIBuilderPage() {
                   onExportJSON={handleExportJSON}
                   onExportSQL={handleExportSQL}
                 />
+              )}
+              {activeTab === "summary" && (
+                <BuildSummaryPanel pipelineState={pipelineState} />
               )}
               {activeTab === "code" && (
                 <CodePanel
