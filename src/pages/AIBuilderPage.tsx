@@ -1348,17 +1348,6 @@ export default function AIBuilderPage() {
 
     return (
       <div className="flex flex-col h-full">
-        {/* Preview toolbar */}
-        <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-card shrink-0">
-          <div className="flex items-center gap-2">
-            {validation && (
-              <Badge variant="secondary" className="text-[10px] gap-1">
-                <Shield className="w-3 h-3" /> {validation.score}/100
-              </Badge>
-            )}
-          </div>
-        </div>
-
         {/* Content */}
         <div className="flex-1 min-h-0">
           {previewMode === "visual" ? (
