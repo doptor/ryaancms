@@ -66,12 +66,12 @@
     <!-- Stats -->
     <div class="stats-bar">
       <div class="stat"><div class="stat-value">14</div><div class="stat-label">Engine Modules</div></div>
-      <div class="stat"><div class="stat-value">22</div><div class="stat-label">UI Panels</div></div>
+      <div class="stat"><div class="stat-value">23</div><div class="stat-label">UI Panels</div></div>
       <div class="stat"><div class="stat-value">11</div><div class="stat-label">Starter Templates</div></div>
       <div class="stat"><div class="stat-value">21</div><div class="stat-label">Pages</div></div>
       <div class="stat"><div class="stat-value">10</div><div class="stat-label">Edge Functions</div></div>
       <div class="stat"><div class="stat-value">17</div><div class="stat-label">DB Tables</div></div>
-      <div class="stat"><div class="stat-value">7</div><div class="stat-label">Platform Modules</div></div>
+      <div class="stat"><div class="stat-value">8</div><div class="stat-label">Platform Modules</div></div>
     </div>
 
     <hr class="divider" />
@@ -576,7 +576,39 @@
       <tr><td>PWA Support</td><td>✅</td><td>PWAInstallPrompt, InstallDialog, OfflineIndicator</td></tr>
     </table>
 
-    <div class="footer">
+    <!-- ==================== PHASE 9 ==================== -->
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-number">PHASE 9</span>
+        <span class="phase-title">Visual Drag & Drop Builder + Enhanced Live Preview</span>
+        <span class="phase-status status-done">✅ Complete</span>
+      </div>
+      <h3>Visual Drag & Drop Builder</h3>
+      <ul>
+        <li><strong>DragDropBuilderPanel.tsx</strong> — Full visual builder with 3-panel layout: Component Palette (left), Canvas (center), Properties Editor (right).</li>
+        <li><strong>Component Palette</strong> — 6 categories (Layout, Content, Data, Forms & Input, Commerce, Media & Other) with 30+ draggable components. Searchable with expand/collapse.</li>
+        <li><strong>Canvas</strong> — Drop zone with responsive viewport switching (Desktop/Tablet/Mobile). Visual drop indicators with animated feedback.</li>
+        <li><strong>Drag & Drop Flow</strong> — Drag from palette to canvas to add new components. Drag within canvas to reorder. Click to select and edit props.</li>
+        <li><strong>Viewport Preview</strong> — Desktop (100%), Tablet (768px), Mobile (375px) responsive preview within the builder canvas.</li>
+      </ul>
+      <h3>Enhanced Live Preview</h3>
+      <ul>
+        <li><strong>LivePreviewPanel.tsx</strong> — Already implemented with hot-reload, console capture, viewport switching, and fullscreen mode.</li>
+        <li><strong>Real-time Sync</strong> — Changes in Builder tab instantly reflect in Preview tab and Live Preview tab through shared PipelineState.</li>
+      </ul>
+      <h3>New Files</h3>
+      <div class="file-grid">
+        <div class="file-item"><span class="icon">📁</span> src/components/ai-builder/DragDropBuilderPanel.tsx</div>
+      </div>
+      <h3>Integration</h3>
+      <ul>
+        <li>New <strong>"Builder"</strong> tab added to AI Builder page (desktop tabs + mobile dropdown)</li>
+        <li>Builder tab uses shared PipelineState — edits in Builder reflect everywhere</li>
+        <li>Integrates with existing AppPreviewRenderer for rendering + PropEditorSidebar for property editing</li>
+      </ul>
+    </div>
+
+    <hr class="divider" />
       <p>📝 This document is auto-maintained. Every new AI Builder feature is appended here.</p>
       <p>Ryaan CMS — AI Builder Documentation © 2026</p>
     </div>

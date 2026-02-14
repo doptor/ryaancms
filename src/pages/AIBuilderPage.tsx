@@ -60,6 +60,7 @@ import { ProjectSelector } from "@/components/ai-builder/ProjectSelector";
 import { EnvironmentManagerPanel } from "@/components/ai-builder/EnvironmentManagerPanel";
 import { WebhookNotificationPanel } from "@/components/ai-builder/WebhookNotificationPanel";
 import { ProjectBranchingPanel } from "@/components/ai-builder/ProjectBranchingPanel";
+import { DragDropBuilderPanel } from "@/components/ai-builder/DragDropBuilderPanel";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getThemePreset } from "@/lib/engine/theme-generator";
@@ -1881,6 +1882,9 @@ export default function AIBuilderPage() {
                           <TabsTrigger value="preview" className={tabTriggerClass}>
                             <Eye className="w-3.5 h-3.5" /> Preview
                           </TabsTrigger>
+                          <TabsTrigger value="builder" className={tabTriggerClass}>
+                            <Layers className="w-3.5 h-3.5" /> Builder
+                          </TabsTrigger>
                           <TabsTrigger value="code" className={tabTriggerClass}>
                             <FileCode2 className="w-3.5 h-3.5" /> Code
                             {generatedFiles.length > 0 && <Badge variant="secondary" className="text-[10px] h-4 ml-1">{generatedFiles.length}</Badge>}
@@ -1964,6 +1968,19 @@ export default function AIBuilderPage() {
                   </div>
                   <div className="flex-1 min-h-0 overflow-hidden">
                     {desktopRightTab === "preview" && renderPreview()}
+                    {desktopRightTab === "builder" && (
+                      <DragDropBuilderPanel
+                        config={pipelineState?.config || null}
+                        onConfigUpdate={(newConfig) => {
+                          if (!pipelineState) return;
+                          setPipelineState({ ...pipelineState, config: newConfig });
+                        }}
+                        selectedComponent={selectedComponent}
+                        onSelectComponent={(pi, ci) => setSelectedComponent({ pageIndex: pi, componentIndex: ci })}
+                        onClearSelection={() => setSelectedComponent(null)}
+                        onPropUpdate={handlePropUpdate}
+                      />
+                    )}
                     {desktopRightTab === "config" && renderConfig()}
                     {desktopRightTab === "sql" && renderSQL()}
                     {desktopRightTab === "security" && (
@@ -2136,6 +2153,7 @@ export default function AIBuilderPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="min-w-[160px] max-h-[300px] overflow-y-auto">
                       {[
+                        { value: "builder", icon: Layers, label: "Builder" },
                         { value: "code", icon: FileCode2, label: "Code" },
                         { value: "deploy", icon: Rocket, label: "Deploy" },
                         { value: "quality", icon: TrendingUp, label: "Quality" },
@@ -2176,6 +2194,19 @@ export default function AIBuilderPage() {
             <div className="flex-1 min-h-0 overflow-hidden">
               {effectiveTab === "chat" && renderChat()}
               {effectiveTab === "preview" && renderPreview()}
+              {effectiveTab === "builder" && (
+                <DragDropBuilderPanel
+                  config={pipelineState?.config || null}
+                  onConfigUpdate={(newConfig) => {
+                    if (!pipelineState) return;
+                    setPipelineState({ ...pipelineState, config: newConfig });
+                  }}
+                  selectedComponent={selectedComponent}
+                  onSelectComponent={(pi, ci) => setSelectedComponent({ pageIndex: pi, componentIndex: ci })}
+                  onClearSelection={() => setSelectedComponent(null)}
+                  onPropUpdate={handlePropUpdate}
+                />
+              )}
               {effectiveTab === "config" && renderConfig()}
               {effectiveTab === "sql" && renderSQL()}
               {effectiveTab === "quality" && (
