@@ -71,6 +71,8 @@ import { PaymentIntegrationPanel } from "@/components/ai-builder/PaymentIntegrat
 import { CronJobPanel } from "@/components/ai-builder/CronJobPanel";
 import { ComponentMarketplacePanel } from "@/components/ai-builder/ComponentMarketplacePanel";
 import { TeamWorkspacePanel } from "@/components/ai-builder/TeamWorkspacePanel";
+import { ApiDocsGeneratorPanel } from "@/components/ai-builder/ApiDocsGeneratorPanel";
+import { WorkflowAutomationPanel } from "@/components/ai-builder/WorkflowAutomationPanel";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getThemePreset } from "@/lib/engine/theme-generator";
@@ -2107,6 +2109,16 @@ export default function AIBuilderPage() {
                           <TabsTrigger value="team" className={tabTriggerClass}>
                             <Users className="w-3.5 h-3.5" /> Team
                           </TabsTrigger>
+
+                          <div className="w-px h-5 bg-border mx-1 self-center shrink-0" />
+
+                          {/* Phase 14: API Docs + Workflow */}
+                          <TabsTrigger value="api-docs" className={tabTriggerClass}>
+                            <FileText className="w-3.5 h-3.5" /> API
+                          </TabsTrigger>
+                          <TabsTrigger value="automation" className={tabTriggerClass}>
+                            <GitBranch className="w-3.5 h-3.5" /> Automate
+                          </TabsTrigger>
                         </TabsList>
                       </div>
                     </Tabs>
@@ -2311,6 +2323,12 @@ export default function AIBuilderPage() {
                     {desktopRightTab === "team" && (
                       <TeamWorkspacePanel pipelineState={pipelineState} />
                     )}
+                    {desktopRightTab === "api-docs" && (
+                      <ApiDocsGeneratorPanel pipelineState={pipelineState} />
+                    )}
+                    {desktopRightTab === "automation" && (
+                      <WorkflowAutomationPanel pipelineState={pipelineState} />
+                    )}
                   </div>
                 </div>
               </ResizablePanel>
@@ -2373,6 +2391,8 @@ export default function AIBuilderPage() {
                         { value: "cron", icon: Clock, label: "Cron" },
                         { value: "marketplace", icon: Package, label: "Market" },
                         { value: "team", icon: Users, label: "Team" },
+                        { value: "api-docs", icon: FileText, label: "API" },
+                        { value: "automation", icon: GitBranch, label: "Automate" },
                       ].map((tab) => (
                         <DropdownMenuItem
                           key={tab.value}
@@ -2538,6 +2558,12 @@ export default function AIBuilderPage() {
               )}
               {effectiveTab === "team" && (
                 <TeamWorkspacePanel pipelineState={pipelineState} />
+              )}
+              {effectiveTab === "api-docs" && (
+                <ApiDocsGeneratorPanel pipelineState={pipelineState} />
+              )}
+              {effectiveTab === "automation" && (
+                <WorkflowAutomationPanel pipelineState={pipelineState} />
               )}
             </div>
           </div>
