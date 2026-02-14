@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Save, Globe, Shield, Bell, Palette, Database, Loader2, Brain, Image, Upload } from "lucide-react";
+import { Save, Globe, Shield, Bell, Palette, Database, Loader2, Brain, Image, Upload, RefreshCw, Clock, CheckCircle2, AlertCircle, Download, History, ToggleLeft, Settings2, Wifi, FileText } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSettings } from "@/hooks/useSettings";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,6 +20,7 @@ import AIIntegrationSettings from "@/components/settings/AIIntegrationSettings";
 const settingSections = [
   { id: "general", icon: Globe, label: "General", desc: "Site name, URL, timezone, language, and branding.", color: "text-blue-400" },
   { id: "ai-integrations", icon: Brain, label: "AI Integrations", desc: "Manage AI platform connections and models.", color: "text-pink-400" },
+  { id: "auto-update", icon: RefreshCw, label: "Auto Update", desc: "Manage automatic updates, schedules, and version control.", color: "text-emerald-400" },
   { id: "security", icon: Shield, label: "Security", desc: "SSO, MFA, API keys, and role-based access control.", color: "text-teal-400" },
   { id: "notifications", icon: Bell, label: "Notifications", desc: "Email, webhook, and in-app notification preferences.", color: "text-amber-400" },
   { id: "appearance", icon: Palette, label: "Appearance", desc: "Theme, colors, typography, and custom CSS.", color: "text-violet-400" },
@@ -427,8 +428,332 @@ function DatabaseSettings({ values, onChange }: SectionProps) {
   );
 }
 
+function AutoUpdateSettings({ values, onChange }: SectionProps) {
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [updateAvailable, setUpdateAvailable] = useState<null | { version: string; changelog: string[] }>(null);
+
+  const handleCheckUpdate = () => {
+    setCheckingUpdate(true);
+    setTimeout(() => {
+      setCheckingUpdate(false);
+      if (Math.random() > 0.5) {
+        setUpdateAvailable({
+          version: "2.4.0",
+          changelog: [
+            "Improved AI Builder performance",
+            "New drag-and-drop component system",
+            "Security patches for authentication",
+            "Database migration improvements",
+            "Bug fixes and stability enhancements",
+          ],
+        });
+      } else {
+        setUpdateAvailable(null);
+        toast({ title: "✅ Up to date!", description: "You're running the latest version." });
+      }
+    }, 2000);
+  };
+
+  const updateHistory = [
+    { version: "2.3.1", date: "2026-02-10", status: "success", type: "Patch" },
+    { version: "2.3.0", date: "2026-02-01", status: "success", type: "Minor" },
+    { version: "2.2.5", date: "2026-01-20", status: "success", type: "Patch" },
+    { version: "2.2.0", date: "2026-01-05", status: "rolled-back", type: "Minor" },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Current Version & Check */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-border bg-muted/30">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+            <RefreshCw className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-foreground">Current Version: <span className="text-primary">v2.3.1</span></p>
+            <p className="text-xs text-muted-foreground">Last checked: {values.lastChecked || "Never"}</p>
+          </div>
+        </div>
+        <Button onClick={handleCheckUpdate} disabled={checkingUpdate} size="sm" className="gap-2">
+          {checkingUpdate ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+          {checkingUpdate ? "Checking..." : "Check for Updates"}
+        </Button>
+      </div>
+
+      {/* Update Available Banner */}
+      {updateAvailable && (
+        <div className="p-4 rounded-xl border border-primary/30 bg-primary/5 space-y-3">
+          <div className="flex items-center gap-2">
+            <Download className="w-4 h-4 text-primary" />
+            <span className="text-sm font-semibold text-primary">Update Available: v{updateAvailable.version}</span>
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs font-medium text-foreground">Changelog:</p>
+            {updateAvailable.changelog.map((item, i) => (
+              <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                {item}
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" className="gap-1.5">
+              <Download className="w-3.5 h-3.5" /> Install Update
+            </Button>
+            <Button variant="outline" size="sm">View Full Changelog</Button>
+          </div>
+        </div>
+      )}
+
+      {/* Auto-Update Toggle */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+          <Settings2 className="w-4 h-4" /> Update Preferences
+        </h3>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Enable Auto Updates</Label>
+              <p className="text-xs text-muted-foreground">Automatically install updates when available</p>
+            </div>
+            <Switch checked={!!values.autoUpdateEnabled} onCheckedChange={(v) => onChange("autoUpdateEnabled", v)} />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Auto Update Plugins</Label>
+              <p className="text-xs text-muted-foreground">Keep installed plugins up to date automatically</p>
+            </div>
+            <Switch checked={!!values.autoUpdatePlugins} onCheckedChange={(v) => onChange("autoUpdatePlugins", v)} />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Auto Update Themes</Label>
+              <p className="text-xs text-muted-foreground">Automatically update theme components</p>
+            </div>
+            <Switch checked={!!values.autoUpdateThemes} onCheckedChange={(v) => onChange("autoUpdateThemes", v)} />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Pre-release Updates</Label>
+              <p className="text-xs text-muted-foreground">Include beta and pre-release versions</p>
+            </div>
+            <Switch checked={!!values.prereleaseUpdates} onCheckedChange={(v) => onChange("prereleaseUpdates", v)} />
+          </div>
+        </div>
+      </div>
+
+      {/* Update Schedule */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+          <Clock className="w-4 h-4" /> Update Schedule
+        </h3>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Update Window</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {["Immediate", "Nightly (2-4 AM)", "Weekly (Sunday)", "Manual Only"].map((opt) => (
+                <button
+                  key={opt}
+                  onClick={() => onChange("updateSchedule", opt)}
+                  className={cn(
+                    "px-3 py-2 rounded-lg border text-xs font-medium transition-all",
+                    values.updateSchedule === opt
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border text-muted-foreground hover:border-primary/30"
+                  )}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Create Backup Before Update</Label>
+              <p className="text-xs text-muted-foreground">Automatically backup before applying updates</p>
+            </div>
+            <Switch checked={values.backupBeforeUpdate !== false} onCheckedChange={(v) => onChange("backupBeforeUpdate", v)} />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Auto Rollback on Failure</Label>
+              <p className="text-xs text-muted-foreground">Revert to previous version if update fails</p>
+            </div>
+            <Switch checked={values.autoRollback !== false} onCheckedChange={(v) => onChange("autoRollback", v)} />
+          </div>
+        </div>
+      </div>
+
+      {/* Notification Preferences for Updates */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+          <Bell className="w-4 h-4" /> Update Notifications
+        </h3>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Email on Update Available</Label>
+              <p className="text-xs text-muted-foreground">Get notified when new updates are released</p>
+            </div>
+            <Switch checked={!!values.emailOnUpdate} onCheckedChange={(v) => onChange("emailOnUpdate", v)} />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Email on Update Installed</Label>
+              <p className="text-xs text-muted-foreground">Confirm when updates are successfully applied</p>
+            </div>
+            <Switch checked={!!values.emailOnInstall} onCheckedChange={(v) => onChange("emailOnInstall", v)} />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Email on Update Failure</Label>
+              <p className="text-xs text-muted-foreground">Alert when an update fails or rolls back</p>
+            </div>
+            <Switch checked={values.emailOnFailure !== false} onCheckedChange={(v) => onChange("emailOnFailure", v)} />
+          </div>
+        </div>
+      </div>
+
+      {/* Update Channels */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+          <Wifi className="w-4 h-4" /> Update Channel
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          {[
+            { id: "stable", label: "Stable", desc: "Production-ready releases", icon: CheckCircle2 },
+            { id: "beta", label: "Beta", desc: "Pre-release testing builds", icon: AlertCircle },
+            { id: "nightly", label: "Nightly", desc: "Latest development builds", icon: RefreshCw },
+          ].map((ch) => (
+            <button
+              key={ch.id}
+              onClick={() => onChange("updateChannel", ch.id)}
+              className={cn(
+                "flex flex-col items-center gap-2 p-3 rounded-xl border text-center transition-all",
+                values.updateChannel === ch.id
+                  ? "border-primary bg-primary/5 ring-1 ring-primary"
+                  : "border-border hover:border-primary/30"
+              )}
+            >
+              <ch.icon className={cn("w-5 h-5", values.updateChannel === ch.id ? "text-primary" : "text-muted-foreground")} />
+              <span className="text-xs font-medium text-foreground">{ch.label}</span>
+              <span className="text-[10px] text-muted-foreground">{ch.desc}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Update History */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+          <History className="w-4 h-4" /> Update History
+        </h3>
+        <div className="rounded-xl border border-border overflow-hidden">
+          {updateHistory.map((entry, i) => (
+            <div
+              key={entry.version}
+              className={cn(
+                "flex items-center justify-between px-4 py-3",
+                i < updateHistory.length - 1 && "border-b border-border"
+              )}
+            >
+              <div className="flex items-center gap-3">
+                {entry.status === "success" ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 text-amber-500" />
+                )}
+                <div>
+                  <span className="text-sm font-medium text-foreground">v{entry.version}</span>
+                  <span className="text-xs text-muted-foreground ml-2">{entry.type}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-muted-foreground">{entry.date}</span>
+                <span className={cn(
+                  "text-[10px] px-2 py-0.5 rounded-full font-medium",
+                  entry.status === "success"
+                    ? "bg-emerald-500/10 text-emerald-500"
+                    : "bg-amber-500/10 text-amber-500"
+                )}>
+                  {entry.status === "success" ? "Installed" : "Rolled Back"}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Maintenance Mode */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+          <ToggleLeft className="w-4 h-4" /> Maintenance Mode
+        </h3>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Enable During Updates</Label>
+              <p className="text-xs text-muted-foreground">Show maintenance page while updates are being applied</p>
+            </div>
+            <Switch checked={!!values.maintenanceDuringUpdate} onCheckedChange={(v) => onChange("maintenanceDuringUpdate", v)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Maintenance Message</Label>
+            <Input
+              value={values.maintenanceMessage || ""}
+              onChange={(e) => onChange("maintenanceMessage", e.target.value)}
+              placeholder="We're updating! Back in a few minutes..."
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Update Log */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+          <FileText className="w-4 h-4" /> Advanced
+        </h3>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Verbose Update Logs</Label>
+              <p className="text-xs text-muted-foreground">Save detailed logs during update process</p>
+            </div>
+            <Switch checked={!!values.verboseLogs} onCheckedChange={(v) => onChange("verboseLogs", v)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Update Server URL</Label>
+            <Input
+              value={values.updateServerUrl || ""}
+              onChange={(e) => onChange("updateServerUrl", e.target.value)}
+              placeholder="https://updates.ryaancms.com/api/v1"
+            />
+            <p className="text-xs text-muted-foreground">Custom update server endpoint (leave blank for default)</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <FileText className="w-3.5 h-3.5" /> View Update Logs
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <Download className="w-3.5 h-3.5" /> Export Logs
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const sectionComponentMap: Record<string, React.FC<SectionProps>> = {
   general: GeneralSettings,
+  "auto-update": AutoUpdateSettings,
   security: SecuritySettings,
   notifications: NotificationSettings,
   appearance: AppearanceSettings,
