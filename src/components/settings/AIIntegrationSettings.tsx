@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/pagination";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
-import { Plus, Pencil, Trash2, Search, CheckCircle2, XCircle, ExternalLink, Info, Copy, Check, Plug, Loader2, Wifi, WifiOff } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, CheckCircle2, XCircle, ExternalLink, Info, Copy, Check, Plug, Loader2, Wifi, WifiOff, Sparkles, Zap, Brain, Image, Mic, Globe, BookOpen } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -464,6 +464,105 @@ export default function AIIntegrationSettings() {
 
   return (
     <div className="space-y-4">
+      {/* Model Recommendation Guide */}
+      <Accordion type="single" collapsible className="border border-border rounded-xl bg-card">
+        <AccordionItem value="guide" className="border-none">
+          <AccordionTrigger className="px-5 py-4 text-sm hover:no-underline">
+            <span className="flex items-center gap-2 font-semibold">
+              <BookOpen className="w-4 h-4 text-primary" />
+              Which API & Model is best for what? — Quick Guide
+            </span>
+          </AccordionTrigger>
+          <AccordionContent className="px-5 pb-5">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {/* Text Generation & Chat */}
+              <div className="rounded-lg border border-border p-4 space-y-2">
+                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Brain className="w-4 h-4 text-primary" /> Text / Chat / Reasoning
+                </div>
+                <ul className="text-xs text-muted-foreground space-y-1.5">
+                  <li><Badge variant="outline" className="text-[10px] mr-1">Best</Badge>OpenAI <code className="text-[10px]">gpt-5</code> — strongest reasoning</li>
+                  <li><Badge variant="outline" className="text-[10px] mr-1">Best</Badge>Gemini <code className="text-[10px]">gemini-2.5-pro</code> — big context + reasoning</li>
+                  <li><Badge variant="outline" className="text-[10px] mr-1">Fast</Badge>Gemini <code className="text-[10px]">gemini-2.5-flash</code> — balanced speed & quality</li>
+                  <li><Badge variant="outline" className="text-[10px] mr-1">Budget</Badge>OpenAI <code className="text-[10px]">gpt-5-nano</code> — cheapest, simple tasks</li>
+                  <li><Badge variant="outline" className="text-[10px] mr-1">Budget</Badge>DeepSeek <code className="text-[10px]">deepseek-chat</code> — great value</li>
+                </ul>
+              </div>
+
+              {/* Code Generation */}
+              <div className="rounded-lg border border-border p-4 space-y-2">
+                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Zap className="w-4 h-4 text-primary" /> Code Generation
+                </div>
+                <ul className="text-xs text-muted-foreground space-y-1.5">
+                  <li><Badge variant="outline" className="text-[10px] mr-1">Best</Badge>Anthropic <code className="text-[10px]">claude-sonnet-4</code> — top coding model</li>
+                  <li><Badge variant="outline" className="text-[10px] mr-1">Best</Badge>OpenAI <code className="text-[10px]">gpt-5</code> — excellent for complex code</li>
+                  <li><Badge variant="outline" className="text-[10px] mr-1">Fast</Badge>Groq <code className="text-[10px]">llama-3.3-70b</code> — ultra-fast inference</li>
+                  <li><Badge variant="outline" className="text-[10px] mr-1">Budget</Badge>DeepSeek <code className="text-[10px]">deepseek-coder</code> — cheapest code model</li>
+                  <li><Badge variant="outline" className="text-[10px] mr-1">Budget</Badge>Mistral <code className="text-[10px]">codestral-latest</code> — good for completions</li>
+                </ul>
+              </div>
+
+              {/* Voice / Speech */}
+              <div className="rounded-lg border border-border p-4 space-y-2">
+                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Mic className="w-4 h-4 text-primary" /> Voice & Speech-to-Text
+                </div>
+                <ul className="text-xs text-muted-foreground space-y-1.5">
+                  <li><Badge variant="outline" className="text-[10px] mr-1">Best</Badge>OpenAI <code className="text-[10px]">whisper-1</code> — best multilingual STT</li>
+                  <li><Badge variant="outline" className="text-[10px] mr-1">Fast</Badge>Groq <code className="text-[10px]">whisper-large-v3-turbo</code> — fastest STT</li>
+                  <li><Badge variant="outline" className="text-[10px] mr-1">Good</Badge>Gemini <code className="text-[10px]">gemini-2.5-flash</code> — audio understanding</li>
+                  <li><Badge variant="outline" className="text-[10px] mr-1">TTS</Badge>OpenAI <code className="text-[10px]">tts-1-hd</code> — text-to-speech</li>
+                </ul>
+              </div>
+
+              {/* Image */}
+              <div className="rounded-lg border border-border p-4 space-y-2">
+                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Image className="w-4 h-4 text-primary" /> Image Generation & Vision
+                </div>
+                <ul className="text-xs text-muted-foreground space-y-1.5">
+                  <li><Badge variant="outline" className="text-[10px] mr-1">Best</Badge>Gemini <code className="text-[10px]">imagen-4</code> — top image gen</li>
+                  <li><Badge variant="outline" className="text-[10px] mr-1">Good</Badge>OpenAI <code className="text-[10px]">dall-e-3</code> — creative images</li>
+                  <li><Badge variant="outline" className="text-[10px] mr-1">Vision</Badge>xAI <code className="text-[10px]">grok-2-vision</code> — image understanding</li>
+                  <li><Badge variant="outline" className="text-[10px] mr-1">Vision</Badge>Gemini <code className="text-[10px]">gemini-2.5-pro</code> — multimodal analysis</li>
+                </ul>
+              </div>
+
+              {/* Search & Research */}
+              <div className="rounded-lg border border-border p-4 space-y-2">
+                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Globe className="w-4 h-4 text-primary" /> Search & Research
+                </div>
+                <ul className="text-xs text-muted-foreground space-y-1.5">
+                  <li><Badge variant="outline" className="text-[10px] mr-1">Best</Badge>Perplexity <code className="text-[10px]">sonar-pro</code> — web search built-in</li>
+                  <li><Badge variant="outline" className="text-[10px] mr-1">Deep</Badge>Perplexity <code className="text-[10px]">sonar-deep-research</code> — in-depth research</li>
+                  <li><Badge variant="outline" className="text-[10px] mr-1">Good</Badge>Cohere <code className="text-[10px]">command-r-plus</code> — RAG optimized</li>
+                </ul>
+              </div>
+
+              {/* Multilingual */}
+              <div className="rounded-lg border border-border p-4 space-y-2">
+                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Sparkles className="w-4 h-4 text-primary" /> Multilingual & Embeddings
+                </div>
+                <ul className="text-xs text-muted-foreground space-y-1.5">
+                  <li><Badge variant="outline" className="text-[10px] mr-1">Best</Badge>Gemini <code className="text-[10px]">gemini-2.5-pro</code> — 100+ languages</li>
+                  <li><Badge variant="outline" className="text-[10px] mr-1">Good</Badge>OpenAI <code className="text-[10px]">gpt-5</code> — strong multilingual</li>
+                  <li><Badge variant="outline" className="text-[10px] mr-1">Embed</Badge>Cohere <code className="text-[10px]">embed-v4.0</code> — best embeddings</li>
+                  <li><Badge variant="outline" className="text-[10px] mr-1">Embed</Badge>Cohere <code className="text-[10px]">embed-multilingual-v3.0</code></li>
+                  <li><Badge variant="outline" className="text-[10px] mr-1">Rerank</Badge>Cohere <code className="text-[10px]">rerank-v3.5</code> — search reranking</li>
+                </ul>
+              </div>
+            </div>
+
+            <p className="mt-4 text-xs text-muted-foreground italic">
+              💡 Tip: For this CMS, we recommend <strong>OpenAI gpt-5-mini</strong> or <strong>Gemini 2.5 Flash</strong> for general AI tasks (best balance of speed, quality & cost). For voice input, <strong>OpenAI Whisper</strong> gives the most accurate multilingual transcription.
+            </p>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">Manage AI platform connections, models, and API keys.</p>
         <Button variant="default" size="sm" onClick={openCreate}>
