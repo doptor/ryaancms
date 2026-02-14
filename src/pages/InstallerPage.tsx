@@ -9,10 +9,12 @@ import {
   Loader2, Play, RotateCcw, CheckCircle2, XCircle,
   Terminal, Package,
 } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import InstallDialog from "@/components/InstallDialog";
 import MyInstalledTab from "@/components/installer/MyInstalledTab";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const marketplaceItems = [
   { name: "SEO Pro", type: "Plugin", rating: 4.9, installs: "12.4K", tag: "Popular", desc: "Advanced SEO toolkit with AI-powered suggestions." },
@@ -44,6 +46,7 @@ const INITIAL_BUILD_STEPS: Omit<BuildStep, "status" | "logs" | "attempt">[] = [
 ];
 
 export default function InstallerPage() {
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [activeType, setActiveType] = useState<string>("All");
   const [installItem, setInstallItem] = useState<typeof marketplaceItems[0] | null>(null);
@@ -51,6 +54,23 @@ export default function InstallerPage() {
   const [uploadFile, setUploadFile] = useState<string | null>(null);
   const [urlInput, setUrlInput] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const [installedSlugs, setInstalledSlugs] = useState<Set<string>>(new Set());
+
+  const loadInstalledSlugs = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("user_plugins")
+      .select("plugins(slug)")
+      .eq("user_id", user.id);
+    if (data) {
+      const slugs = new Set(data.map((d: any) => d.plugins?.slug).filter(Boolean));
+      setInstalledSlugs(slugs as Set<string>);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    loadInstalledSlugs();
+  }, [loadInstalledSlugs]);
 
   // Build loop state
   const [buildSteps, setBuildSteps] = useState<BuildStep[]>([]);
@@ -243,6 +263,8 @@ export default function InstallerPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filtered.map((item, idx) => {
+                const slug = item.name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+                const isInstalled = installedSlugs.has(slug);
                 const colors = [
                   "from-primary/10 to-chart-2/10 border-primary/20",
                   "from-chart-3/10 to-primary/10 border-chart-3/20",
@@ -257,15 +279,22 @@ export default function InstallerPage() {
                     colorClass
                   )}>
                     <div className="flex items-center justify-between mb-3">
-                      <Badge
-                        variant="secondary"
-                        className={cn("text-xs", 
-                          item.tag === "Popular" && "bg-chart-5/20 text-chart-5 border-chart-5/30",
-                          item.tag === "Featured" && "bg-primary/20 text-primary border-primary/30",
-                          item.tag === "AI" && "bg-chart-2/20 text-chart-2 border-chart-2/30",
-                          item.tag === "New" && "bg-chart-4/20 text-chart-4 border-chart-4/30",
+                      <div className="flex items-center gap-1.5">
+                        <Badge
+                          variant="secondary"
+                          className={cn("text-xs", 
+                            item.tag === "Popular" && "bg-chart-5/20 text-chart-5 border-chart-5/30",
+                            item.tag === "Featured" && "bg-primary/20 text-primary border-primary/30",
+                            item.tag === "AI" && "bg-chart-2/20 text-chart-2 border-chart-2/30",
+                            item.tag === "New" && "bg-chart-4/20 text-chart-4 border-chart-4/30",
+                          )}
+                        >{item.tag}</Badge>
+                        {isInstalled && (
+                          <Badge className="text-[10px] bg-chart-4/20 text-chart-4 border-chart-4/30 gap-0.5">
+                            <CheckCircle className="w-2.5 h-2.5" /> Installed
+                          </Badge>
                         )}
-                      >{item.tag}</Badge>
+                      </div>
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <Star className="w-3 h-3 text-chart-5 fill-chart-5" />{item.rating}
                       </div>
@@ -284,9 +313,15 @@ export default function InstallerPage() {
                     <p className="text-xs text-muted-foreground mb-4 leading-relaxed flex-1">{item.desc}</p>
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground"><Download className="w-3 h-3 inline mr-1" />{item.installs}</span>
-                      <Button size="sm" onClick={() => handleInstall(item)} className="shadow-primary-lg">
-                        <ArrowRight className="w-3.5 h-3.5" /> Install
-                      </Button>
+                      {isInstalled ? (
+                        <Button size="sm" variant="outline" disabled className="gap-1 opacity-70">
+                          <CheckCircle className="w-3.5 h-3.5 text-chart-4" /> Installed
+                        </Button>
+                      ) : (
+                        <Button size="sm" onClick={() => handleInstall(item)} className="shadow-primary-lg">
+                          <ArrowRight className="w-3.5 h-3.5" /> Install
+                        </Button>
+                      )}
                     </div>
                   </div>
                 );
@@ -475,7 +510,7 @@ export default function InstallerPage() {
           </TabsContent>
         </Tabs>
 
-        <InstallDialog open={dialogOpen} onOpenChange={setDialogOpen} item={installItem} />
+        <InstallDialog open={dialogOpen} onOpenChange={setDialogOpen} item={installItem} onInstallComplete={loadInstalledSlugs} />
       </div>
     </DashboardLayout>
   );
