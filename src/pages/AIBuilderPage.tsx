@@ -1316,52 +1316,11 @@ export default function AIBuilderPage() {
         {/* Preview toolbar */}
         <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-card shrink-0">
           <div className="flex items-center gap-2">
-            <div className="flex rounded-lg border border-border overflow-hidden">
-              <button
-                onClick={() => setPreviewMode("visual")}
-                className={cn(
-                  "px-3 py-1 text-xs font-medium transition-colors",
-                  previewMode === "visual" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"
-                )}
-              >
-                Visual
-              </button>
-              <button
-                onClick={() => setPreviewMode("schema")}
-                className={cn(
-                  "px-3 py-1 text-xs font-medium transition-colors",
-                  previewMode === "schema" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"
-                )}
-              >
-                Schema
-              </button>
-            </div>
             {validation && (
               <Badge variant="secondary" className="text-[10px] gap-1">
                 <Shield className="w-3 h-3" /> {validation.score}/100
               </Badge>
             )}
-          </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost" size="sm"
-              onClick={() => {
-                if (pipelineState?.config) {
-                  localStorage.setItem("ai-builder-preview-config", JSON.stringify(pipelineState.config));
-                  window.open("/preview", "_blank");
-                }
-              }}
-              className="gap-1 h-7 text-xs text-muted-foreground hover:text-foreground"
-              title="Open preview in new tab"
-            >
-              <ExternalLink className="w-3 h-3" /> New Tab
-            </Button>
-            <Button variant="ghost" size="sm" onClick={handleExportJSON} className="gap-1 h-7 text-xs text-muted-foreground hover:text-foreground">
-              <Download className="w-3 h-3" /> JSON
-            </Button>
-            <Button variant="ghost" size="sm" onClick={handleExportSQL} className="gap-1 h-7 text-xs text-muted-foreground hover:text-foreground">
-              <Download className="w-3 h-3" /> SQL
-            </Button>
           </div>
         </div>
 
@@ -1578,6 +1537,20 @@ export default function AIBuilderPage() {
                 <Download className="w-3.5 h-3.5" /> Export
               </Button>
             )}
+            <Button
+              variant="ghost" size="sm"
+              onClick={() => {
+                if (pipelineState?.config) {
+                  localStorage.setItem("ai-builder-preview-config", JSON.stringify(pipelineState.config));
+                  window.open("/preview", "_blank");
+                }
+              }}
+              disabled={!buildComplete}
+              className="gap-1 text-xs h-7 sm:h-8 px-2 text-muted-foreground hover:text-foreground"
+              title="Open preview in new tab"
+            >
+              <ExternalLink className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">New Tab</span>
+            </Button>
             <Button size="sm" onClick={handlePublish} disabled={!buildComplete} className="gap-1 text-xs sm:text-sm h-7 sm:h-8 px-2 sm:px-3">
               <Rocket className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">Publish</span>
             </Button>
@@ -1822,20 +1795,11 @@ export default function AIBuilderPage() {
               <div className="flex items-center h-10 w-full overflow-x-auto scrollbar-none">
                 <Tabs value={effectiveTab} onValueChange={setActiveTab} className="flex-1 min-w-0">
                   <TabsList className="bg-transparent h-10 p-0 gap-0 justify-start inline-flex">
-                    <TabsTrigger value="chat" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2.5 gap-1 text-[11px] shrink-0">
+                     <TabsTrigger value="chat" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2.5 gap-1 text-[11px] shrink-0">
                       <Sparkles className="w-3 h-3" /> Chat
                     </TabsTrigger>
                     <TabsTrigger value="preview" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2.5 gap-1 text-[11px] shrink-0">
                       <Eye className="w-3 h-3" /> Preview
-                    </TabsTrigger>
-                    <TabsTrigger value="code" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2.5 gap-1 text-[11px] shrink-0">
-                      <FileCode2 className="w-3 h-3" /> Code
-                    </TabsTrigger>
-                    <TabsTrigger value="deploy" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2.5 gap-1 text-[11px] shrink-0">
-                      <Rocket className="w-3 h-3" /> Deploy
-                    </TabsTrigger>
-                    <TabsTrigger value="quality" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2.5 gap-1 text-[11px] shrink-0">
-                      <TrendingUp className="w-3 h-3" /> Quality
                     </TabsTrigger>
                   </TabsList>
                 </Tabs>
@@ -1850,8 +1814,10 @@ export default function AIBuilderPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="min-w-[160px] max-h-[300px] overflow-y-auto">
                       {[
+                        { value: "code", icon: FileCode2, label: "Code" },
+                        { value: "deploy", icon: Rocket, label: "Deploy" },
+                        { value: "quality", icon: TrendingUp, label: "Quality" },
                         { value: "config", icon: Code, label: "Config" },
-                        { value: "sql", icon: Database, label: "SQL" },
                         { value: "security", icon: Shield, label: "Security" },
                         { value: "summary", icon: Layers, label: "Summary" },
                         { value: "live", icon: Eye, label: "Live" },
