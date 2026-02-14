@@ -158,6 +158,7 @@ export default function AIBuilderPage() {
   const { user } = useAuth();
   const incomingPrompt = (location.state as any)?.prompt || "";
   const incomingProjectId = (location.state as any)?.projectId || null;
+  const incomingIsNew = (location.state as any)?.isNew || false;
   const [input, setInput] = useState("");
   const [isRestoring, setIsRestoring] = useState(true);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -207,14 +208,14 @@ export default function AIBuilderPage() {
   }, [messages]);
 
   useEffect(() => {
-    // Only auto-send prompt for NEW projects (created from dashboard prompt box).
-    // If incomingProjectId exists, the project was clicked from the dashboard grid — don't re-build.
-    if (incomingPrompt && !hasProcessedIncoming.current && !isRestoring && !incomingProjectId) {
+    // Auto-send prompt for NEW projects created from dashboard prompt box.
+    // incomingIsNew distinguishes "just created" from "clicked existing project".
+    if (incomingPrompt && !hasProcessedIncoming.current && !isRestoring && (incomingIsNew || !incomingProjectId)) {
       hasProcessedIncoming.current = true;
       window.history.replaceState({}, document.title);
       setTimeout(() => sendMessage(incomingPrompt), 300);
     }
-  }, [incomingPrompt, isRestoring, incomingProjectId]);
+  }, [incomingPrompt, isRestoring, incomingProjectId, incomingIsNew]);
 
   // Auto-resize textarea
   useEffect(() => {
