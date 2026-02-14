@@ -573,25 +573,14 @@ export default function MenuBuilderPage() {
               <DialogTitle>{editingItem ? "Edit Menu Item" : "Add Menu Item"}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Group</Label>
-                  <Select value={itemForm.group_id} onValueChange={v => setItemForm(f => ({ ...f, group_id: v, parent_id: "" }))}>
-                    <SelectTrigger><SelectValue placeholder="Select group" /></SelectTrigger>
-                    <SelectContent>
-                      {groups.map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Position</Label>
-                  <Select value={itemForm.position} onValueChange={v => setItemForm(f => ({ ...f, position: v }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {POSITIONS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <Label>Group</Label>
+                <Select value={itemForm.group_id} onValueChange={v => setItemForm(f => ({ ...f, group_id: v, parent_id: "" }))}>
+                  <SelectTrigger><SelectValue placeholder="Select group" /></SelectTrigger>
+                  <SelectContent>
+                    {groups.map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label>Label</Label>
