@@ -104,8 +104,8 @@ const highlights = [
   },
   {
     icon: ShoppingBag,
-    title: "Plugin Marketplace",
-    description: "Install payments, SMS, WhatsApp, email marketing plugins with one click. Plugin-ready architecture with hooks and middleware stack built-in.",
+    title: "Marketplace",
+    description: "Browse and install plugins, templates, applications, and AI tools with one click. Extensible architecture with hooks and middleware built-in.",
   },
   {
     icon: Eye,
@@ -396,19 +396,19 @@ export default function LandingPage() {
       <section id="marketplace" className="py-12 sm:py-20 bg-gradient-surface">
         <div className="container px-4 sm:px-6">
           <div className="text-center mb-8 sm:mb-14">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 text-foreground">Plugin Marketplace</h2>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 text-foreground">Marketplace</h2>
             <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">
-              Payments, SMS, WhatsApp, email marketing — install with one click. Plugin-ready architecture built-in.
+              Plugins, templates, applications & AI tools — discover, install, and manage everything in one place.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto">
             {[
-              { title: "SEO Pro Plugin", type: "Plugin", installs: "12.4k", tag: "Popular" },
-              { title: "E-Commerce Template", type: "Template", installs: "8.2k", tag: "Featured" },
-              { title: "AI Content Writer", type: "Plugin", installs: "15.1k", tag: "AI" },
+              { title: "SEO Pro", type: "Plugin", installs: "12.4k", tag: "Popular" },
+              { title: "E-Commerce Starter", type: "Template", installs: "8.2k", tag: "Featured" },
+              { title: "AI Content Writer", type: "Application", installs: "15.1k", tag: "AI" },
               { title: "WhatsApp Integration", type: "Plugin", installs: "6.8k", tag: "Communication" },
               { title: "Payment Gateway", type: "Plugin", installs: "10.3k", tag: "Finance" },
-              { title: "Email Marketing", type: "Plugin", installs: "9.1k", tag: "Marketing" },
+              { title: "Smart Translator", type: "AI Tool", installs: "9.1k", tag: "AI" },
             ].map((item) => (
               <div key={item.title} className="rounded-xl border border-border bg-card p-4 sm:p-5 hover:shadow-glow hover:border-primary/30 transition-all duration-300">
                 <div className="flex items-center justify-between mb-2 sm:mb-3">
