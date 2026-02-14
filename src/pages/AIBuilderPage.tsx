@@ -1373,12 +1373,12 @@ export default function AIBuilderPage() {
     const validation = pipelineState?.validation;
 
     return (
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full overflow-hidden">
         {/* Content */}
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 overflow-auto">
           {previewMode === "visual" ? (
-            <div className="flex h-full">
-              <div className="flex-1 min-w-0">
+            <div className="flex h-full min-h-0">
+              <div className="flex-1 min-w-0 overflow-auto">
                 <AppPreviewRenderer
                   config={config}
                   selectedComponent={selectedComponent}
@@ -1544,9 +1544,9 @@ export default function AIBuilderPage() {
 
   // Mobile: default to chat tab
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-  // Mobile: default to chat if no build yet; Desktop: "chat" isn't valid for right panel, use "preview"
+  // Mobile: only override to "chat" if no build AND not currently restoring
   const effectiveTab = isMobile
-    ? (activeTab === "preview" && !hasStarted ? "chat" : activeTab)
+    ? (activeTab === "preview" && !hasStarted && !isRestoring ? "chat" : activeTab)
     : activeTab;
   // Desktop right panel: if activeTab is "chat", show "preview" instead (chat is always visible on left)
   const desktopRightTab = activeTab === "chat" ? "preview" : activeTab;
