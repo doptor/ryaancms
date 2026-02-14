@@ -224,6 +224,72 @@ export default function AIBuilderPage() {
   }, [input]);
 
   // Auto-restore last active project on mount (read-only, no creation)
+  // Load project from navigation state (clicked from dashboard)
+  useEffect(() => {
+    if (!user || !incomingProjectId) return;
+    if (currentProject?.id === incomingProjectId) { setIsRestoring(false); return; }
+    const loadIncomingProject = async () => {
+      try {
+        const { data } = await supabase
+          .from("projects")
+          .select("*")
+          .eq("id", incomingProjectId)
+          .eq("user_id", user.id)
+          .single();
+        if (data) {
+          setCurrentProject(data);
+          currentProjectRef.current = data;
+          localStorage.setItem("ai-builder-active-project-id", data.id);
+          // Load memory
+          const { data: memory } = await supabase
+            .from("project_memory")
+            .select("*")
+            .eq("project_id", data.id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .single();
+          if (memory) {
+            const restored: PipelineState = {
+              stage: "complete", config: null, validation: null, schema: null, rbac: null,
+              testSuite: null, docs: null, theme: null, error: null,
+              requirements: (memory.requirements as any) || [], taskPlan: (memory.task_plan as any) || [],
+              suggestions: (memory.suggestions as any) || [], apiEndpoints: (memory.api_list as any) || [],
+              qualityScore: (memory.quality_score as any) || {}, qualityIssues: [], qualityImprovements: [],
+              qualityVerdict: "", agentLog: (memory.agent_log as any) || [],
+              workflows: memory.workflow ? [memory.workflow as any] : [], businessRules: [], permissionMatrix: [],
+              folderStructure: (memory.folder_structure as any) || {}, testScenarios: [], seedData: [],
+              bugs: [], autoFixes: [], riskScore: 0, webhooks: [], edgeFunctions: [],
+              errorFixMemory: [], documentationPlan: [], documentationChecklist: {},
+              securityChecklist: {}, defaultAdminCredentials: { email: "admin@admin.com", password: "admin123" },
+              installerSteps: [], pluginHooks: [], middlewareStack: [], reusableComponents: [], prismaSchemaHint: "",
+            };
+            if (memory.modules || memory.page_layouts || memory.db_schema) {
+              restored.config = {
+                project_type: "saas", build_target: "application", title: data.title || "Restored Project", description: data.prompt || "",
+                modules: (memory.modules as any) || [], roles: [], features: [],
+                pages: (memory.page_layouts as any) || [], collections: (memory.db_schema as any) || [],
+                style: {}, multi_tenant: false,
+              };
+            }
+            setPipelineState(restored);
+            const agentLog = memory.agent_log as any[] || [];
+            const convEntry = agentLog.find((e: any) => e?.type === "conversation");
+            if (convEntry?.messages?.length) {
+              setMessages(convEntry.messages);
+            } else {
+              setMessages([
+                { role: "ai", content: `✅ Restored project: **${data.brand_name || data.title || "Untitled"}**` }
+              ]);
+            }
+          }
+        }
+      } catch {}
+      setIsRestoring(false);
+    };
+    loadIncomingProject();
+  }, [user, incomingProjectId]);
+
+  // Auto-restore last active project on mount (read-only, no creation)
   useEffect(() => {
     if (!user) { setIsRestoring(false); return; }
     if (currentProject || incomingProjectId || hasProcessedIncoming.current) { setIsRestoring(false); return; }
