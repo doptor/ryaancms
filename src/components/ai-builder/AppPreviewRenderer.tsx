@@ -45,26 +45,7 @@ export function AppPreviewRenderer({ config, selectedComponent, onSelectComponen
 
   return (
     <div className="flex flex-col h-full">
-      {config.pages.length > 1 && (
-        <div className="border-b border-border bg-card px-3 py-2 shrink-0">
-          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
-            {config.pages.map((page, i) => (
-              <button
-                key={page.route}
-                onClick={() => setActivePage(i)}
-                className={cn(
-                  "px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-all duration-200",
-                  i === activePage
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                )}
-              >
-                {page.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Page tabs removed — preview shows all content inline */}
 
       <ScrollArea className="flex-1">
         <div className="bg-background min-h-full">
