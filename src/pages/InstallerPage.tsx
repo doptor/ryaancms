@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useState, useRef } from "react";
 import InstallDialog from "@/components/InstallDialog";
+import MyInstalledTab from "@/components/installer/MyInstalledTab";
 import { cn } from "@/lib/utils";
 
 const marketplaceItems = [
@@ -191,6 +192,7 @@ export default function InstallerPage() {
         <Tabs defaultValue="marketplace" className="space-y-6">
           <TabsList>
             <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
+            <TabsTrigger value="installed">My Installed</TabsTrigger>
             <TabsTrigger value="upload">Upload / Import</TabsTrigger>
             <TabsTrigger value="build">Build Loop</TabsTrigger>
           </TabsList>
@@ -246,6 +248,10 @@ export default function InstallerPage() {
                 <div className="col-span-full text-center py-16 text-muted-foreground text-sm">No items match your search.</div>
               )}
             </div>
+          </TabsContent>
+          {/* ─── My Installed Tab ─── */}
+          <TabsContent value="installed" className="space-y-6">
+            <MyInstalledTab />
           </TabsContent>
 
           {/* ─── Upload / Import Tab ─── */}
