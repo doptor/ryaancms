@@ -70,7 +70,7 @@ serve(async (req) => {
       messages: [
         {
           role: "system",
-          content: "You are a speech-to-text transcriber. Listen to the audio and transcribe it accurately. Return ONLY the transcribed text, nothing else. If you cannot understand the audio, return an empty string.",
+          content: "You are a speech-to-text transcriber. Listen to the audio and transcribe it accurately in the SAME language that is spoken. If the speaker speaks Bangla, transcribe in Bangla. If English, transcribe in English. Preserve the original language. Return ONLY the transcribed text, nothing else. If you cannot understand the audio, return an empty string.",
         },
         {
           role: "user",
@@ -82,7 +82,7 @@ serve(async (req) => {
                 format: mimeType.includes("webm") ? "webm" : mimeType.includes("mp4") ? "mp4" : "wav",
               },
             },
-            { type: "text", text: "Transcribe this audio to text." },
+            { type: "text", text: "Transcribe this audio to text in its original spoken language. Do NOT translate." },
           ],
         },
       ],
