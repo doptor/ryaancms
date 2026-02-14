@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Builder — Complete Update Documentation</title>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --card: #12121a;
+      --border: #1e1e2e;
+      --text: #e4e4e7;
+      --muted: #71717a;
+      --primary: #818cf8;
+      --primary-light: #a5b4fc;
+      --green: #34d399;
+      --orange: #fb923c;
+      --red: #f87171;
+      --blue: #60a5fa;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+    h1 { font-size: 2.2rem; font-weight: 800; background: linear-gradient(135deg, var(--primary), var(--primary-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 8px; }
+    .subtitle { color: var(--muted); font-size: 0.95rem; margin-bottom: 40px; }
+    .last-updated { color: var(--muted); font-size: 0.8rem; margin-bottom: 32px; padding: 8px 16px; background: var(--card); border-radius: 8px; display: inline-block; border: 1px solid var(--border); }
+    h2 { font-size: 1.3rem; font-weight: 700; margin: 36px 0 16px; color: var(--primary-light); display: flex; align-items: center; gap: 8px; }
+    h2 .emoji { font-size: 1.2rem; }
+    h3 { font-size: 1rem; font-weight: 600; margin: 20px 0 8px; color: var(--text); }
+    .phase { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+    .phase-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .phase-number { background: var(--primary); color: #fff; font-weight: 700; font-size: 0.75rem; padding: 4px 10px; border-radius: 6px; }
+    .phase-title { font-size: 1.1rem; font-weight: 700; }
+    .phase-status { margin-left: auto; font-size: 0.75rem; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+    .status-done { background: rgba(52,211,153,0.15); color: var(--green); }
+    .status-wip { background: rgba(251,146,60,0.15); color: var(--orange); }
+    ul { padding-left: 20px; margin: 8px 0; }
+    li { margin: 4px 0; font-size: 0.9rem; color: var(--text); }
+    li::marker { color: var(--primary); }
+    .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; margin: 12px 0; }
+    .file-item { background: rgba(129,140,248,0.06); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-family: 'Fira Code', monospace; font-size: 0.78rem; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+    .file-item .icon { color: var(--primary); }
+    .template-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin: 12px 0; }
+    .template-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+    .template-card h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 4px; }
+    .template-card p { font-size: 0.78rem; color: var(--muted); }
+    .tag { display: inline-block; font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; margin: 2px; background: rgba(129,140,248,0.1); color: var(--primary-light); }
+    table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.85rem; }
+    th { text-align: left; padding: 10px 12px; background: var(--card); border: 1px solid var(--border); color: var(--primary-light); font-weight: 600; }
+    td { padding: 8px 12px; border: 1px solid var(--border); }
+    .stats-bar { display: flex; gap: 16px; flex-wrap: wrap; margin: 20px 0; }
+    .stat { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; flex: 1; min-width: 150px; }
+    .stat-value { font-size: 1.8rem; font-weight: 800; color: var(--primary); }
+    .stat-label { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+    code { background: rgba(129,140,248,0.1); padding: 2px 6px; border-radius: 4px; font-size: 0.82rem; font-family: 'Fira Code', monospace; }
+    .footer { text-align: center; color: var(--muted); font-size: 0.78rem; margin-top: 60px; padding: 20px; border-top: 1px solid var(--border); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🚀 AI Builder — Update Documentation</h1>
+    <p class="subtitle">Complete technical changelog of every feature, module, and component built in the Ryaan CMS AI Builder system.</p>
+    <div class="last-updated">📅 Last Updated: February 14, 2026</div>
+
+    <!-- Stats -->
+    <div class="stats-bar">
+      <div class="stat"><div class="stat-value">14</div><div class="stat-label">Engine Modules</div></div>
+      <div class="stat"><div class="stat-value">22</div><div class="stat-label">UI Panels</div></div>
+      <div class="stat"><div class="stat-value">11</div><div class="stat-label">Starter Templates</div></div>
+      <div class="stat"><div class="stat-value">22+</div><div class="stat-label">Builder Tabs</div></div>
+      <div class="stat"><div class="stat-value">10</div><div class="stat-label">Edge Functions</div></div>
+    </div>
+
+    <hr class="divider" />
+
+    <!-- ==================== PHASE 1 ==================== -->
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-number">PHASE 1</span>
+        <span class="phase-title">Foundation — Engine, Pipeline & Core UI</span>
+        <span class="phase-status status-done">✅ Complete</span>
+      </div>
+      <h3>Engine Core (src/lib/engine/)</h3>
+      <ul>
+        <li><strong>prompt-analyzer.ts</strong> — NLP-based prompt parsing: extracts project type, modules, features, pages, collections, roles, style preferences. Detects build target (website/application/plugin/combos).</li>
+        <li><strong>component-registry.ts</strong> — Central type definitions: AppConfig, PageConfig, ComponentConfig, CollectionConfig, ApiEndpoint, FieldConfig, Role. 30+ component types registered.</li>
+        <li><strong>orchestrator.ts</strong> — 10-agent autonomous pipeline with 17-step full build sequence. Smart Step Detection for micro-edits (3-5 steps). PipelineState management with agent logs.</li>
+        <li><strong>database-generator.ts</strong> — Auto-generates Prisma schema + raw SQL from collections. Handles RLS, soft-delete, audit fields, relations, tenant isolation.</li>
+        <li><strong>security-validator.ts</strong> — Scores project security (0-100). Checks: RLS, auth, input validation, rate limiting, CORS, SQL injection, XSS.</li>
+        <li><strong>rbac-generator.ts</strong> — Generates RBAC middleware, policies, and permission matrices from role definitions.</li>
+        <li><strong>theme-generator.ts</strong> — Generates CSS variables, Tailwind config, and component theme tokens from style preferences.</li>
+        <li><strong>section-factory.ts</strong> — Maps component types to rendered UI sections in the preview.</li>
+        <li><strong>module-templates.ts</strong> — Module scaffolding templates for auth, CRUD, media, payments, notifications, etc.</li>
+        <li><strong>docs-generator.ts</strong> — Auto-generates 5 documentation files: README.md, INSTALL.md, API.md, DB_SCHEMA.md, SECURITY.md.</li>
+        <li><strong>test-generator.ts</strong> — Generates automated test suites: Auth tests, CRUD tests, Security tests, Multi-tenant isolation tests.</li>
+        <li><strong>index.ts</strong> — Barrel export for all engine modules.</li>
+      </ul>
+
+      <h3>AI Builder Page (src/pages/AIBuilderPage.tsx)</h3>
+      <ul>
+        <li>2274-line main orchestrator page</li>
+        <li>Chat interface with voice input (speech-to-text via Edge Function)</li>
+        <li>Resizable left (chat) + right (panels) layout</li>
+        <li>22+ desktop tabs grouped: Core → Data/Security → Tools → History/Team</li>
+        <li>Mobile 6-tab bottom nav with effectiveTab/desktopRightTab separation</li>
+        <li>Project lifecycle: create, select, restore, delete, fork</li>
+        <li>Build pipeline with progress bar showing only relevant steps</li>
+        <li>Persists active project & tab in localStorage</li>
+        <li>Credit check handling (402 → settings redirect)</li>
+      </ul>
+
+      <h3>Core Panels</h3>
+      <ul>
+        <li><strong>AppPreviewRenderer.tsx</strong> — Visual preview of generated app. 30+ component renderers (hero, navbar, footer, crud_table, chart, kanban, calendar, media_gallery, etc.). Page tabs, add/delete component, add/delete page, component selection & reorder, delete button on selected.</li>
+        <li><strong>CodePanel.tsx</strong> — Config JSON viewer with syntax highlighting + copy.</li>
+        <li><strong>LivePreviewPanel.tsx</strong> — Real-time rendered preview of generated code files.</li>
+        <li><strong>PropEditorSidebar.tsx</strong> — Visual property editor for selected components.</li>
+        <li><strong>ThemeSelector.tsx</strong> — Color, font, border-radius, theme mode selector.</li>
+        <li><strong>ProjectSelector.tsx</strong> — Project list with search, status badges, create new, delete project (hover trash icon).</li>
+      </ul>
+    </div>
+
+    <!-- ==================== PHASE 2 ==================== -->
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-number">PHASE 2</span>
+        <span class="phase-title">Real Code Generation & Templates</span>
+        <span class="phase-status status-done">✅ Complete</span>
+      </div>
+      <ul>
+        <li><strong>code-generator.ts</strong> — Generates 40+ real source files: React frontend (components, pages, hooks, utils) + Express backend (routes, middleware, auth, Prisma models). Full-stack runnable project.</li>
+        <li><strong>template-library.ts</strong> — 11 pre-built starter templates with complete AppConfig.</li>
+        <li><strong>ZIP Export</strong> — JSZip integration in AIBuilderPage. Downloads complete project as .zip with all generated files.</li>
+        <li><strong>Iterative Editing</strong> — Smart Step Detection: micro-edits skip heavy processing. sendMessage detects edit intent vs full rebuild.</li>
+      </ul>
+
+      <h3>Starter Templates (11 total)</h3>
+      <div class="template-grid">
+        <div class="template-card"><h4>🛒 E-Commerce</h4><p>Products, cart, orders, payments, admin dashboard</p></div>
+        <div class="template-card"><h4>📝 Blog Platform</h4><p>Posts, categories, comments, SEO, rich editor</p></div>
+        <div class="template-card"><h4>☁️ SaaS Starter</h4><p>Multi-tenant, billing, teams, API keys, analytics</p></div>
+        <div class="template-card"><h4>🎨 Portfolio</h4><p>Projects showcase, about, contact, resume</p></div>
+        <div class="template-card"><h4>📊 CRM</h4><p>Contacts, deals, pipeline, tasks, reporting</p></div>
+        <div class="template-card"><h4>🎓 LMS</h4><p>Courses, lessons, enrollment, progress, quizzes</p></div>
+        <div class="template-card"><h4>🍽️ Restaurant</h4><p>Menu, reservations, reviews, online ordering</p></div>
+        <div class="template-card"><h4>🏠 Real Estate</h4><p>Listings, agents, inquiries, property search</p></div>
+        <div class="template-card"><h4>💼 Job Board</h4><p>Jobs, companies, applications, employer dashboard</p></div>
+        <div class="template-card"><h4>👥 Social Network</h4><p>Posts, comments, follows, messaging, moderation</p></div>
+        <div class="template-card"><h4>📦 Inventory</h4><p>Products, warehouses, suppliers, purchase orders, stock tracking</p></div>
+      </div>
+    </div>
+
+    <!-- ==================== PHASE 3-4 ==================== -->
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-number">PHASE 3-4</span>
+        <span class="phase-title">Backend Generation, Preview & Plugin System</span>
+        <span class="phase-status status-done">✅ Complete</span>
+      </div>
+      <ul>
+        <li><strong>Backend Code Gen</strong> — Express routes, Prisma models, auth middleware, JWT setup auto-generated from config.</li>
+        <li><strong>Live Preview</strong> — AppPreviewRenderer renders 30+ component types from configuration in real-time.</li>
+        <li><strong>Plugin Lifecycle</strong> — Full install/activate/deactivate flow in MyInstalledTab.</li>
+        <li><strong>PluginGeneratorWizard.tsx</strong> — Step-by-step wizard for creating custom plugins with config schema.</li>
+      </ul>
+    </div>
+
+    <!-- ==================== PHASE 5-6 ==================== -->
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-number">PHASE 5-6</span>
+        <span class="phase-title">DevOps, CI/CD, Deploy & Monitoring</span>
+        <span class="phase-status status-done">✅ Complete</span>
+      </div>
+      <ul>
+        <li><strong>DeployPanel.tsx</strong> — One-click deploy approval submission. Status tracking. Saves to deploy_approvals table.</li>
+        <li><strong>CICDExportPanel.tsx</strong> — Generates Dockerfile, docker-compose.yml, nginx.conf, GitHub Actions workflow, .env.example. Download individually or all.</li>
+        <li><strong>MonitoringPanel.tsx</strong> — Real-time health metrics, error rates, response times, uptime visualization.</li>
+        <li><strong>EnvironmentManagerPanel.tsx</strong> — Manage env variables across dev/staging/production environments.</li>
+        <li><strong>WebhookNotificationPanel.tsx</strong> — Configure webhooks for build, deploy, error events. Persisted to webhooks table.</li>
+      </ul>
+    </div>
+
+    <!-- ==================== PHASE 7-8 ==================== -->
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-number">PHASE 7-8</span>
+        <span class="phase-title">History, Versioning, Collaboration & Quality</span>
+        <span class="phase-status status-done">✅ Complete</span>
+      </div>
+      <ul>
+        <li><strong>ProjectHistoryPanel.tsx</strong> — Full build history timeline with agent logs, step details, timestamps.</li>
+        <li><strong>TimeMachinePanel.tsx</strong> — Version snapshots, restore previous states, diff comparison.</li>
+        <li><strong>ProjectBranchingPanel.tsx</strong> — Create/switch/merge branches for parallel development paths.</li>
+        <li><strong>CollaborationPanel.tsx</strong> — Real-time team chat per project. Uses collaboration_messages table with Supabase Realtime.</li>
+        <li><strong>QualityScorePanel.tsx</strong> — Code quality metrics: security score, test coverage, accessibility, performance, best practices.</li>
+        <li><strong>BuildSummaryPanel.tsx</strong> — Complete build overview: modules, pages, collections, roles, API endpoints, file tree.</li>
+        <li><strong>WorkflowApiPanel.tsx</strong> — API endpoint visualization, event-driven workflow mapping.</li>
+        <li><strong>InstallerArchitecturePanel.tsx</strong> — Interactive folder tree, infrastructure mapping, permission matrices.</li>
+        <li><strong>DocsGeneratorPanel.tsx</strong> — In-browser doc viewer with tabs (README, API, DB_SCHEMA, INSTALL, SECURITY). Copy & download.</li>
+        <li><strong>AutoFixLoopPanel.tsx</strong> — Error memory tracking, auto-fix suggestions, "Apply All Fixes" rebuild trigger.</li>
+      </ul>
+    </div>
+
+    <hr class="divider" />
+
+    <!-- ==================== LATEST UPDATES ==================== -->
+    <h2><span class="emoji">🆕</span> Latest Updates (Feb 14, 2026)</h2>
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-number">UPDATE</span>
+        <span class="phase-title">Missing Features & Polish</span>
+        <span class="phase-status status-done">✅ Complete</span>
+      </div>
+      <ul>
+        <li><strong>5 New Templates</strong> — Restaurant, Real Estate, Job Board, Social Network, Inventory Management (total: 11)</li>
+        <li><strong>Delete Project</strong> — Hover trash icon on project list items. Confirms before deleting project + memory.</li>
+        <li><strong>Tab Overflow Fix</strong> — Desktop tabs now horizontally scrollable with visual group separators (Core | Data | Tools | History).</li>
+        <li><strong>Component Management</strong> — Add/delete components in preview. "Add Component" button with 23 component type picker.</li>
+        <li><strong>Page Management</strong> — Add/delete pages in preview. Page tabs with navigation.</li>
+        <li><strong>Component Delete</strong> — Selected component shows ✕ button next to type label.</li>
+        <li><strong>scrollbar-hide CSS utility</strong> — Added for clean horizontal tab scrolling.</li>
+      </ul>
+    </div>
+
+    <hr class="divider" />
+
+    <!-- ==================== FILE REGISTRY ==================== -->
+    <h2><span class="emoji">📁</span> Complete File Registry</h2>
+
+    <h3>Engine (src/lib/engine/)</h3>
+    <div class="file-grid">
+      <div class="file-item"><span class="icon">⚙</span> prompt-analyzer.ts</div>
+      <div class="file-item"><span class="icon">⚙</span> component-registry.ts</div>
+      <div class="file-item"><span class="icon">⚙</span> orchestrator.ts</div>
+      <div class="file-item"><span class="icon">⚙</span> database-generator.ts</div>
+      <div class="file-item"><span class="icon">⚙</span> security-validator.ts</div>
+      <div class="file-item"><span class="icon">⚙</span> rbac-generator.ts</div>
+      <div class="file-item"><span class="icon">⚙</span> theme-generator.ts</div>
+      <div class="file-item"><span class="icon">⚙</span> section-factory.ts</div>
+      <div class="file-item"><span class="icon">⚙</span> module-templates.ts</div>
+      <div class="file-item"><span class="icon">⚙</span> docs-generator.ts</div>
+      <div class="file-item"><span class="icon">⚙</span> test-generator.ts</div>
+      <div class="file-item"><span class="icon">⚙</span> code-generator.ts</div>
+      <div class="file-item"><span class="icon">⚙</span> template-library.ts</div>
+      <div class="file-item"><span class="icon">⚙</span> index.ts</div>
+    </div>
+
+    <h3>AI Builder Panels (src/components/ai-builder/)</h3>
+    <div class="file-grid">
+      <div class="file-item"><span class="icon">🧩</span> AppPreviewRenderer.tsx</div>
+      <div class="file-item"><span class="icon">🧩</span> AutoFixLoopPanel.tsx</div>
+      <div class="file-item"><span class="icon">🧩</span> BuildSummaryPanel.tsx</div>
+      <div class="file-item"><span class="icon">🧩</span> CICDExportPanel.tsx</div>
+      <div class="file-item"><span class="icon">🧩</span> CodePanel.tsx</div>
+      <div class="file-item"><span class="icon">🧩</span> CollaborationPanel.tsx</div>
+      <div class="file-item"><span class="icon">🧩</span> DeployPanel.tsx</div>
+      <div class="file-item"><span class="icon">🧩</span> DocsGeneratorPanel.tsx</div>
+      <div class="file-item"><span class="icon">🧩</span> EnvironmentManagerPanel.tsx</div>
+      <div class="file-item"><span class="icon">🧩</span> InstallerArchitecturePanel.tsx</div>
+      <div class="file-item"><span class="icon">🧩</span> LivePreviewPanel.tsx</div>
+      <div class="file-item"><span class="icon">🧩</span> MonitoringPanel.tsx</div>
+      <div class="file-item"><span class="icon">🧩</span> PluginGeneratorWizard.tsx</div>
+      <div class="file-item"><span class="icon">🧩</span> ProjectBranchingPanel.tsx</div>
+      <div class="file-item"><span class="icon">🧩</span> ProjectHistoryPanel.tsx</div>
+      <div class="file-item"><span class="icon">🧩</span> ProjectSelector.tsx</div>
+      <div class="file-item"><span class="icon">🧩</span> PropEditorSidebar.tsx</div>
+      <div class="file-item"><span class="icon">🧩</span> QualityScorePanel.tsx</div>
+      <div class="file-item"><span class="icon">🧩</span> ThemeSelector.tsx</div>
+      <div class="file-item"><span class="icon">🧩</span> TimeMachinePanel.tsx</div>
+      <div class="file-item"><span class="icon">🧩</span> WebhookNotificationPanel.tsx</div>
+      <div class="file-item"><span class="icon">🧩</span> WorkflowApiPanel.tsx</div>
+    </div>
+
+    <h3>Edge Functions (supabase/functions/)</h3>
+    <div class="file-grid">
+      <div class="file-item"><span class="icon">⚡</span> ai-builder/index.ts</div>
+      <div class="file-item"><span class="icon">⚡</span> ai-builder-agents/index.ts</div>
+      <div class="file-item"><span class="icon">⚡</span> auto-release/index.ts</div>
+      <div class="file-item"><span class="icon">⚡</span> generate-brand/index.ts</div>
+      <div class="file-item"><span class="icon">⚡</span> generate-code/index.ts</div>
+      <div class="file-item"><span class="icon">⚡</span> generate-title/index.ts</div>
+      <div class="file-item"><span class="icon">⚡</span> github-push/index.ts</div>
+      <div class="file-item"><span class="icon">⚡</span> marketplace-api/index.ts</div>
+      <div class="file-item"><span class="icon">⚡</span> speech-to-text/index.ts</div>
+      <div class="file-item"><span class="icon">⚡</span> test-ai-connection/index.ts</div>
+    </div>
+
+    <h3>Database Tables</h3>
+    <table>
+      <tr><th>Table</th><th>Purpose</th><th>RLS</th></tr>
+      <tr><td>projects</td><td>AI Builder projects</td><td>✅</td></tr>
+      <tr><td>project_memory</td><td>Pipeline state persistence</td><td>✅</td></tr>
+      <tr><td>build_analytics</td><td>Build metrics & stats</td><td>✅</td></tr>
+      <tr><td>collaboration_messages</td><td>Real-time team chat</td><td>✅</td></tr>
+      <tr><td>deploy_approvals</td><td>Deploy submission tracking</td><td>✅</td></tr>
+      <tr><td>plugins</td><td>Plugin marketplace</td><td>✅</td></tr>
+      <tr><td>user_plugins</td><td>Installed plugins per user</td><td>✅</td></tr>
+      <tr><td>orders</td><td>Plugin purchases</td><td>✅</td></tr>
+      <tr><td>developer_api_keys</td><td>API key management</td><td>✅</td></tr>
+      <tr><td>developer_payouts</td><td>Payout tracking</td><td>✅</td></tr>
+      <tr><td>webhooks</td><td>Webhook configurations</td><td>✅</td></tr>
+      <tr><td>releases</td><td>Version releases</td><td>✅</td></tr>
+      <tr><td>profiles</td><td>User profiles</td><td>✅</td></tr>
+      <tr><td>site_settings</td><td>Platform settings</td><td>✅</td></tr>
+      <tr><td>menu_groups</td><td>Navigation groups</td><td>✅</td></tr>
+      <tr><td>menu_items</td><td>Navigation items</td><td>✅</td></tr>
+      <tr><td>user_roles</td><td>RBAC roles</td><td>✅</td></tr>
+    </table>
+
+    <hr class="divider" />
+
+    <!-- ==================== ARCHITECTURE ==================== -->
+    <h2><span class="emoji">🏗️</span> Architecture Overview</h2>
+    <table>
+      <tr><th>Layer</th><th>Technology</th><th>Notes</th></tr>
+      <tr><td>Frontend</td><td>React 18 + Vite + TypeScript</td><td>SPA with react-router-dom</td></tr>
+      <tr><td>Styling</td><td>Tailwind CSS + shadcn/ui</td><td>HSL design tokens, dark/light mode</td></tr>
+      <tr><td>State</td><td>React useState + TanStack Query</td><td>Optimistic updates, caching</td></tr>
+      <tr><td>Backend</td><td>Lovable Cloud (Supabase)</td><td>Auth, DB, Storage, Realtime, Edge Functions</td></tr>
+      <tr><td>AI</td><td>Lovable AI (Gemini/GPT models)</td><td>No API key needed for supported models</td></tr>
+      <tr><td>Generated Stack</td><td>Express + Prisma + PostgreSQL</td><td>What the AI Builder outputs for users</td></tr>
+      <tr><td>PWA</td><td>vite-plugin-pwa</td><td>Offline support, installable</td></tr>
+    </table>
+
+    <hr class="divider" />
+
+    <h2><span class="emoji">📋</span> Feature Checklist</h2>
+    <table>
+      <tr><th>Feature</th><th>Status</th><th>Files</th></tr>
+      <tr><td>Prompt-to-App Pipeline</td><td>✅</td><td>orchestrator.ts, prompt-analyzer.ts</td></tr>
+      <tr><td>Smart Step Detection</td><td>✅</td><td>orchestrator.ts</td></tr>
+      <tr><td>30+ Component Renderers</td><td>✅</td><td>AppPreviewRenderer.tsx</td></tr>
+      <tr><td>Real Source Code Generation</td><td>✅</td><td>code-generator.ts</td></tr>
+      <tr><td>ZIP Download</td><td>✅</td><td>AIBuilderPage.tsx (JSZip)</td></tr>
+      <tr><td>11 Starter Templates</td><td>✅</td><td>template-library.ts</td></tr>
+      <tr><td>Visual Component Editor</td><td>✅</td><td>PropEditorSidebar.tsx</td></tr>
+      <tr><td>Component Add/Delete</td><td>✅</td><td>AppPreviewRenderer.tsx</td></tr>
+      <tr><td>Page Add/Delete</td><td>✅</td><td>AppPreviewRenderer.tsx</td></tr>
+      <tr><td>Project CRUD + Delete</td><td>✅</td><td>ProjectSelector.tsx, AIBuilderPage.tsx</td></tr>
+      <tr><td>Voice Input</td><td>✅</td><td>speech-to-text Edge Function</td></tr>
+      <tr><td>Auto Documentation (5 docs)</td><td>✅</td><td>docs-generator.ts, DocsGeneratorPanel.tsx</td></tr>
+      <tr><td>Security Scoring</td><td>✅</td><td>security-validator.ts</td></tr>
+      <tr><td>RBAC Generation</td><td>✅</td><td>rbac-generator.ts</td></tr>
+      <tr><td>Test Suite Generation</td><td>✅</td><td>test-generator.ts</td></tr>
+      <tr><td>CI/CD Export (Docker/GH Actions)</td><td>✅</td><td>CICDExportPanel.tsx</td></tr>
+      <tr><td>Deploy Approvals</td><td>✅</td><td>DeployPanel.tsx</td></tr>
+      <tr><td>Real-time Collaboration</td><td>✅</td><td>CollaborationPanel.tsx</td></tr>
+      <tr><td>Project Branching</td><td>✅</td><td>ProjectBranchingPanel.tsx</td></tr>
+      <tr><td>Version Time Machine</td><td>✅</td><td>TimeMachinePanel.tsx</td></tr>
+      <tr><td>Build History</td><td>✅</td><td>ProjectHistoryPanel.tsx</td></tr>
+      <tr><td>Monitoring Dashboard</td><td>✅</td><td>MonitoringPanel.tsx</td></tr>
+      <tr><td>Environment Manager</td><td>✅</td><td>EnvironmentManagerPanel.tsx</td></tr>
+      <tr><td>Webhook Notifications</td><td>✅</td><td>WebhookNotificationPanel.tsx</td></tr>
+      <tr><td>Auto-Fix Loop</td><td>✅</td><td>AutoFixLoopPanel.tsx</td></tr>
+      <tr><td>Plugin Generator Wizard</td><td>✅</td><td>PluginGeneratorWizard.tsx</td></tr>
+      <tr><td>Quality Score Panel</td><td>✅</td><td>QualityScorePanel.tsx</td></tr>
+      <tr><td>Scrollable Grouped Tabs</td><td>✅</td><td>AIBuilderPage.tsx</td></tr>
+    </table>
+
+    <div class="footer">
+      <p>📝 This document is auto-maintained. Every new AI Builder feature is appended here.</p>
+      <p>Ryaan CMS — AI Builder Documentation © 2026</p>
+    </div>
+  </div>
+</body>
+</html>
