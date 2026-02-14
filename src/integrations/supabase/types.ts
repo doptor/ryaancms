@@ -133,6 +133,42 @@ export type Database = {
         }
         Relationships: []
       }
+      developer_payouts: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          developer_id: string
+          id: string
+          notes: string | null
+          paid_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          developer_id: string
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          developer_id?: string
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       menu_groups: {
         Row: {
           created_at: string
@@ -241,11 +277,62 @@ export type Database = {
           },
         ]
       }
+      orders: {
+        Row: {
+          amount: number
+          buyer_id: string
+          commission_amount: number
+          created_at: string
+          currency: string
+          developer_amount: number
+          id: string
+          license_key: string | null
+          payment_method: string | null
+          plugin_id: string
+          status: string
+        }
+        Insert: {
+          amount?: number
+          buyer_id: string
+          commission_amount?: number
+          created_at?: string
+          currency?: string
+          developer_amount?: number
+          id?: string
+          license_key?: string | null
+          payment_method?: string | null
+          plugin_id: string
+          status?: string
+        }
+        Update: {
+          amount?: number
+          buyer_id?: string
+          commission_amount?: number
+          created_at?: string
+          currency?: string
+          developer_amount?: number
+          id?: string
+          license_key?: string | null
+          payment_method?: string | null
+          plugin_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_plugin_id_fkey"
+            columns: ["plugin_id"]
+            isOneToOne: false
+            referencedRelation: "plugins"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plugins: {
         Row: {
           approval_status: string
           author: string | null
           category: string
+          commission_rate: number | null
           config_schema: Json | null
           created_at: string
           demo_url: string | null
@@ -254,8 +341,10 @@ export type Database = {
           icon: string | null
           id: string
           install_count: number | null
+          is_free: boolean | null
           is_official: boolean | null
           name: string
+          price: number | null
           rating: number | null
           reviewed_at: string | null
           reviewed_by: string | null
@@ -270,6 +359,7 @@ export type Database = {
           approval_status?: string
           author?: string | null
           category?: string
+          commission_rate?: number | null
           config_schema?: Json | null
           created_at?: string
           demo_url?: string | null
@@ -278,8 +368,10 @@ export type Database = {
           icon?: string | null
           id?: string
           install_count?: number | null
+          is_free?: boolean | null
           is_official?: boolean | null
           name: string
+          price?: number | null
           rating?: number | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -294,6 +386,7 @@ export type Database = {
           approval_status?: string
           author?: string | null
           category?: string
+          commission_rate?: number | null
           config_schema?: Json | null
           created_at?: string
           demo_url?: string | null
@@ -302,8 +395,10 @@ export type Database = {
           icon?: string | null
           id?: string
           install_count?: number | null
+          is_free?: boolean | null
           is_official?: boolean | null
           name?: string
+          price?: number | null
           rating?: number | null
           reviewed_at?: string | null
           reviewed_by?: string | null
