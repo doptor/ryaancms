@@ -1,7 +1,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Star, Download, Puzzle, ExternalLink, Sparkles, CheckCircle2, Loader2 } from "lucide-react";
+import { ArrowLeft, Star, Download, Puzzle, Layout, AppWindow, ExternalLink, Sparkles, CheckCircle2, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,7 +10,7 @@ import { toast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
-interface Plugin {
+interface MarketplaceItem {
   id: string;
   name: string;
   slug: string;
@@ -28,24 +28,42 @@ interface Plugin {
   config_schema: any;
 }
 
-export default function PluginDetailPage() {
+const CATEGORY_LABELS: Record<string, string> = {
+  plugin: "Plugin",
+  template: "Template",
+  application: "Application",
+  theme: "Theme",
+  tool: "Tool",
+};
+
+const CATEGORY_ICONS: Record<string, typeof Puzzle> = {
+  plugin: Puzzle,
+  template: Layout,
+  application: AppWindow,
+};
+
+function getCategoryLabel(category: string) {
+  return CATEGORY_LABELS[category] || category.charAt(0).toUpperCase() + category.slice(1);
+}
+
+export default function MarketplaceDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [plugin, setPlugin] = useState<Plugin | null>(null);
+  const [item, setItem] = useState<MarketplaceItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [installed, setInstalled] = useState(false);
   const [installing, setInstalling] = useState(false);
 
   useEffect(() => {
-    if (slug) loadPlugin();
+    if (slug) loadItem();
   }, [slug, user]);
 
-  const loadPlugin = async () => {
+  const loadItem = async () => {
     setLoading(true);
     const { data } = await supabase.from("plugins").select("*").eq("slug", slug!).single();
     if (data) {
-      setPlugin(data as any);
+      setItem(data as any);
       if (user) {
         const { data: up } = await supabase.from("user_plugins").select("id").eq("user_id", user.id).eq("plugin_id", data.id);
         if (up && up.length > 0) setInstalled(true);
@@ -55,13 +73,13 @@ export default function PluginDetailPage() {
   };
 
   const handleInstall = async () => {
-    if (!user || !plugin) { toast({ title: "Login required", variant: "destructive" }); return; }
+    if (!user || !item) { toast({ title: "Login required", variant: "destructive" }); return; }
     setInstalling(true);
     try {
-      const { error } = await supabase.from("user_plugins").insert({ user_id: user.id, plugin_id: plugin.id });
+      const { error } = await supabase.from("user_plugins").insert({ user_id: user.id, plugin_id: item.id });
       if (error) throw error;
       setInstalled(true);
-      toast({ title: `${plugin.name} installed!` });
+      toast({ title: `${item.name} installed!` });
     } catch (err: any) {
       toast({ title: "Install failed", description: err.message, variant: "destructive" });
     }
@@ -69,12 +87,12 @@ export default function PluginDetailPage() {
   };
 
   const handleUninstall = async () => {
-    if (!user || !plugin) return;
+    if (!user || !item) return;
     setInstalling(true);
     try {
-      await supabase.from("user_plugins").delete().eq("user_id", user.id).eq("plugin_id", plugin.id);
+      await supabase.from("user_plugins").delete().eq("user_id", user.id).eq("plugin_id", item.id);
       setInstalled(false);
-      toast({ title: `${plugin.name} uninstalled` });
+      toast({ title: `${item.name} uninstalled` });
     } catch (err: any) {
       toast({ title: "Uninstall failed", description: err.message, variant: "destructive" });
     }
@@ -91,18 +109,21 @@ export default function PluginDetailPage() {
     );
   }
 
-  if (!plugin) {
+  if (!item) {
     return (
       <DashboardLayout>
         <div className="p-6 lg:p-8 max-w-4xl">
           <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard/marketplace")} className="mb-4 gap-1.5">
             <ArrowLeft className="w-4 h-4" /> Back to Marketplace
           </Button>
-          <p className="text-muted-foreground">Plugin not found.</p>
+          <p className="text-muted-foreground">Item not found.</p>
         </div>
       </DashboardLayout>
     );
   }
+
+  const categoryLabel = getCategoryLabel(item.category);
+  const IconComp = CATEGORY_ICONS[item.category] || Puzzle;
 
   return (
     <DashboardLayout>
@@ -117,17 +138,17 @@ export default function PluginDetailPage() {
             <div>
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <Puzzle className="w-6 h-6 text-primary" />
+                  <IconComp className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-foreground">{plugin.name}</h1>
-                  <p className="text-sm text-muted-foreground">by {plugin.author || "Unknown"}</p>
+                  <h1 className="text-2xl font-bold text-foreground">{item.name}</h1>
+                  <p className="text-sm text-muted-foreground">by {item.author || "Unknown"}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                {plugin.is_official && <Badge variant="secondary">Official</Badge>}
-                <Badge variant="outline">v{plugin.version}</Badge>
-                <Badge variant="outline" className="capitalize">{plugin.category}</Badge>
+                {item.is_official && <Badge variant="secondary">Official</Badge>}
+                <Badge variant="outline">v{item.version}</Badge>
+                <Badge variant="outline">{categoryLabel}</Badge>
               </div>
             </div>
 
@@ -136,30 +157,30 @@ export default function PluginDetailPage() {
             <div>
               <h2 className="text-lg font-semibold text-foreground mb-2">Description</h2>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                {plugin.description || "No description available."}
+                {item.description || "No description available."}
               </p>
             </div>
 
-            {plugin.tags && plugin.tags.length > 0 && (
+            {item.tags && item.tags.length > 0 && (
               <div>
                 <h2 className="text-lg font-semibold text-foreground mb-2">Tags</h2>
                 <div className="flex flex-wrap gap-1.5">
-                  {plugin.tags.map((tag) => (
+                  {item.tags.map((tag) => (
                     <span key={tag} className="px-2 py-1 rounded-md text-xs bg-muted text-muted-foreground">{tag}</span>
                   ))}
                 </div>
               </div>
             )}
 
-            {plugin.demo_url && (
+            {item.demo_url && (
               <div>
                 <h2 className="text-lg font-semibold text-foreground mb-2">Live Demo</h2>
                 <Card>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm text-muted-foreground">Try this plugin before installing</p>
+                      <p className="text-sm text-muted-foreground">Try this {categoryLabel.toLowerCase()} before installing</p>
                       <Button variant="outline" size="sm" asChild className="gap-1.5">
-                        <a href={plugin.demo_url} target="_blank" rel="noopener noreferrer">
+                        <a href={item.demo_url} target="_blank" rel="noopener noreferrer">
                           <ExternalLink className="w-3.5 h-3.5" /> Open Live Demo
                         </a>
                       </Button>
@@ -182,13 +203,13 @@ export default function PluginDetailPage() {
                 ) : (
                   <Button className="w-full gap-1.5" onClick={handleInstall} disabled={installing}>
                     {installing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                    Install Plugin
+                    Install {categoryLabel}
                   </Button>
                 )}
 
-                {plugin.demo_url && (
+                {item.demo_url && (
                   <Button variant="outline" className="w-full gap-1.5" asChild>
-                    <a href={plugin.demo_url} target="_blank" rel="noopener noreferrer">
+                    <a href={item.demo_url} target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="w-4 h-4" /> Live Demo
                     </a>
                   </Button>
@@ -198,24 +219,28 @@ export default function PluginDetailPage() {
 
                 <div className="space-y-3 text-sm">
                   <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Type</span>
+                    <span className="font-medium text-foreground">{categoryLabel}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Rating</span>
                     <span className="flex items-center gap-1 font-medium text-foreground">
-                      <Star className="w-3.5 h-3.5 text-chart-5 fill-chart-5" /> {plugin.rating}
+                      <Star className="w-3.5 h-3.5 text-chart-5 fill-chart-5" /> {item.rating}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Installs</span>
                     <span className="flex items-center gap-1 font-medium text-foreground">
-                      <Download className="w-3.5 h-3.5" /> {(plugin.install_count / 1000).toFixed(1)}K
+                      <Download className="w-3.5 h-3.5" /> {(item.install_count / 1000).toFixed(1)}K
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Version</span>
-                    <span className="font-medium text-foreground">{plugin.version}</span>
+                    <span className="font-medium text-foreground">{item.version}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Author</span>
-                    <span className="font-medium text-foreground">{plugin.author || "Unknown"}</span>
+                    <span className="font-medium text-foreground">{item.author || "Unknown"}</span>
                   </div>
                 </div>
               </CardContent>
