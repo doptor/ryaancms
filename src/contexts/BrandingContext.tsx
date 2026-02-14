@@ -16,7 +16,7 @@ const DEFAULT_BRANDING: BrandingValues = {
   accentColor: "#8b5cf6",
   headingFont: "Inter",
   bodyFont: "Inter",
-  darkMode: true,
+  darkMode: false,
   customCss: "",
 };
 
