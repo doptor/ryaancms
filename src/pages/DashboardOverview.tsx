@@ -340,27 +340,26 @@ export default function DashboardOverview() {
               <div className="flex items-center justify-between px-4 pb-3">
                 {/* Left: action buttons */}
                 <div className="flex items-center gap-0.5">
-                  <Button
-                    variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
-                    onClick={() => fileInputRef.current?.click()}
-                    title="Upload file"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
-                    onClick={() => fileInputRef.current?.click()}
-                    title="Attach content"
-                  >
-                    <Paperclip className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
-                    onClick={() => setShowUrlInput(!showUrlInput)}
-                    title="Add URL to replicate"
-                  >
-                    <Link2 className="w-4 h-4" />
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
+                        title="Add"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="min-w-[180px]">
+                      <DropdownMenuItem onClick={() => fileInputRef.current?.click()} className="gap-2">
+                        <Paperclip className="w-4 h-4" />
+                        Attachment
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setShowUrlInput(!showUrlInput)} className="gap-2">
+                        <Link2 className="w-4 h-4" />
+                        Website URL
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   <Button
                     variant="ghost" size="icon"
                     className={cn(

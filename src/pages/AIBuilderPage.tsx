@@ -4,6 +4,12 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Sparkles, Send, Database, FileText, CreditCard,
   Paperclip, Mic, Code, Palette, BarChart3, CheckCircle2,
   Circle, Loader2, ExternalLink, Rocket, AlertCircle,
@@ -1134,30 +1140,27 @@ export default function AIBuilderPage() {
         />
         <div className="relative flex items-end gap-2 rounded-xl border border-input bg-background p-1.5 focus-within:ring-2 focus-within:ring-ring focus-within:border-transparent transition-all">
           <div className="flex items-center gap-0.5 pl-1">
-            {/* Add / Attachment */}
-            <Button
-              variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
-              onClick={() => fileInputRef.current?.click()}
-              title="Upload file"
-            >
-              <Plus className="w-4 h-4" />
-            </Button>
-            {/* Attachment button */}
-            <Button
-              variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
-              onClick={() => fileInputRef.current?.click()}
-              title="Attach content"
-            >
-              <Paperclip className="w-4 h-4" />
-            </Button>
-            {/* URL button */}
-            <Button
-              variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
-              onClick={() => setShowUrlInput(!showUrlInput)}
-              title="Add URL to replicate"
-            >
-              <Link2 className="w-4 h-4" />
-            </Button>
+            {/* Plus dropdown: Attachment + URL */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
+                  title="Add"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="min-w-[180px]">
+                <DropdownMenuItem onClick={() => fileInputRef.current?.click()} className="gap-2">
+                  <Paperclip className="w-4 h-4" />
+                  Attachment
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowUrlInput(!showUrlInput)} className="gap-2">
+                  <Link2 className="w-4 h-4" />
+                  Website URL
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             {/* Mic button */}
             <Button
               variant="ghost" size="icon"
