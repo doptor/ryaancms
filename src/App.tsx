@@ -8,6 +8,7 @@ import { BrandingProvider } from "@/contexts/BrandingContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
 import DashboardOverview from "./pages/DashboardOverview";
@@ -33,6 +34,7 @@ const AppContent = () => {
   return (
     <>
       <OfflineIndicator isOnline={isOnline} isSyncing={isSyncing} pendingCount={pendingCount} />
+      <PWAInstallPrompt />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/auth" element={<AuthPage />} />
