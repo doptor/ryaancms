@@ -8,3 +8,4 @@ export * from "./rbac-generator";
 export * from "./test-generator";
 export * from "./docs-generator";
 export * from "./theme-generator";
+export * from "./code-generator";
