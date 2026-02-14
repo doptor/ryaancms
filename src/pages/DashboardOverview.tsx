@@ -8,7 +8,7 @@ import {
   Send, Plus, Clock, Search,
   Globe, Sparkles, FolderOpen,
   MoreVertical, Pencil, Trash2, Paperclip, Link2, Mic, MicOff,
-  Palette, ChevronDown, Package, Layers, LayoutGrid, X,
+  Palette, ChevronDown, Package, Layers, LayoutGrid, X, Loader2,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
@@ -62,6 +62,8 @@ export default function DashboardOverview() {
     { name: "Cyan", color: "hsl(189, 94%, 43%)" },
   ];
 
+  const [isTranscribing, setIsTranscribing] = useState(false);
+
   const handleMicToggle = async () => {
     if (isRecording) {
       mediaRecorderRef.current?.stop();
@@ -73,9 +75,29 @@ export default function DashboardOverview() {
       const mediaRecorder = new MediaRecorder(stream);
       const chunks: Blob[] = [];
       mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-      mediaRecorder.onstop = () => {
+      mediaRecorder.onstop = async () => {
         stream.getTracks().forEach(t => t.stop());
-        toast({ title: "🎤 Audio recorded!", description: "Audio-to-text feature will use AI transcription." });
+        const audioBlob = new Blob(chunks, { type: "audio/webm" });
+        setIsTranscribing(true);
+        toast({ title: "🎤 Transcribing...", description: "Converting speech to text..." });
+        try {
+          const formData = new FormData();
+          formData.append("audio", audioBlob, "recording.webm");
+          const { data, error } = await supabase.functions.invoke("speech-to-text", { body: formData });
+          if (error) throw error;
+          const transcript = data?.transcript?.trim();
+          if (transcript) {
+            setPrompt((prev) => (prev ? prev + " " + transcript : transcript));
+            toast({ title: "✅ Transcribed!", description: transcript.slice(0, 80) });
+          } else {
+            toast({ title: "Could not transcribe audio", description: "Try speaking louder or closer to the mic.", variant: "destructive" });
+          }
+        } catch (err) {
+          console.error("Transcription error:", err);
+          toast({ title: "Transcription failed", variant: "destructive" });
+        } finally {
+          setIsTranscribing(false);
+        }
       };
       mediaRecorderRef.current = mediaRecorder;
       mediaRecorder.start();
@@ -304,12 +326,15 @@ export default function DashboardOverview() {
                     variant="ghost" size="icon"
                     className={cn(
                       "h-8 w-8 rounded-lg transition-colors",
-                      isRecording ? "text-destructive bg-destructive/10 hover:bg-destructive/20" : "text-muted-foreground hover:text-foreground"
+                      isRecording ? "text-destructive bg-destructive/10 hover:bg-destructive/20"
+                        : isTranscribing ? "text-primary bg-primary/10 animate-pulse"
+                        : "text-muted-foreground hover:text-foreground"
                     )}
                     onClick={handleMicToggle}
-                    title={isRecording ? "Stop recording" : "Voice input"}
+                    disabled={isTranscribing}
+                    title={isTranscribing ? "Transcribing..." : isRecording ? "Stop recording" : "Voice input"}
                   >
-                    {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                    {isTranscribing ? <Loader2 className="w-4 h-4 animate-spin" /> : isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
                   </Button>
 
                   <div className="w-px h-4 bg-border mx-1" />
