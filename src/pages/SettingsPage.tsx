@@ -15,8 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import AIIntegrationSettings from "@/components/settings/AIIntegrationSettings";
 
 const settingSections = [
-  { id: "general", icon: Globe, label: "General", desc: "Site name, URL, timezone, and language settings.", color: "text-blue-400" },
-  { id: "branding", icon: Image, label: "Branding", desc: "Logo, brand name, favicon, and identity.", color: "text-orange-400" },
+  { id: "general", icon: Globe, label: "General", desc: "Site name, URL, timezone, language, and branding.", color: "text-blue-400" },
   { id: "ai-integrations", icon: Brain, label: "AI Integrations", desc: "Manage AI platform connections and models.", color: "text-pink-400" },
   { id: "security", icon: Shield, label: "Security", desc: "SSO, MFA, API keys, and role-based access control.", color: "text-teal-400" },
   { id: "notifications", icon: Bell, label: "Notifications", desc: "Email, webhook, and in-app notification preferences.", color: "text-amber-400" },
@@ -109,29 +108,89 @@ function GeneralSettings({ values, onChange }: SectionProps) {
   }, []);
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Label>Site Name</Label>
-        <Input value={values.siteName || ""} onChange={(e) => onChange("siteName", e.target.value)} placeholder="RyaanCMS" />
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Site Name</Label>
+          <Input value={values.siteName || ""} onChange={(e) => onChange("siteName", e.target.value)} placeholder="RyaanCMS" />
+        </div>
+        <div className="space-y-2">
+          <Label>Site URL</Label>
+          <Input value={values.siteUrl || ""} onChange={(e) => onChange("siteUrl", e.target.value)} placeholder="https://example.com" />
+        </div>
       </div>
-      <div className="space-y-2">
-        <Label>Site URL</Label>
-        <Input value={values.siteUrl || ""} onChange={(e) => onChange("siteUrl", e.target.value)} placeholder="https://example.com" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <SearchableSelect
+          label="Timezone"
+          value={values.timezone || ""}
+          onValueChange={(v) => onChange("timezone", v)}
+          options={timezones}
+          placeholder="Select timezone..."
+        />
+        <SearchableSelect
+          label="Language"
+          value={values.language || ""}
+          onValueChange={(v) => onChange("language", v)}
+          options={ALL_LANGUAGES}
+          placeholder="Select language..."
+        />
       </div>
-      <SearchableSelect
-        label="Timezone"
-        value={values.timezone || ""}
-        onValueChange={(v) => onChange("timezone", v)}
-        options={timezones}
-        placeholder="Select timezone..."
-      />
-      <SearchableSelect
-        label="Language"
-        value={values.language || ""}
-        onValueChange={(v) => onChange("language", v)}
-        options={ALL_LANGUAGES}
-        placeholder="Select language..."
-      />
+
+      {/* Branding fields */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3">Brand Identity</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Brand Name</Label>
+            <Input value={values.brandName || ""} onChange={(e) => onChange("brandName", e.target.value)} placeholder="My Brand" />
+            <p className="text-xs text-muted-foreground">Displayed in navigation, emails, and generated apps</p>
+          </div>
+          <div className="space-y-2">
+            <Label>Tagline</Label>
+            <Input value={values.tagline || ""} onChange={(e) => onChange("tagline", e.target.value)} placeholder="Build faster, ship smarter" />
+            <p className="text-xs text-muted-foreground">Short slogan or description</p>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3">Logo & Favicon</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Logo URL</Label>
+            <Input value={values.logoUrl || ""} onChange={(e) => onChange("logoUrl", e.target.value)} placeholder="https://example.com/logo.png" />
+            {values.logoUrl && (
+              <div className="mt-2 p-3 border border-border rounded-lg bg-muted/30 flex items-center justify-center">
+                <img src={values.logoUrl} alt="Logo preview" className="max-h-16 max-w-full object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+              </div>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label>Favicon URL</Label>
+            <Input value={values.faviconUrl || ""} onChange={(e) => onChange("faviconUrl", e.target.value)} placeholder="https://example.com/favicon.ico" />
+            {values.faviconUrl && (
+              <div className="mt-2 p-3 border border-border rounded-lg bg-muted/30 flex items-center justify-center">
+                <img src={values.faviconUrl} alt="Favicon preview" className="w-8 h-8 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3">Social & SEO</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>OG Image URL</Label>
+            <Input value={values.ogImageUrl || ""} onChange={(e) => onChange("ogImageUrl", e.target.value)} placeholder="https://example.com/og-image.png" />
+            <p className="text-xs text-muted-foreground">Social share preview image (1200×630 recommended)</p>
+          </div>
+          <div className="space-y-2">
+            <Label>Copyright Text</Label>
+            <Input value={values.copyrightText || ""} onChange={(e) => onChange("copyrightText", e.target.value)} placeholder="© 2026 My Brand. All rights reserved." />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -284,70 +343,8 @@ function DatabaseSettings({ values, onChange }: SectionProps) {
   );
 }
 
-function BrandingSettings({ values, onChange }: SectionProps) {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-sm font-semibold text-foreground mb-3">Brand Identity</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Brand Name</Label>
-            <Input value={values.brandName || ""} onChange={(e) => onChange("brandName", e.target.value)} placeholder="My Brand" />
-            <p className="text-xs text-muted-foreground">Displayed in navigation, emails, and generated apps</p>
-          </div>
-          <div className="space-y-2">
-            <Label>Tagline</Label>
-            <Input value={values.tagline || ""} onChange={(e) => onChange("tagline", e.target.value)} placeholder="Build faster, ship smarter" />
-            <p className="text-xs text-muted-foreground">Short slogan or description</p>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <h3 className="text-sm font-semibold text-foreground mb-3">Logo</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Logo URL</Label>
-            <Input value={values.logoUrl || ""} onChange={(e) => onChange("logoUrl", e.target.value)} placeholder="https://example.com/logo.png" />
-            {values.logoUrl && (
-              <div className="mt-2 p-3 border border-border rounded-lg bg-muted/30 flex items-center justify-center">
-                <img src={values.logoUrl} alt="Logo preview" className="max-h-16 max-w-full object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-              </div>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label>Favicon URL</Label>
-            <Input value={values.faviconUrl || ""} onChange={(e) => onChange("faviconUrl", e.target.value)} placeholder="https://example.com/favicon.ico" />
-            {values.faviconUrl && (
-              <div className="mt-2 p-3 border border-border rounded-lg bg-muted/30 flex items-center justify-center">
-                <img src={values.faviconUrl} alt="Favicon preview" className="w-8 h-8 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <h3 className="text-sm font-semibold text-foreground mb-3">Social & SEO</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>OG Image URL</Label>
-            <Input value={values.ogImageUrl || ""} onChange={(e) => onChange("ogImageUrl", e.target.value)} placeholder="https://example.com/og-image.png" />
-            <p className="text-xs text-muted-foreground">Social share preview image (1200×630 recommended)</p>
-          </div>
-          <div className="space-y-2">
-            <Label>Copyright Text</Label>
-            <Input value={values.copyrightText || ""} onChange={(e) => onChange("copyrightText", e.target.value)} placeholder="© 2026 My Brand. All rights reserved." />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 const sectionComponentMap: Record<string, React.FC<SectionProps>> = {
   general: GeneralSettings,
-  branding: BrandingSettings,
   security: SecuritySettings,
   notifications: NotificationSettings,
   appearance: AppearanceSettings,
