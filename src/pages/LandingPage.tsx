@@ -20,31 +20,61 @@ const features = [
     icon: Database,
     title: "Schema Architect",
     description: "Visual collection builder with AI schema generation, relationship mapping, and zero-downtime deployment.",
+    gradient: "from-blue-500 to-cyan-400",
+    iconBg: "bg-blue-500/10 group-hover:bg-gradient-to-br group-hover:from-blue-500 group-hover:to-cyan-400",
+    iconColor: "text-blue-500 group-hover:text-white",
+    border: "hover:border-blue-500/40",
+    glow: "hover:shadow-[0_0_30px_-5px_rgba(59,130,246,0.3)]",
   },
   {
     icon: Sparkles,
     title: "AI-Native Engine",
     description: "Schema generation, content writing, SEO optimization, and intelligent layout suggestions powered by AI.",
+    gradient: "from-violet-500 to-purple-400",
+    iconBg: "bg-violet-500/10 group-hover:bg-gradient-to-br group-hover:from-violet-500 group-hover:to-purple-400",
+    iconColor: "text-violet-500 group-hover:text-white",
+    border: "hover:border-violet-500/40",
+    glow: "hover:shadow-[0_0_30px_-5px_rgba(139,92,246,0.3)]",
   },
   {
     icon: Puzzle,
     title: "Plugin Ecosystem",
     description: "Sandboxed .rypkg plugins with dependency resolution, security scanning, and blue-green deployment.",
+    gradient: "from-emerald-500 to-green-400",
+    iconBg: "bg-emerald-500/10 group-hover:bg-gradient-to-br group-hover:from-emerald-500 group-hover:to-green-400",
+    iconColor: "text-emerald-500 group-hover:text-white",
+    border: "hover:border-emerald-500/40",
+    glow: "hover:shadow-[0_0_30px_-5px_rgba(16,185,129,0.3)]",
   },
   {
     icon: Globe,
     title: "Edge-Native APIs",
     description: "Auto-generated REST, GraphQL, and webhooks with CDN caching. API responses under 50ms globally.",
+    gradient: "from-orange-500 to-amber-400",
+    iconBg: "bg-orange-500/10 group-hover:bg-gradient-to-br group-hover:from-orange-500 group-hover:to-amber-400",
+    iconColor: "text-orange-500 group-hover:text-white",
+    border: "hover:border-orange-500/40",
+    glow: "hover:shadow-[0_0_30px_-5px_rgba(249,115,22,0.3)]",
   },
   {
     icon: Zap,
     title: "Visual Builder",
     description: "Drag & drop canvas with live data binding, responsive preview, and real-time collaborative editing.",
+    gradient: "from-pink-500 to-rose-400",
+    iconBg: "bg-pink-500/10 group-hover:bg-gradient-to-br group-hover:from-pink-500 group-hover:to-rose-400",
+    iconColor: "text-pink-500 group-hover:text-white",
+    border: "hover:border-pink-500/40",
+    glow: "hover:shadow-[0_0_30px_-5px_rgba(236,72,153,0.3)]",
   },
   {
     icon: Shield,
     title: "Enterprise Ready",
     description: "Multi-tenant architecture, SSO, field-level permissions, audit logs, and 99.9% uptime SLA.",
+    gradient: "from-red-500 to-orange-400",
+    iconBg: "bg-red-500/10 group-hover:bg-gradient-to-br group-hover:from-red-500 group-hover:to-orange-400",
+    iconColor: "text-red-500 group-hover:text-white",
+    border: "hover:border-red-500/40",
+    glow: "hover:shadow-[0_0_30px_-5px_rgba(239,68,68,0.3)]",
   },
 ];
 
@@ -232,9 +262,9 @@ export default function LandingPage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {features.map((f) => (
-              <div key={f.title} className="group rounded-xl border border-border bg-card p-4 sm:p-6 hover:shadow-glow hover:border-primary/30 transition-all duration-300">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-3 sm:mb-4 group-hover:bg-gradient-primary transition-all duration-300">
-                  <f.icon className="w-4 h-4 sm:w-5 sm:h-5 text-primary group-hover:text-primary-foreground transition-colors" />
+              <div key={f.title} className={`group rounded-xl border border-border bg-card p-4 sm:p-6 ${f.border} ${f.glow} transition-all duration-300`}>
+                <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg ${f.iconBg} flex items-center justify-center mb-3 sm:mb-4 transition-all duration-300`}>
+                  <f.icon className={`w-4 h-4 sm:w-5 sm:h-5 ${f.iconColor} transition-colors`} />
                 </div>
                 <h3 className="text-base sm:text-lg font-semibold text-foreground mb-1.5 sm:mb-2">{f.title}</h3>
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{f.description}</p>
