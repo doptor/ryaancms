@@ -12,11 +12,14 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import type { PipelineState } from "@/lib/engine";
 
 interface WebhookNotificationPanelProps {
   pipelineState: PipelineState | null;
   isBuilding: boolean;
+  projectId: string | null;
 }
 
 interface WebhookConfig {
@@ -47,34 +50,35 @@ const EVENT_OPTIONS = [
   { id: "security.issue", label: "Security Issue", icon: AlertCircle },
 ];
 
-export function WebhookNotificationPanel({ pipelineState, isBuilding }: WebhookNotificationPanelProps) {
+export function WebhookNotificationPanel({ pipelineState, isBuilding, projectId }: WebhookNotificationPanelProps) {
   const [activeView, setActiveView] = useState<"notifications" | "webhooks">("notifications");
-  const [webhooks, setWebhooks] = useState<WebhookConfig[]>([
-    {
-      id: "wh-1",
-      name: "Slack Notifications",
-      url: "https://hooks.slack.com/services/...",
-      events: ["build.complete", "build.error"],
-      isActive: true,
-      secret: "whsec_abc123def456",
-      createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
-    },
-    {
-      id: "wh-2",
-      name: "Discord Bot",
-      url: "https://discord.com/api/webhooks/...",
-      events: ["build.complete", "deploy.success"],
-      isActive: false,
-      secret: "whsec_xyz789",
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
-    },
-  ]);
+  const [webhooks, setWebhooks] = useState<WebhookConfig[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showAddWebhook, setShowAddWebhook] = useState(false);
   const [newWebhook, setNewWebhook] = useState({ name: "", url: "", events: [] as string[] });
   const [expandedWebhook, setExpandedWebhook] = useState<string | null>(null);
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
   const [testingId, setTestingId] = useState<string | null>(null);
+
+  // Load webhooks from DB
+  useEffect(() => {
+    const loadWebhooks = async () => {
+      if (!projectId) return;
+      const { data } = await (supabase as any).from("webhooks").select("*").eq("project_id", projectId).order("created_at", { ascending: false });
+      if (data) {
+        setWebhooks(data.map((w: any) => ({
+          id: w.id,
+          name: w.name,
+          url: w.url,
+          events: w.events || [],
+          isActive: w.is_active,
+          secret: w.secret,
+          createdAt: w.created_at,
+        })));
+      }
+    };
+    loadWebhooks();
+  }, [projectId]);
 
   // Generate notifications from build events
   const addNotification = useCallback((type: Notification["type"], title: string, message: string) => {
@@ -124,29 +128,43 @@ export function WebhookNotificationPanel({ pipelineState, isBuilding }: WebhookN
     }
   }, [pipelineState?.stage, addNotification]);
 
-  const handleAddWebhook = () => {
-    if (!newWebhook.name.trim() || !newWebhook.url.trim()) return;
-    const wh: WebhookConfig = {
-      id: `wh-${Date.now()}`,
+  const { user } = useAuth();
+
+  const handleAddWebhook = async () => {
+    if (!newWebhook.name.trim() || !newWebhook.url.trim() || !user || !projectId) return;
+    const secret = `whsec_${Math.random().toString(36).slice(2, 14)}`;
+    const { data, error } = await (supabase as any).from("webhooks").insert({
+      user_id: user.id,
+      project_id: projectId,
       name: newWebhook.name,
       url: newWebhook.url,
       events: newWebhook.events,
-      isActive: true,
-      secret: `whsec_${Math.random().toString(36).slice(2, 14)}`,
-      createdAt: new Date().toISOString(),
-    };
-    setWebhooks((prev) => [wh, ...prev]);
+      is_active: true,
+      secret,
+    }).select("*").single();
+    if (data) {
+      setWebhooks(prev => [{
+        id: data.id, name: data.name, url: data.url,
+        events: data.events || [], isActive: data.is_active,
+        secret: data.secret, createdAt: data.created_at,
+      }, ...prev]);
+    }
     setNewWebhook({ name: "", url: "", events: [] });
     setShowAddWebhook(false);
-    toast({ title: "Webhook added", description: wh.name });
+    toast({ title: "Webhook added", description: newWebhook.name });
   };
 
-  const handleDeleteWebhook = (id: string) => {
+  const handleDeleteWebhook = async (id: string) => {
+    await (supabase as any).from("webhooks").delete().eq("id", id);
     setWebhooks((prev) => prev.filter((w) => w.id !== id));
     toast({ title: "Webhook deleted" });
   };
 
-  const handleToggleWebhook = (id: string) => {
+  const handleToggleWebhook = async (id: string) => {
+    const wh = webhooks.find(w => w.id === id);
+    if (wh) {
+      await (supabase as any).from("webhooks").update({ is_active: !wh.isActive }).eq("id", id);
+    }
     setWebhooks((prev) =>
       prev.map((w) => (w.id === id ? { ...w, isActive: !w.isActive } : w))
     );

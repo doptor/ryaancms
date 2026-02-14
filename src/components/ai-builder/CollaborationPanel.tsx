@@ -16,6 +16,7 @@ import type { PipelineState } from "@/lib/engine/orchestrator";
 interface CollaborationPanelProps {
   pipelineState: PipelineState | null;
   isBuilding: boolean;
+  projectId: string | null;
 }
 
 interface TeamMember {
@@ -53,21 +54,64 @@ const CURSOR_COLORS = [
   "hsl(var(--chart-5))",
 ];
 
-const MOCK_MEMBERS: TeamMember[] = [
-  { id: "1", name: "You", color: CURSOR_COLORS[0], status: "online", lastActive: Date.now() },
-];
-
-export function CollaborationPanel({ pipelineState, isBuilding }: CollaborationPanelProps) {
+export function CollaborationPanel({ pipelineState, isBuilding, projectId }: CollaborationPanelProps) {
   const { user } = useAuth();
   const [activeSection, setActiveSection] = useState<"presence" | "activity" | "chat">("presence");
-  const [members, setMembers] = useState<TeamMember[]>(MOCK_MEMBERS);
+  const [members, setMembers] = useState<TeamMember[]>([]);
   const [activities, setActivities] = useState<ActivityEvent[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [isConnected, setIsConnected] = useState(true);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Simulate presence with current user
+  // Load chat messages from DB
+  useEffect(() => {
+    if (!projectId || !user) return;
+    const loadMessages = async () => {
+      const { data } = await supabase
+        .from("collaboration_messages")
+        .select("*")
+        .eq("project_id", projectId)
+        .order("created_at", { ascending: true })
+        .limit(100);
+      if (data) {
+        setChatMessages(data.map((m: any) => ({
+          id: m.id,
+          user: m.display_name || "User",
+          text: m.message,
+          timestamp: new Date(m.created_at).getTime(),
+        })));
+      }
+    };
+    loadMessages();
+
+    // Subscribe to realtime messages
+    const channel = supabase
+      .channel(`collab-${projectId}`)
+      .on("postgres_changes", {
+        event: "INSERT",
+        schema: "public",
+        table: "collaboration_messages",
+        filter: `project_id=eq.${projectId}`,
+      }, (payload: any) => {
+        const m = payload.new;
+        if (m.user_id !== user.id) {
+          setChatMessages(prev => [...prev, {
+            id: m.id,
+            user: m.display_name || "User",
+            text: m.message,
+            timestamp: new Date(m.created_at).getTime(),
+          }]);
+        }
+      })
+      .subscribe((status) => {
+        setIsConnected(status === "SUBSCRIBED");
+      });
+
+    return () => { supabase.removeChannel(channel); };
+  }, [projectId, user]);
+
+  // Set current user presence
   useEffect(() => {
     if (user) {
       setMembers([{
@@ -100,16 +144,29 @@ export function CollaborationPanel({ pipelineState, isBuilding }: CollaborationP
     }, ...prev].slice(0, 50));
   };
 
-  const handleSendChat = () => {
-    if (!chatInput.trim()) return;
-    setChatMessages(prev => [...prev, {
+  const handleSendChat = async () => {
+    if (!chatInput.trim() || !user || !projectId) return;
+    const text = chatInput.trim();
+    const displayName = user.email?.split("@")[0] || "You";
+
+    // Optimistically add to local state
+    const localMsg: ChatMessage = {
       id: crypto.randomUUID(),
-      user: user?.email?.split("@")[0] || "You",
-      text: chatInput,
+      user: displayName,
+      text,
       timestamp: Date.now(),
-    }]);
+    };
+    setChatMessages(prev => [...prev, localMsg]);
     setChatInput("");
     setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+
+    // Persist to DB
+    await supabase.from("collaboration_messages").insert({
+      user_id: user.id,
+      project_id: projectId,
+      display_name: displayName,
+      message: text,
+    } as any);
   };
 
   const getStatusIcon = (status: TeamMember["status"]) => {
@@ -201,15 +258,11 @@ export function CollaborationPanel({ pipelineState, isBuilding }: CollaborationP
         {activeSection === "presence" && (
           <ScrollArea className="h-full">
             <div className="p-4 space-y-4">
-              {/* Online members */}
               <div className="space-y-2">
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Online — {members.filter(m => m.status !== "away").length}</h3>
                 {members.map(m => (
                   <div key={m.id} className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card">
-                    <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold"
-                      style={{ backgroundColor: m.color + "20", color: m.color }}
-                    >
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold" style={{ backgroundColor: m.color + "20", color: m.color }}>
                       {m.name[0].toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -219,47 +272,23 @@ export function CollaborationPanel({ pipelineState, isBuilding }: CollaborationP
                       </div>
                       <span className="text-[11px] text-muted-foreground capitalize">{m.status}</span>
                     </div>
-                    {m.cursor && (
-                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                        <MousePointer2 className="w-3 h-3" style={{ color: m.color }} />
-                        {m.cursor.tab}
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
 
-              {/* Cursors visualization */}
               <div className="space-y-2">
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Live Cursors</h3>
                 <div className="rounded-xl border border-border bg-muted/30 p-4 relative min-h-[120px]">
                   {members.filter(m => m.status !== "away").map((m, i) => (
-                    <div
-                      key={m.id}
-                      className="absolute flex items-center gap-1 animate-pulse"
-                      style={{
-                        left: `${20 + i * 30}%`,
-                        top: `${30 + i * 20}%`,
-                      }}
-                    >
+                    <div key={m.id} className="absolute flex items-center gap-1 animate-pulse" style={{ left: `${20 + i * 30}%`, top: `${30 + i * 20}%` }}>
                       <MousePointer2 className="w-4 h-4" style={{ color: m.color }} />
-                      <span
-                        className="text-[10px] px-1.5 py-0.5 rounded font-medium"
-                        style={{ backgroundColor: m.color + "20", color: m.color }}
-                      >
-                        {m.name}
-                      </span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded font-medium" style={{ backgroundColor: m.color + "20", color: m.color }}>{m.name}</span>
                     </div>
                   ))}
-                  {members.length === 1 && (
-                    <p className="text-xs text-muted-foreground text-center pt-8">
-                      Invite team members to see live cursors
-                    </p>
-                  )}
+                  {members.length === 1 && <p className="text-xs text-muted-foreground text-center pt-8">Invite team members to see live cursors</p>}
                 </div>
               </div>
 
-              {/* Build sync status */}
               <div className="space-y-2">
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Build Sync</h3>
                 <div className="rounded-xl border border-border p-3 space-y-2">
@@ -275,10 +304,6 @@ export function CollaborationPanel({ pipelineState, isBuilding }: CollaborationP
                       <span className="text-xs text-foreground font-medium">{pipelineState.config.title}</span>
                     </div>
                   )}
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">Viewers</span>
-                    <span className="text-xs text-foreground">{members.filter(m => m.status === "viewing").length}</span>
-                  </div>
                 </div>
               </div>
             </div>
@@ -290,18 +315,14 @@ export function CollaborationPanel({ pipelineState, isBuilding }: CollaborationP
             <div className="p-4 space-y-2">
               {activities.length === 0 ? (
                 <div className="text-center py-12 space-y-3">
-                  <div className="w-12 h-12 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
-                    <Bell className="w-5 h-5 text-primary" />
-                  </div>
+                  <div className="w-12 h-12 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center"><Bell className="w-5 h-5 text-primary" /></div>
                   <p className="text-sm text-muted-foreground">No activity yet</p>
                   <p className="text-xs text-muted-foreground">Build something to see activity here</p>
                 </div>
               ) : (
                 activities.map(a => (
                   <div key={a.id} className="flex items-start gap-3 p-3 rounded-xl border border-border bg-card">
-                    <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center shrink-0 mt-0.5">
-                      {getActivityIcon(a.type)}
-                    </div>
+                    <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center shrink-0 mt-0.5">{getActivityIcon(a.type)}</div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs font-medium text-foreground">{a.user}</span>
@@ -323,18 +344,14 @@ export function CollaborationPanel({ pipelineState, isBuilding }: CollaborationP
               <div className="p-4 space-y-3">
                 {chatMessages.length === 0 && (
                   <div className="text-center py-12 space-y-3">
-                    <div className="w-12 h-12 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
-                      <MessageSquare className="w-5 h-5 text-primary" />
-                    </div>
+                    <div className="w-12 h-12 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center"><MessageSquare className="w-5 h-5 text-primary" /></div>
                     <p className="text-sm text-muted-foreground">Team chat</p>
                     <p className="text-xs text-muted-foreground">Discuss build decisions with your team</p>
                   </div>
                 )}
                 {chatMessages.map(msg => (
                   <div key={msg.id} className="flex items-start gap-2.5">
-                    <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
-                      {msg.user[0].toUpperCase()}
-                    </div>
+                    <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">{msg.user[0].toUpperCase()}</div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-medium text-foreground">{msg.user}</span>
@@ -353,10 +370,11 @@ export function CollaborationPanel({ pipelineState, isBuilding }: CollaborationP
                   value={chatInput}
                   onChange={e => setChatInput(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && handleSendChat()}
-                  placeholder="Type a message..."
+                  placeholder={projectId ? "Type a message..." : "Select a project first..."}
+                  disabled={!projectId}
                   className="text-sm h-9"
                 />
-                <Button size="icon" className="h-9 w-9 shrink-0" onClick={handleSendChat} disabled={!chatInput.trim()}>
+                <Button size="icon" className="h-9 w-9 shrink-0" onClick={handleSendChat} disabled={!chatInput.trim() || !projectId}>
                   <Send className="w-3.5 h-3.5" />
                 </Button>
               </div>
