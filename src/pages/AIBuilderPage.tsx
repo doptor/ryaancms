@@ -159,6 +159,7 @@ export default function AIBuilderPage() {
   const incomingPrompt = (location.state as any)?.prompt || "";
   const incomingProjectId = (location.state as any)?.projectId || null;
   const [input, setInput] = useState("");
+  const [isRestoring, setIsRestoring] = useState(true);
   const [messages, setMessages] = useState<Message[]>([]);
   const [progress, setProgress] = useState<ProgressStep[]>([]);
   const [isBuilding, setIsBuilding] = useState(false);
@@ -197,13 +198,13 @@ export default function AIBuilderPage() {
   }, [messages]);
 
   useEffect(() => {
-    if (incomingPrompt && !hasProcessedIncoming.current) {
+    if (incomingPrompt && !hasProcessedIncoming.current && !isRestoring) {
       hasProcessedIncoming.current = true;
       // Clear location state to prevent re-triggering on refresh
       window.history.replaceState({}, document.title);
       setTimeout(() => sendMessage(incomingPrompt), 300);
     }
-  }, [incomingPrompt]);
+  }, [incomingPrompt, isRestoring]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -215,7 +216,8 @@ export default function AIBuilderPage() {
 
   // Auto-restore last active project on mount (read-only, no creation)
   useEffect(() => {
-    if (!user || currentProject || incomingProjectId || hasProcessedIncoming.current) return;
+    if (!user) { setIsRestoring(false); return; }
+    if (currentProject || incomingProjectId || hasProcessedIncoming.current) { setIsRestoring(false); return; }
     const restoreLastProject = async () => {
       try {
         const { data: projects } = await supabase
@@ -224,7 +226,7 @@ export default function AIBuilderPage() {
           .eq("user_id", user.id)
           .order("updated_at", { ascending: false })
           .limit(1);
-        if (!projects || projects.length === 0) return;
+        if (!projects || projects.length === 0) { setIsRestoring(false); return; }
         const project = projects[0];
         setCurrentProject(project);
         currentProjectRef.current = project;
@@ -236,7 +238,6 @@ export default function AIBuilderPage() {
           .limit(1)
           .single();
         if (memory) {
-          // Pass project directly since state may not be updated yet
           const restored: PipelineState = {
             stage: "complete", config: null, validation: null, schema: null, rbac: null,
             testSuite: null, docs: null, theme: null, error: null,
@@ -271,7 +272,11 @@ export default function AIBuilderPage() {
         } else {
           setMessages([{ role: "ai", content: `📂 Loaded project **${project.title || "Untitled"}**. Send a prompt to start building!` }]);
         }
-      } catch {}
+      } catch (err) {
+        console.error("Failed to restore project:", err);
+      } finally {
+        setIsRestoring(false);
+      }
     };
     restoreLastProject();
   }, [user]);
