@@ -13,7 +13,20 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
-interface PendingPlugin {
+const CATEGORY_LABELS: Record<string, string> = {
+  plugin: "Plugin",
+  template: "Template",
+  application: "Application",
+  "ai-tool": "AI Tool",
+  theme: "Theme",
+  tool: "Tool",
+};
+
+function getCategoryLabel(cat: string) {
+  return CATEGORY_LABELS[cat] || cat.charAt(0).toUpperCase() + cat.slice(1);
+}
+
+interface MarketplaceSubmission {
   id: string;
   name: string;
   slug: string;
@@ -30,7 +43,7 @@ interface PendingPlugin {
 
 export default function PluginApprovalsPage() {
   const { user } = useAuth();
-  const [plugins, setPlugins] = useState<PendingPlugin[]>([]);
+  const [items, setItems] = useState<MarketplaceSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
@@ -40,7 +53,7 @@ export default function PluginApprovalsPage() {
   useEffect(() => {
     if (user) {
       checkAdmin();
-      loadPlugins();
+      loadItems();
     }
   }, [user]);
 
@@ -52,40 +65,42 @@ export default function PluginApprovalsPage() {
     setIsAdmin(!!data);
   };
 
-  const loadPlugins = async () => {
+  const loadItems = async () => {
     setLoading(true);
     const { data } = await supabase
       .from("plugins")
       .select("id, name, slug, category, description, version, approval_status, demo_url, download_url, submitted_by, created_at, reviewer_notes")
       .order("created_at", { ascending: false });
-    if (data) setPlugins(data as PendingPlugin[]);
+    if (data) setItems(data as MarketplaceSubmission[]);
     setLoading(false);
   };
 
-  const handleApproval = async (plugin: PendingPlugin, status: "approved" | "rejected") => {
-    setActionId(plugin.id);
+  const handleApproval = async (item: MarketplaceSubmission, status: "approved" | "rejected") => {
+    setActionId(item.id);
+    const label = getCategoryLabel(item.category);
     const { error } = await supabase
       .from("plugins")
       .update({
         approval_status: status,
-        reviewer_notes: notes[plugin.id] || null,
+        reviewer_notes: notes[item.id] || null,
         reviewed_at: new Date().toISOString(),
         reviewed_by: user!.id,
       })
-      .eq("id", plugin.id);
+      .eq("id", item.id);
 
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: status === "approved" ? "Plugin Approved ✓" : "Plugin Rejected" });
-      loadPlugins();
+      toast({ title: status === "approved" ? `${label} Approved ✓` : `${label} Rejected` });
+      loadItems();
     }
     setActionId(null);
   };
 
   const categoryIcon = (cat: string) => {
     if (cat === "template") return <Layout className="w-4 h-4 text-chart-3" />;
-    if (cat === "ai-tool") return <Sparkles className="w-4 h-4 text-chart-2" />;
+    if (cat === "ai-tool" || cat === "tool") return <Sparkles className="w-4 h-4 text-chart-2" />;
+    if (cat === "application") return <Eye className="w-4 h-4 text-chart-1" />;
     return <Puzzle className="w-4 h-4 text-primary" />;
   };
 
@@ -95,7 +110,7 @@ export default function PluginApprovalsPage() {
     return <Badge className="bg-chart-5/20 text-chart-5 border-chart-5/30 text-xs"><Clock className="w-3 h-3 mr-1" /> Pending</Badge>;
   };
 
-  const filtered = plugins.filter((p) => filter === "all" || p.approval_status === filter);
+  const filtered = items.filter((p) => filter === "all" || p.approval_status === filter);
 
   if (!isAdmin && !loading) {
     return (
@@ -120,9 +135,9 @@ export default function PluginApprovalsPage() {
               <span className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
                 <Shield className="w-4 h-4 text-primary-foreground" />
               </span>
-              Plugin Approvals
+              Marketplace Approvals
             </h1>
-            <p className="text-sm text-muted-foreground">Review, test, and approve submitted plugins, templates & AI tools.</p>
+            <p className="text-sm text-muted-foreground">Review, test, and approve submitted plugins, templates, applications & tools.</p>
           </div>
         </div>
 
@@ -131,7 +146,7 @@ export default function PluginApprovalsPage() {
           <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-primary-foreground/10 blur-2xl" />
           <h2 className="text-lg font-bold relative z-10">🛡️ Submission Review Queue</h2>
           <p className="text-sm opacity-90 mt-1 relative z-10">
-            {plugins.filter((p) => p.approval_status === "pending").length} pending · {plugins.filter((p) => p.approval_status === "approved").length} approved · {plugins.filter((p) => p.approval_status === "rejected").length} rejected
+            {items.filter((p) => p.approval_status === "pending").length} pending · {items.filter((p) => p.approval_status === "approved").length} approved · {items.filter((p) => p.approval_status === "rejected").length} rejected
           </p>
         </div>
 
@@ -156,14 +171,14 @@ export default function PluginApprovalsPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {filtered.map((plugin) => (
+                {filtered.map((item) => (
                   <div
-                    key={plugin.id}
+                    key={item.id}
                     className={cn(
                       "rounded-xl border p-5 transition-all duration-300 bg-gradient-to-br",
-                      plugin.approval_status === "pending" && "from-chart-5/5 to-chart-2/5 border-chart-5/20",
-                      plugin.approval_status === "approved" && "from-chart-4/5 to-chart-3/5 border-chart-4/20",
-                      plugin.approval_status === "rejected" && "from-destructive/5 to-destructive/3 border-destructive/20",
+                      item.approval_status === "pending" && "from-chart-5/5 to-chart-2/5 border-chart-5/20",
+                      item.approval_status === "approved" && "from-chart-4/5 to-chart-3/5 border-chart-4/20",
+                      item.approval_status === "rejected" && "from-destructive/5 to-destructive/3 border-destructive/20",
                     )}
                   >
                     <div className="flex flex-col lg:flex-row lg:items-start gap-4">
@@ -172,25 +187,29 @@ export default function PluginApprovalsPage() {
                         <div className="flex items-center gap-2 mb-2">
                           <div className={cn(
                             "w-8 h-8 rounded-lg flex items-center justify-center",
-                            plugin.category === "plugin" && "bg-primary/15",
-                            plugin.category === "template" && "bg-chart-3/15",
-                            plugin.category === "ai-tool" && "bg-chart-2/15",
+                            item.category === "plugin" && "bg-primary/15",
+                            item.category === "template" && "bg-chart-3/15",
+                            item.category === "application" && "bg-chart-1/15",
+                            (item.category === "ai-tool" || item.category === "tool") && "bg-chart-2/15",
                           )}>
-                            {categoryIcon(plugin.category)}
+                            {categoryIcon(item.category)}
                           </div>
                           <div>
-                            <h3 className="font-semibold text-foreground">{plugin.name}</h3>
-                            <span className="text-[10px] text-muted-foreground font-mono">v{plugin.version} · {plugin.slug}</span>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold text-foreground">{item.name}</h3>
+                              <Badge variant="outline" className="text-[10px]">{getCategoryLabel(item.category)}</Badge>
+                            </div>
+                            <span className="text-[10px] text-muted-foreground font-mono">v{item.version} · {item.slug}</span>
                           </div>
-                          <div className="ml-auto">{statusBadge(plugin.approval_status)}</div>
+                          <div className="ml-auto">{statusBadge(item.approval_status)}</div>
                         </div>
-                        <p className="text-xs text-muted-foreground leading-relaxed mb-3">{plugin.description}</p>
+                        <p className="text-xs text-muted-foreground leading-relaxed mb-3">{item.description}</p>
                         
                         {/* Links */}
                         <div className="flex items-center gap-3 mb-3">
-                          {plugin.demo_url && (
+                          {item.demo_url && (
                             <a
-                              href={plugin.demo_url}
+                              href={item.demo_url}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-xs text-primary hover:text-primary/80 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 transition-colors"
@@ -198,9 +217,9 @@ export default function PluginApprovalsPage() {
                               <ExternalLink className="w-3 h-3" /> Live Demo
                             </a>
                           )}
-                          {plugin.download_url && (
+                          {item.download_url && (
                             <a
-                              href={plugin.download_url}
+                              href={item.download_url}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-xs text-chart-3 hover:text-chart-3/80 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-chart-3/10 transition-colors"
@@ -209,43 +228,43 @@ export default function PluginApprovalsPage() {
                             </a>
                           )}
                           <span className="text-[10px] text-muted-foreground">
-                            Submitted {new Date(plugin.created_at).toLocaleDateString()}
+                            Submitted {new Date(item.created_at).toLocaleDateString()}
                           </span>
                         </div>
 
                         {/* Existing reviewer notes */}
-                        {plugin.reviewer_notes && plugin.approval_status !== "pending" && (
+                        {item.reviewer_notes && item.approval_status !== "pending" && (
                           <div className="rounded-lg bg-muted/50 p-2.5 text-xs text-muted-foreground border border-border">
-                            <span className="font-medium text-foreground">Review notes:</span> {plugin.reviewer_notes}
+                            <span className="font-medium text-foreground">Review notes:</span> {item.reviewer_notes}
                           </div>
                         )}
                       </div>
 
                       {/* Actions (only for pending) */}
-                      {plugin.approval_status === "pending" && (
+                      {item.approval_status === "pending" && (
                         <div className="flex flex-col gap-2 lg:w-64 shrink-0">
                           <Textarea
                             placeholder="Reviewer notes (optional)..."
-                            value={notes[plugin.id] || ""}
-                            onChange={(e) => setNotes((prev) => ({ ...prev, [plugin.id]: e.target.value }))}
+                            value={notes[item.id] || ""}
+                            onChange={(e) => setNotes((prev) => ({ ...prev, [item.id]: e.target.value }))}
                             className="text-xs min-h-[60px] resize-none"
                           />
                           <div className="flex gap-2">
                             <Button
                               size="sm"
                               className="flex-1 gap-1 bg-chart-4 hover:bg-chart-4/90"
-                              onClick={() => handleApproval(plugin, "approved")}
-                              disabled={actionId === plugin.id}
+                              onClick={() => handleApproval(item, "approved")}
+                              disabled={actionId === item.id}
                             >
-                              {actionId === plugin.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
+                              {actionId === item.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
                               Approve
                             </Button>
                             <Button
                               size="sm"
                               variant="destructive"
                               className="flex-1 gap-1"
-                              onClick={() => handleApproval(plugin, "rejected")}
-                              disabled={actionId === plugin.id}
+                              onClick={() => handleApproval(item, "rejected")}
+                              disabled={actionId === item.id}
                             >
                               <XCircle className="w-3.5 h-3.5" /> Reject
                             </Button>
