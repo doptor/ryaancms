@@ -8,6 +8,7 @@ import {
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { MARKETPLACE_ENDPOINTS } from "@/lib/marketplace-config";
 import { toast } from "@/hooks/use-toast";
 
 interface ApiKeyRow {
@@ -48,9 +49,7 @@ export default function DeveloperKeysPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/marketplace-api/keys/generate`,
-        {
+      const res = await fetch(MARKETPLACE_ENDPOINTS.generateKey, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -139,7 +138,7 @@ export default function DeveloperKeysPage() {
         <div className="rounded-xl border border-border bg-card p-5 mb-6">
           <h2 className="text-sm font-semibold text-foreground mb-3">How to Submit from Self-Hosted CMS</h2>
           <pre className="text-xs bg-muted rounded-lg p-4 overflow-x-auto text-muted-foreground">
-{`POST ${window.location.origin.replace('preview--', '').replace('.lovable.app', '.supabase.co')}/functions/v1/marketplace-api/submit
+{`POST ${MARKETPLACE_ENDPOINTS.submit}
 Headers:
   x-api-key: rcms_YOUR_API_KEY
   Content-Type: application/json
