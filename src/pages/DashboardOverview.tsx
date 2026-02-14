@@ -5,8 +5,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useBranding } from "@/contexts/BrandingContext";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Send, Plus, Clock, Search, ChevronLeft, ChevronRight,
-  Layout, Globe, ShoppingCart, FileText, Sparkles, FolderOpen,
+  Send, Plus, Clock, Search,
+  Globe, Sparkles, FolderOpen,
   MoreVertical, Pencil, Trash2, Paperclip, Link2, Mic, MicOff,
   Palette, ChevronDown, Package, Layers, LayoutGrid, X,
 } from "lucide-react";
@@ -26,13 +26,6 @@ import {
 
 // No pagination limit — show all projects
 
-const preDesignTemplates = [
-  { label: "Portfolio Website", icon: Layout, prompt: "Create a modern portfolio website with hero section, about me, projects gallery, skills section, and contact form." },
-  { label: "E-Commerce Store", icon: ShoppingCart, prompt: "Build an e-commerce store with product listing, cart, checkout flow, and order history." },
-  { label: "Blog / Magazine", icon: FileText, prompt: "Create a blog platform with article listing, categories, search, and rich text editor for posts." },
-  { label: "Landing Page", icon: Globe, prompt: "Design a high-converting landing page with hero, features, testimonials, pricing, and CTA sections." },
-  { label: "Dashboard App", icon: Layout, prompt: "Build an analytics dashboard with charts, KPI cards, data tables, and filter controls." },
-];
 
 export default function DashboardOverview() {
   const { user } = useAuth();
@@ -45,9 +38,7 @@ export default function DashboardOverview() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [isRecording, setIsRecording] = useState(false);
-  const [showContentType, setShowContentType] = useState(false);
   const [selectedContentType, setSelectedContentType] = useState("website");
-  const [showColorPresets, setShowColorPresets] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [urlValue, setUrlValue] = useState("");
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -273,133 +264,101 @@ export default function DashboardOverview() {
                   if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); }
                 }}
               />
-              <div className="flex flex-col gap-2 px-3 sm:px-4 pb-3">
-                {/* Top row on mobile: content type + colors + templates */}
-                <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
-                  {/* Content Type Selector */}
-                  <div className="relative shrink-0">
-                    <button
-                      onClick={() => { setShowContentType(!showContentType); setShowColorPresets(false); }}
-                      className="flex items-center gap-1 px-2 py-1 rounded-full border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors whitespace-nowrap"
-                    >
-                      {CONTENT_TYPES.find(c => c.value === selectedContentType)?.label || "🌐 Website"}
-                      <ChevronDown className="w-3 h-3" />
-                    </button>
-                    {showContentType && (
-                      <div className="absolute bottom-full left-0 mb-1 bg-popover border border-border rounded-lg shadow-lg p-1 z-50 min-w-[180px]">
-                        {CONTENT_TYPES.map((ct) => (
-                          <button
-                            key={ct.value}
-                            onClick={() => { setSelectedContentType(ct.value); setShowContentType(false); }}
-                            className={cn(
-                              "flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-xs text-left transition-colors",
-                              selectedContentType === ct.value ? "bg-primary/10 text-primary" : "text-foreground hover:bg-accent"
-                            )}
-                          >
-                            <ct.icon className="w-3.5 h-3.5" />
-                            {ct.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Color Presets */}
-                  <div className="relative shrink-0">
-                    <button
-                      onClick={() => { setShowColorPresets(!showColorPresets); setShowContentType(false); }}
-                      className="flex items-center gap-1 px-2 py-1 rounded-full border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors whitespace-nowrap"
-                    >
-                      <Palette className="w-3 h-3" /> Colors
-                    </button>
-                    {showColorPresets && (
-                      <div className="absolute bottom-full left-0 mb-1 bg-popover border border-border rounded-lg shadow-lg p-2 z-50">
-                        <div className="flex gap-1.5">
-                          {COLOR_PRESETS.map((cp) => (
-                            <button
-                              key={cp.name}
-                              onClick={() => {
-                                setPrompt((prev) => prev + ` Use ${cp.name.toLowerCase()} as primary color.`);
-                                setShowColorPresets(false);
-                              }}
-                              className="group flex flex-col items-center gap-1"
-                              title={cp.name}
-                            >
-                              <div
-                                className="w-6 h-6 rounded-full border-2 border-border group-hover:border-foreground/50 transition-colors"
-                                style={{ backgroundColor: cp.color }}
-                              />
-                              <span className="text-[9px] text-muted-foreground">{cp.name}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Templates */}
+              <div className="flex items-center justify-between px-3 sm:px-4 pb-3">
+                {/* Left: action buttons + website + colors */}
+                <div className="flex items-center gap-0.5">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button className="flex items-center gap-1 px-2 py-1 rounded-full border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors whitespace-nowrap shrink-0">
-                        <Sparkles className="w-3 h-3" />
-                        Templates
+                      <Button
+                        variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
+                        title="Add"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="min-w-[180px]">
+                      <DropdownMenuItem onClick={() => fileInputRef.current?.click()} className="gap-2">
+                        <Paperclip className="w-4 h-4" />
+                        Attachment
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setShowUrlInput(!showUrlInput)} className="gap-2">
+                        <Link2 className="w-4 h-4" />
+                        Website URL
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <Button
+                    variant="ghost" size="icon"
+                    className={cn(
+                      "h-8 w-8 rounded-lg transition-colors",
+                      isRecording ? "text-destructive bg-destructive/10 hover:bg-destructive/20" : "text-muted-foreground hover:text-foreground"
+                    )}
+                    onClick={handleMicToggle}
+                    title={isRecording ? "Stop recording" : "Voice input"}
+                  >
+                    {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                  </Button>
+
+                  <div className="w-px h-4 bg-border mx-1" />
+
+                  {/* Content Type Selector */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="flex items-center gap-1 px-2 py-1 rounded-full border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors whitespace-nowrap">
+                        {CONTENT_TYPES.find(c => c.value === selectedContentType)?.label || "🌐 Website"}
                         <ChevronDown className="w-3 h-3" />
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="min-w-[220px]">
-                      {preDesignTemplates.map((tpl, i) => (
-                        <DropdownMenuItem key={i} onClick={() => setPrompt(tpl.prompt)} className="gap-2">
-                          <tpl.icon className="w-4 h-4" />
-                          {tpl.label}
+                    <DropdownMenuContent align="start" className="min-w-[180px]">
+                      {CONTENT_TYPES.map((ct) => (
+                        <DropdownMenuItem
+                          key={ct.value}
+                          onClick={() => setSelectedContentType(ct.value)}
+                          className={cn("gap-2", selectedContentType === ct.value && "bg-primary/10 text-primary")}
+                        >
+                          <ct.icon className="w-3.5 h-3.5" />
+                          {ct.label}
                         </DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
+
+                  {/* Color Presets */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="flex items-center gap-1 px-2 py-1 rounded-full border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors whitespace-nowrap">
+                        <Palette className="w-3 h-3" /> Colors
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="p-2">
+                      <div className="flex gap-1.5">
+                        {COLOR_PRESETS.map((cp) => (
+                          <button
+                            key={cp.name}
+                            onClick={() => setPrompt((prev) => prev + ` Use ${cp.name.toLowerCase()} as primary color.`)}
+                            className="group flex flex-col items-center gap-1"
+                            title={cp.name}
+                          >
+                            <div
+                              className="w-6 h-6 rounded-full border-2 border-border group-hover:border-foreground/50 transition-colors"
+                              style={{ backgroundColor: cp.color }}
+                            />
+                            <span className="text-[9px] text-muted-foreground">{cp.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
 
-                {/* Bottom row: action buttons + send */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-0.5">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
-                          title="Add"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="min-w-[180px]">
-                        <DropdownMenuItem onClick={() => fileInputRef.current?.click()} className="gap-2">
-                          <Paperclip className="w-4 h-4" />
-                          Attachment
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setShowUrlInput(!showUrlInput)} className="gap-2">
-                          <Link2 className="w-4 h-4" />
-                          Website URL
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                    <Button
-                      variant="ghost" size="icon"
-                      className={cn(
-                        "h-8 w-8 rounded-lg transition-colors",
-                        isRecording ? "text-destructive bg-destructive/10 hover:bg-destructive/20" : "text-muted-foreground hover:text-foreground"
-                      )}
-                      onClick={handleMicToggle}
-                      title={isRecording ? "Stop recording" : "Voice input"}
-                    >
-                      {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                    </Button>
-                  </div>
-                  <button
-                    onClick={handleSubmit}
-                    disabled={!prompt.trim() || createProject.isPending}
-                    className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground disabled:opacity-40 hover:opacity-90 transition-opacity shrink-0"
-                  >
-                    <Send className="w-4 h-4" />
-                  </button>
-                </div>
+                {/* Right: send */}
+                <button
+                  onClick={handleSubmit}
+                  disabled={!prompt.trim() || createProject.isPending}
+                  className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground disabled:opacity-40 hover:opacity-90 transition-opacity shrink-0"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
               </div>
             </div>
           </div>
