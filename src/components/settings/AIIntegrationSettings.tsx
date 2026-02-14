@@ -14,7 +14,7 @@ import {
   Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, Search, CheckCircle2, XCircle, ExternalLink, Info, Copy, Check, Plug, Loader2, Wifi, WifiOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -303,7 +303,8 @@ function CopyButton({ text }: { text: string }) {
 }
 
 export default function AIIntegrationSettings() {
-  const [items, setItems] = useState<AIIntegration[]>(seedData);
+  const [items, setItems] = useState<AIIntegration[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const [search, setSearch] = useState("");
   const [filterProvider, setFilterProvider] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -317,6 +318,44 @@ export default function AIIntegrationSettings() {
   const [connectionResult, setConnectionResult] = useState<{ success: boolean; message: string } | null>(null);
   const [testingItemId, setTestingItemId] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Load AI integrations from site_settings
+  useEffect(() => {
+    const loadIntegrations = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setLoaded(true); return; }
+      const { data, error } = await supabase
+        .from("site_settings")
+        .select("value")
+        .eq("user_id", user.id)
+        .eq("key", "ai_integrations")
+        .maybeSingle();
+      if (!error && data?.value && Array.isArray((data.value as any).items)) {
+        setItems((data.value as any).items);
+      } else {
+        // Seed with defaults on first load
+        setItems(seedData);
+      }
+      setLoaded(true);
+    };
+    loadIntegrations();
+  }, []);
+
+  // Persist AI integrations to site_settings whenever items change
+  useEffect(() => {
+    if (!loaded) return;
+    const persist = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      await supabase
+        .from("site_settings")
+        .upsert(
+          { user_id: user.id, key: "ai_integrations", value: { items } as any },
+          { onConflict: "user_id,key" }
+        );
+    };
+    persist();
+  }, [items, loaded]);
 
   const testConnection = async (provider: string, apiEndpoint: string, apiKey: string, model: string, itemId?: string) => {
     if (itemId) {
@@ -402,12 +441,14 @@ export default function AIIntegrationSettings() {
       setItems((prev) => prev.map((i) => (i.id === editId ? { ...i, ...form } : i)));
     }
     setDialogOpen(false);
+    toast({ title: "✅ Saved", description: "AI integration saved and synced." });
   };
 
   const handleDelete = () => {
     if (!deleteId) return;
     setItems((prev) => prev.filter((i) => i.id !== deleteId));
     setDeleteId(null);
+    toast({ title: "Deleted", description: "AI integration removed." });
   };
 
   const currentProviderConfig = getProviderConfig(form.provider);

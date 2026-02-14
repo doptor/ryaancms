@@ -789,11 +789,19 @@ Rules:
 
 type AgentName = keyof typeof AGENT_CONFIGS;
 
+interface UserApiConfig {
+  provider: string;
+  endpoint: string;
+  apiKey: string;
+  model: string;
+}
+
 async function runAgent(
   agentName: AgentName,
   userPrompt: string,
   context: Record<string, unknown>,
-  apiKey: string
+  apiKey: string,
+  userApiConfig?: UserApiConfig | null
 ): Promise<{ success: boolean; data?: unknown; error?: string; agentName: string }> {
   const agent = AGENT_CONFIGS[agentName];
 
@@ -808,27 +816,52 @@ async function runAgent(
     ? `User Request: "${userPrompt}"\n\n--- Previous Agent Outputs ---\n${contextStr}`
     : `User Request: "${userPrompt}"`;
 
-  try {
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const requestBody = JSON.stringify({
+    model: "google/gemini-2.5-flash",
+    messages: [
+      { role: "system", content: agent.system },
+      { role: "user", content: fullPrompt },
+    ],
+    tools: [{ type: "function", function: { name: agent.tool.name, description: agent.tool.description, parameters: agent.tool.parameters } }],
+    tool_choice: { type: "function", function: { name: agent.tool.name } },
+  });
+
+  // Helper to call an AI endpoint
+  async function callAI(url: string, key: string, body: string) {
+    const response = await fetch(url, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: agent.system },
-          { role: "user", content: fullPrompt },
-        ],
-        tools: [{ type: "function", function: { name: agent.tool.name, description: agent.tool.description, parameters: agent.tool.parameters } }],
-        tool_choice: { type: "function", function: { name: agent.tool.name } },
-      }),
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body,
     });
+    return response;
+  }
+
+  try {
+    // Try Lovable AI Gateway first
+    let response = await callAI("https://ai.gateway.lovable.dev/v1/chat/completions", apiKey, requestBody);
+
+    // If 402 (credits exhausted), try user's own API key
+    if (response.status === 402 && userApiConfig) {
+      console.log(`Lovable AI credits exhausted, falling back to user's ${userApiConfig.provider} key`);
+      await response.text(); // consume body
+      
+      // Map the model for the user's provider
+      const fallbackBody = JSON.stringify({
+        ...JSON.parse(requestBody),
+        model: userApiConfig.model || "gpt-4o",
+      });
+      response = await callAI(
+        userApiConfig.endpoint.endsWith("/chat/completions")
+          ? userApiConfig.endpoint
+          : `${userApiConfig.endpoint}/chat/completions`,
+        userApiConfig.apiKey,
+        fallbackBody
+      );
+    }
 
     if (!response.ok) {
       if (response.status === 429) return { success: false, error: "Rate limit exceeded. Please try again shortly.", agentName: agent.name };
-      if (response.status === 402) return { success: false, error: "AI credits exhausted.", agentName: agent.name };
+      if (response.status === 402) return { success: false, error: "AI credits exhausted. Please add your own API key in Settings → AI Integrations.", agentName: agent.name };
       return { success: false, error: `Agent ${agent.name} failed: HTTP ${response.status}`, agentName: agent.name };
     }
 
@@ -874,6 +907,45 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
+    // Fetch user's own API keys from site_settings for fallback
+    let userApiConfig: UserApiConfig | null = null;
+    try {
+      const authHeader = req.headers.get("authorization");
+      if (authHeader) {
+        const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+        const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+        const settingsRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/site_settings?key=eq.ai_integrations&select=value`,
+          {
+            headers: {
+              Authorization: authHeader,
+              apikey: SUPABASE_ANON_KEY,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        if (settingsRes.ok) {
+          const rows = await settingsRes.json();
+          if (rows?.[0]?.value?.items) {
+            const activeIntegration = rows[0].value.items.find(
+              (i: any) => i.status === "active" && i.apiKey && i.apiKey.length > 5
+            );
+            if (activeIntegration) {
+              userApiConfig = {
+                provider: activeIntegration.provider,
+                endpoint: activeIntegration.apiEndpoint,
+                apiKey: activeIntegration.apiKey,
+                model: activeIntegration.model,
+              };
+              console.log(`User API fallback available: ${activeIntegration.provider}/${activeIntegration.model}`);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.log("Could not fetch user API config (non-fatal):", e);
+    }
+
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
@@ -907,7 +979,7 @@ serve(async (req) => {
 
           send("agent_start", { agent: agent.name, step, total: totalAgents });
 
-          const result = await runAgent(key, prompt, context, LOVABLE_API_KEY);
+          const result = await runAgent(key, prompt, context, LOVABLE_API_KEY, userApiConfig);
           agentLog.push({ agent: key, ...result });
 
           if (!result.success) {
