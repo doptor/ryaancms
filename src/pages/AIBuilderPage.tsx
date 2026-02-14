@@ -71,7 +71,18 @@ import { generateProjectCode } from "@/lib/engine/code-generator";
 import { STARTER_TEMPLATES, type StarterTemplate } from "@/lib/engine/template-library";
 import JSZip from "jszip";
 
-type Message = { role: "user" | "ai"; content: string };
+type BuildTask = {
+  label: string;
+  status: "done" | "in_progress" | "pending";
+};
+
+type Message = {
+  role: "user" | "ai";
+  content: string;
+  thinkingTime?: number;
+  tasks?: BuildTask[];
+  editedFiles?: string[];
+};
 
 type ProgressStep = {
   label: string;
@@ -193,6 +204,9 @@ export default function AIBuilderPage() {
   const [showContentType, setShowContentType] = useState(false);
   const [selectedContentType, setSelectedContentType] = useState<string>("website");
   const [showColorPresets, setShowColorPresets] = useState(false);
+  const [buildElapsed, setBuildElapsed] = useState(0);
+  const buildTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const buildStartTimeRef = useRef<number>(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const hasProcessedIncoming = useRef(false);
@@ -479,6 +493,12 @@ export default function AIBuilderPage() {
   const executeBuild = async (buildPrompt: string) => {
     setIsBuilding(true);
     setPipelineState(null);
+    setBuildElapsed(0);
+    buildStartTimeRef.current = Date.now();
+    buildTimerRef.current = setInterval(() => {
+      setBuildElapsed(Math.round((Date.now() - buildStartTimeRef.current) / 1000));
+    }, 1000);
+
 
     const analysis = analyzePrompt(buildPrompt);
     const relevantSteps = analysis.stepsNeeded;
@@ -637,6 +657,22 @@ export default function AIBuilderPage() {
         } catch {}
 
         // Build summary
+        const thinkingTime = Math.round(duration / 1000);
+        const allComponents = config.pages.flatMap((p) => p.components.map((c) => c.type));
+        const buildTasks: BuildTask[] = [
+          { label: `Analyzed requirements & planned architecture`, status: "done" },
+          ...(config.pages.length > 0 ? [{ label: `Created ${config.pages.length} pages with ${allComponents.length} components`, status: "done" as const }] : []),
+          ...(config.collections.length > 0 ? [{ label: `Designed ${config.collections.length} database collections`, status: "done" as const }] : []),
+          ...(config.roles && config.roles.length > 0 ? [{ label: `Set up ${config.roles.length} user roles with RBAC`, status: "done" as const }] : []),
+          ...(v ? [{ label: `Security validation: ${v.score}/100`, status: "done" as const }] : []),
+          { label: `Generated complete app configuration`, status: "done" },
+        ];
+        const editedFiles = [
+          "AppConfig.json",
+          ...(config.collections.length > 0 ? ["DatabaseSchema.sql"] : []),
+          ...config.pages.map(p => `${p.name}Page.tsx`),
+        ];
+
         const summary = [
           `## ✅ ${config.title}`,
           `**${config.project_type}** · **${config.build_target}** · ${config.modules.join(", ")}`,
@@ -680,7 +716,7 @@ export default function AIBuilderPage() {
           setAwaitingPhaseConfirm(true);
 
           setMessages((prev) => {
-            const updated = [...prev, { role: "ai" as const, content: phaseMsg }];
+            const updated = [...prev, { role: "ai" as const, content: phaseMsg, thinkingTime, tasks: buildTasks, editedFiles }];
             if (currentProject?.id && user) {
               supabase.from("project_memory").upsert({
                 user_id: user.id,
@@ -706,7 +742,7 @@ export default function AIBuilderPage() {
           }
 
           setMessages((prev) => {
-            const updated = [...prev, { role: "ai" as const, content: completionMsg }];
+            const updated = [...prev, { role: "ai" as const, content: completionMsg, thinkingTime, tasks: buildTasks, editedFiles }];
             if (currentProject?.id && user) {
               supabase.from("project_memory").upsert({
                 user_id: user.id,
@@ -735,6 +771,10 @@ export default function AIBuilderPage() {
     } finally {
       unsub();
       setIsBuilding(false);
+      if (buildTimerRef.current) {
+        clearInterval(buildTimerRef.current);
+        buildTimerRef.current = null;
+      }
     }
   };
 
@@ -1108,6 +1148,10 @@ export default function AIBuilderPage() {
 
     return (
       <div className="mx-4 mb-3">
+        {/* Thinking timer */}
+        {buildElapsed > 0 && (
+          <p className="text-[11px] text-muted-foreground mb-1.5 ml-10">Thought for {buildElapsed}s</p>
+        )}
         <div className="rounded-xl border border-border bg-card p-4 space-y-3 animate-fade-in">
           <div className="flex items-center gap-3">
             {hasError ? (
@@ -1231,20 +1275,69 @@ export default function AIBuilderPage() {
     <ScrollArea className="flex-1">
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
         {messages.map((msg, i) => (
-          <div key={i} className={cn("flex gap-3 animate-fade-in", msg.role === "user" ? "justify-end" : "justify-start")}>
-            {msg.role === "ai" && (
-              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                <Sparkles className="w-3.5 h-3.5 text-primary" />
-              </div>
+          <div key={i} className="animate-fade-in">
+            {/* Thinking time indicator */}
+            {msg.role === "ai" && msg.thinkingTime && msg.thinkingTime > 0 && (
+              <p className="text-[11px] text-muted-foreground mb-1.5 ml-10">Thought for {msg.thinkingTime}s</p>
             )}
-            <div className={cn(
-              "max-w-[80%] rounded-2xl px-4 py-3 text-sm",
-              msg.role === "user"
-                ? "bg-primary text-primary-foreground"
-                : "bg-card border border-border text-foreground"
-            )}>
-              <div className="prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_h2]:text-base [&_h2]:font-semibold [&_p]:leading-relaxed">
-                <ReactMarkdown>{msg.content}</ReactMarkdown>
+
+            <div className={cn("flex gap-3", msg.role === "user" ? "justify-end" : "justify-start")}>
+              {msg.role === "ai" && (
+                <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                  <Sparkles className="w-3.5 h-3.5 text-primary" />
+                </div>
+              )}
+              <div className={cn(
+                "max-w-[80%] text-sm space-y-2",
+              )}>
+                {/* Main message content */}
+                <div className={cn(
+                  "rounded-2xl px-4 py-3",
+                  msg.role === "user"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card border border-border text-foreground"
+                )}>
+                  <div className="prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_h2]:text-base [&_h2]:font-semibold [&_p]:leading-relaxed">
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  </div>
+                </div>
+
+                {/* Task completion card (Lovable-style) */}
+                {msg.role === "ai" && msg.tasks && msg.tasks.length > 0 && (
+                  <div className="rounded-xl border border-border bg-card overflow-hidden">
+                    {/* Edited files header */}
+                    {msg.editedFiles && msg.editedFiles.length > 0 && (
+                      <div className="px-3 py-2 border-b border-border bg-muted/30">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <FileCode2 className="w-3 h-3" />
+                          <span className="font-medium">Edited</span>
+                          <div className="flex gap-1 flex-wrap">
+                            {msg.editedFiles.map((file, fi) => (
+                              <Badge key={fi} variant="secondary" className="text-[10px] h-4 font-mono">
+                                {file}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {/* Task list */}
+                    <div className="px-3 py-2 space-y-1">
+                      {msg.tasks.map((task, ti) => (
+                        <div key={ti} className="flex items-center gap-2">
+                          <CheckCircle2 className={cn(
+                            "w-3.5 h-3.5 shrink-0",
+                            task.status === "done" ? "text-primary" : "text-muted-foreground/30"
+                          )} />
+                          <span className={cn(
+                            "text-xs",
+                            task.status === "done" ? "text-foreground" : "text-muted-foreground"
+                          )}>{task.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
