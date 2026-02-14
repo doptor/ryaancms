@@ -401,15 +401,16 @@ AVAILABLE LANDING SECTIONS (use these ONLY):
 2. "hero" - Hero section with headline + CTA (always after navbar)
 3. "trusted_by" - Logo cloud showing partner brands
 4. "features_grid" - Feature cards grid (3 or 6 cards)
-5. "how_it_works" - Step-by-step process (3 steps)
-6. "testimonials" - Customer testimonial cards
-7. "pricing_table" - Pricing plans comparison
-8. "faq" - FAQ accordion section
-9. "final_cta" - Bottom CTA with gradient background
-10. "footer" - Site footer (always last)
+5. "feature_split" - Side-by-side section: image/visual on one side, text + bullet points + CTA on other side (use for deep feature explanation)
+6. "how_it_works" - Step-by-step process (3 steps)
+7. "testimonials" - Customer testimonial cards
+8. "pricing_table" - Pricing plans comparison
+9. "faq" - FAQ accordion section
+10. "final_cta" - Bottom CTA with gradient background
+11. "footer" - Site footer (always last)
 
 STANDARD LANDING PAGE FORMULA:
-navbar → hero → trusted_by → features_grid → how_it_works → testimonials → pricing_table → faq → final_cta → footer
+navbar → hero → trusted_by → features_grid → feature_split → how_it_works → testimonials → pricing_table → faq → final_cta → footer
 
 For portfolio sites: navbar → hero → card_grid (projects) → stats_row → media_gallery (skills) → testimonials → form (contact) → footer
 
@@ -446,7 +447,7 @@ Verify all of these before submitting:
 - [ ] Every landing page has at least: navbar, hero, features_grid, final_cta, footer
 
 COMPONENT TYPES AVAILABLE:
-hero, navbar, footer, sidebar, crud_table, form, chart, card_grid, stats_row, auth_form, pricing_table, media_gallery, search_bar, notification_center, rich_text_editor, file_upload, calendar, kanban_board, timeline, map, role_manager, payment_page, dashboard_layout, data_import, settings_panel, api_docs, trusted_by, features_grid, how_it_works, testimonials, faq, final_cta
+hero, navbar, footer, sidebar, crud_table, form, chart, card_grid, stats_row, auth_form, pricing_table, media_gallery, search_bar, notification_center, rich_text_editor, file_upload, calendar, kanban_board, timeline, map, role_manager, payment_page, dashboard_layout, data_import, settings_panel, api_docs, trusted_by, features_grid, feature_split, how_it_works, testimonials, faq, final_cta
 
 MICRO-INTERACTIONS (always include in style):
 - Cards: hover:shadow-lg hover:-translate-y-1
