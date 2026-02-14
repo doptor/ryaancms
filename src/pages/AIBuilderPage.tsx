@@ -209,43 +209,7 @@ export default function AIBuilderPage() {
     }
   }, [input]);
 
-  // Auto-restore last project on mount (prevents data loss on refresh)
-  useEffect(() => {
-    if (!user || currentProject || incomingProjectId || hasProcessedIncoming.current) return;
-    const restoreLastProject = async () => {
-      try {
-        const { data: projects } = await supabase
-          .from("projects")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("updated_at", { ascending: false })
-          .limit(1);
-        if (projects && projects.length > 0) {
-          const project = projects[0];
-          setCurrentProject(project);
-          // Load project memory
-          const { data: memory } = await supabase
-            .from("project_memory")
-            .select("*")
-            .eq("project_id", project.id)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .single();
-          if (memory) {
-            handleLoadProjectMemory(memory);
-            const agentLog = memory.agent_log as any[] || [];
-            const convEntry = agentLog.find((e: any) => e?.type === "conversation");
-            if (convEntry?.messages?.length) {
-              setMessages(convEntry.messages);
-            } else {
-              setMessages([{ role: "ai", content: `📂 Restored project **${project.title || "Untitled"}**. Continue building or start fresh!` }]);
-            }
-          }
-        }
-      } catch {}
-    };
-    restoreLastProject();
-  }, [user]);
+  // Auto-restore removed — user should manually select projects from ProjectSelector
 
   // Auto-save conversation to project memory
   const saveConversation = useCallback(async (msgs: Message[]) => {
@@ -713,7 +677,7 @@ export default function AIBuilderPage() {
     };
     if (memory.modules || memory.page_layouts || memory.db_schema) {
       restored.config = {
-        project_type: "saas", build_target: "application", title: "Restored Project", description: "Loaded from project memory",
+        project_type: "saas", build_target: "application", title: currentProject?.title || "Restored Project", description: currentProject?.prompt || "Loaded from project memory",
         modules: memory.modules || [], roles: [], features: [],
         pages: memory.page_layouts || [], collections: memory.db_schema || [],
         style: {}, multi_tenant: false,
