@@ -120,25 +120,27 @@ export default function DashboardOverview() {
     (p.title || p.prompt).toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const generateShortTitle = (text: string): string => {
-    let title = text.trim();
-    // Remove common prefixes
-    const prefixes = /^(create|build|make|design|develop|generate|i want|i need|please)\s+(a|an|me|the)?\s*/i;
-    title = title.replace(prefixes, "");
-    // Capitalize first letter
-    title = title.charAt(0).toUpperCase() + title.slice(1);
-    // Limit length
-    return title.slice(0, 50);
-  };
-
   const createProject = useMutation({
     mutationFn: async (promptText: string) => {
+      // Quick fallback title (strip common prefixes)
+      const fallback = promptText.replace(/^(create|build|make|design|develop|generate|i want|i need|please)\s+(a|an|me|the)?\s*/i, "").trim();
       const { data, error } = await supabase.from("projects").insert({
         user_id: user!.id,
         prompt: promptText,
-        title: generateShortTitle(promptText),
+        title: (fallback.charAt(0).toUpperCase() + fallback.slice(1)).slice(0, 50),
       }).select().single();
       if (error) throw error;
+
+      // AI generates a smarter short title in background
+      supabase.functions.invoke("generate-title", { body: { prompt: promptText } }).then(({ data: aiData }) => {
+        const aiTitle = aiData?.title;
+        if (aiTitle && aiTitle.length > 0 && aiTitle.length <= 50) {
+          supabase.from("projects").update({ title: aiTitle }).eq("id", data.id).then(() => {
+            queryClient.invalidateQueries({ queryKey: ["projects"] });
+          });
+        }
+      });
+
       return data;
     },
     onSuccess: (data) => {
