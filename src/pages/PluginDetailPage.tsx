@@ -327,13 +327,19 @@ export default function PluginDetailPage() {
                 )}
 
                 {/* Live Preview */}
-                {item.demo_url && (
-                  <Button variant="outline" className="w-full gap-1.5" asChild>
-                    <a href={item.demo_url} target="_blank" rel="noopener noreferrer">
-                      <Eye className="w-4 h-4" /> Live Preview
-                    </a>
-                  </Button>
-                )}
+                <Button
+                  variant="outline"
+                  className="w-full gap-1.5"
+                  onClick={() => {
+                    if (item.demo_url) {
+                      window.open(item.demo_url, "_blank", "noopener,noreferrer");
+                    } else {
+                      toast({ title: "No preview available", description: "This item doesn't have a live preview yet." });
+                    }
+                  }}
+                >
+                  <Eye className="w-4 h-4" /> Live Preview
+                </Button>
 
                 <Separator />
 
