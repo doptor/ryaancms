@@ -117,6 +117,11 @@ const componentIcons: Record<string, any> = {
   data_import: Image, settings_panel: BarChart3, api_docs: Code,
   trusted_by: TrendingUp, features_grid: LayoutGrid, feature_split: Columns,
   how_it_works: FileText, testimonials: Sparkles, faq: FileText, final_cta: Rocket,
+  // Dynamic sections
+  stats_banner: BarChart3, video_section: Eye, comparison_table: Table,
+  integrations_grid: Link2, contact_form: FileText, newsletter_cta: Send,
+  blog_preview: FileText, use_cases: LayoutGrid, team_section: Shield,
+  cta_with_image: Rocket, logo_carousel: TrendingUp,
 };
 
 export default function AIBuilderPage() {

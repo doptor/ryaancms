@@ -15,7 +15,13 @@ export type ComponentType =
   | "role_manager" | "payment_page" | "dashboard_layout"
   | "data_import" | "settings_panel" | "api_docs"
   | "trusted_by" | "features_grid" | "feature_split" | "how_it_works"
-  | "testimonials" | "faq" | "final_cta";
+  | "testimonials" | "faq" | "final_cta"
+  // Dynamic sections (AI can create new ones)
+  | "stats_banner" | "video_section" | "comparison_table"
+  | "integrations_grid" | "contact_form" | "newsletter_cta"
+  | "blog_preview" | "use_cases" | "logo_carousel"
+  | "team_section" | "cta_with_image"
+  | string; // Allow any string for truly dynamic sections
 
 export type FieldType = "text" | "number" | "boolean" | "date" | "relation" | "json" | "media" | "enum" | "uuid" | "email" | "url" | "password" | "timestamp";
 
@@ -677,6 +683,172 @@ export const componentRegistry: ComponentMeta[] = [
       { name: "secondary_cta", type: "string", default: "Talk to Sales" },
     ],
   },
+  // === Dynamic Section Types (AI can generate these) ===
+  {
+    type: "stats_banner" as ComponentType,
+    label: "Stats Banner",
+    category: "content",
+    description: "Full-width statistics banner with key metrics and counters",
+    icon: "BarChart3",
+    tenant_safe: true,
+    requires_auth: false,
+    requires_modules: [],
+    allowed_layouts: ["public", "marketing"],
+    props_schema: [
+      { name: "headline", type: "string", default: "Our Impact in Numbers" },
+      { name: "stats", type: "array", description: "Array of stat objects with label, value, suffix" },
+      { name: "style", type: "enum", enum_values: ["gradient", "minimal", "cards"], default: "gradient" },
+    ],
+  },
+  {
+    type: "video_section" as ComponentType,
+    label: "Video Section",
+    category: "media",
+    description: "Video demo or showcase section with play button overlay",
+    icon: "Play",
+    tenant_safe: true,
+    requires_auth: false,
+    requires_modules: [],
+    allowed_layouts: ["public", "marketing"],
+    props_schema: [
+      { name: "headline", type: "string", default: "See it in action" },
+      { name: "subtitle", type: "string", default: "Watch a quick demo" },
+      { name: "video_url", type: "string" },
+      { name: "thumbnail_url", type: "string" },
+    ],
+  },
+  {
+    type: "comparison_table" as ComponentType,
+    label: "Comparison Table",
+    category: "content",
+    description: "Feature comparison table across plans or competitors",
+    icon: "Table",
+    tenant_safe: true,
+    requires_auth: false,
+    requires_modules: [],
+    allowed_layouts: ["public", "marketing"],
+    props_schema: [
+      { name: "headline", type: "string", default: "How we compare" },
+      { name: "columns", type: "array", description: "Column headers (plan names or competitors)" },
+      { name: "rows", type: "array", description: "Feature rows with values per column" },
+    ],
+  },
+  {
+    type: "integrations_grid" as ComponentType,
+    label: "Integrations Grid",
+    category: "content",
+    description: "Grid of integration partner logos and names",
+    icon: "Puzzle",
+    tenant_safe: true,
+    requires_auth: false,
+    requires_modules: [],
+    allowed_layouts: ["public", "marketing"],
+    props_schema: [
+      { name: "headline", type: "string", default: "Integrates with your tools" },
+      { name: "subtitle", type: "string", default: "Connect with the tools you already use" },
+      { name: "integrations", type: "array", description: "Array of integration objects with name and icon" },
+    ],
+  },
+  {
+    type: "contact_form" as ComponentType,
+    label: "Contact Form",
+    category: "interaction",
+    description: "Contact form section with form fields and info",
+    icon: "Mail",
+    tenant_safe: true,
+    requires_auth: false,
+    requires_modules: [],
+    allowed_layouts: ["public", "marketing"],
+    props_schema: [
+      { name: "headline", type: "string", default: "Get in touch" },
+      { name: "subtitle", type: "string", default: "We'd love to hear from you" },
+      { name: "fields", type: "array", description: "Form field definitions" },
+      { name: "submit_text", type: "string", default: "Send Message" },
+    ],
+  },
+  {
+    type: "newsletter_cta" as ComponentType,
+    label: "Newsletter CTA",
+    category: "content",
+    description: "Email newsletter signup section",
+    icon: "Mail",
+    tenant_safe: true,
+    requires_auth: false,
+    requires_modules: [],
+    allowed_layouts: ["public", "marketing"],
+    props_schema: [
+      { name: "headline", type: "string", default: "Stay in the loop" },
+      { name: "subtitle", type: "string", default: "Get the latest updates delivered to your inbox" },
+      { name: "placeholder", type: "string", default: "Enter your email" },
+      { name: "button_text", type: "string", default: "Subscribe" },
+    ],
+  },
+  {
+    type: "blog_preview" as ComponentType,
+    label: "Blog Preview",
+    category: "content",
+    description: "Preview cards for latest blog posts",
+    icon: "FileText",
+    tenant_safe: true,
+    requires_auth: false,
+    requires_modules: [],
+    allowed_layouts: ["public", "marketing"],
+    props_schema: [
+      { name: "headline", type: "string", default: "Latest from our blog" },
+      { name: "subtitle", type: "string", default: "Insights and updates" },
+      { name: "posts", type: "array", description: "Array of blog post previews" },
+      { name: "columns", type: "number", default: 3, min: 1, max: 4 },
+    ],
+  },
+  {
+    type: "use_cases" as ComponentType,
+    label: "Use Cases",
+    category: "content",
+    description: "Use case showcase with tabs or cards",
+    icon: "Target",
+    tenant_safe: true,
+    requires_auth: false,
+    requires_modules: [],
+    allowed_layouts: ["public", "marketing"],
+    props_schema: [
+      { name: "headline", type: "string", default: "Built for every team" },
+      { name: "subtitle", type: "string", default: "See how teams use our platform" },
+      { name: "cases", type: "array", description: "Array of use case objects" },
+    ],
+  },
+  {
+    type: "team_section" as ComponentType,
+    label: "Team Section",
+    category: "content",
+    description: "Team member cards with photos, names, and roles",
+    icon: "Users",
+    tenant_safe: true,
+    requires_auth: false,
+    requires_modules: [],
+    allowed_layouts: ["public", "marketing"],
+    props_schema: [
+      { name: "headline", type: "string", default: "Meet our team" },
+      { name: "subtitle", type: "string", default: "The people behind the product" },
+      { name: "members", type: "array", description: "Array of team member objects" },
+    ],
+  },
+  {
+    type: "cta_with_image" as ComponentType,
+    label: "CTA with Image",
+    category: "content",
+    description: "Call-to-action section with side image",
+    icon: "ImagePlus",
+    tenant_safe: true,
+    requires_auth: false,
+    requires_modules: [],
+    allowed_layouts: ["public", "marketing"],
+    props_schema: [
+      { name: "headline", type: "string", default: "Ready to transform your workflow?" },
+      { name: "description", type: "string" },
+      { name: "cta_text", type: "string", default: "Get Started" },
+      { name: "image_side", type: "enum", enum_values: ["left", "right"], default: "right" },
+    ],
+  },
 ];
 
 // === Lookup Helpers ===
@@ -696,3 +868,6 @@ export function getComponentsForLayout(layout: LayoutType): ComponentMeta[] {
 export function getComponentsRequiringModule(module: string): ComponentMeta[] {
   return componentRegistry.filter((c) => c.requires_modules.includes(module));
 }
+
+// Re-export section factory
+export { registerSection, getSection, getAllDynamicSections, isDynamicSection, generateCrudFromEntity } from "./section-factory";

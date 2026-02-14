@@ -287,6 +287,17 @@ function ComponentRenderer({ component, config }: { component: ComponentConfig; 
     case "testimonials": return <TestimonialsPreview props={props} />;
     case "faq": return <FaqPreview props={props} />;
     case "final_cta": return <FinalCtaPreview props={props} />;
+    // Dynamic sections
+    case "stats_banner": return <StatsBannerPreview props={props} />;
+    case "video_section": return <VideoSectionPreview props={props} />;
+    case "comparison_table": return <ComparisonTablePreview props={props} />;
+    case "integrations_grid": return <IntegrationsGridPreview props={props} />;
+    case "contact_form": return <ContactFormPreview props={props} />;
+    case "newsletter_cta": return <NewsletterCtaPreview props={props} />;
+    case "blog_preview": return <BlogPreviewPreview props={props} />;
+    case "use_cases": return <UseCasesPreview props={props} />;
+    case "team_section": return <TeamSectionPreview props={props} />;
+    case "cta_with_image": return <CtaWithImagePreview props={props} />;
     case "sidebar": return null;
     case "dashboard_layout": return null;
     default:
@@ -1870,6 +1881,285 @@ function FooterPreview({ props, config }: { props: Record<string, any>; config?:
             ))}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// === Dynamic Section Previews ===
+
+function StatsBannerPreview({ props }: { props: Record<string, any> }) {
+  const stats = props.stats || [
+    { label: "Users", value: "10K+", suffix: "" },
+    { label: "Uptime", value: "99.9", suffix: "%" },
+    { label: "Countries", value: "50", suffix: "+" },
+    { label: "Deployments", value: "1M", suffix: "+" },
+  ];
+  return (
+    <div className="py-20 bg-gradient-to-r from-primary/10 via-background to-primary/5">
+      <div className="max-w-5xl mx-auto px-6 text-center space-y-10">
+        <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">{props.headline || "Our Impact in Numbers"}</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          {stats.map((s: any, i: number) => (
+            <div key={i} className="space-y-1">
+              <p className="text-4xl md:text-5xl font-extrabold text-primary">{s.value}{s.suffix}</p>
+              <p className="text-sm text-muted-foreground">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function VideoSectionPreview({ props }: { props: Record<string, any> }) {
+  return (
+    <div className="py-20 bg-background">
+      <div className="max-w-5xl mx-auto px-6 text-center space-y-10">
+        <div className="space-y-3">
+          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">{props.headline || "See it in action"}</h2>
+          <p className="text-base text-muted-foreground max-w-xl mx-auto">{props.subtitle || "Watch a quick demo"}</p>
+        </div>
+        <div className="relative aspect-video rounded-2xl border border-border bg-card overflow-hidden shadow-lg group cursor-pointer">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-full bg-primary/90 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+              <Play className="w-7 h-7 text-primary-foreground ml-1" />
+            </div>
+          </div>
+          <div className="absolute bottom-4 left-4 flex items-center gap-2">
+            <Badge variant="secondary" className="text-[10px]">3:24</Badge>
+            <span className="text-xs text-muted-foreground">Product Demo</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ComparisonTablePreview({ props }: { props: Record<string, any> }) {
+  const columns = props.columns || ["Us", "Competitor A", "Competitor B"];
+  const rows = props.rows || [
+    { feature: "AI Builder", values: [true, false, false] },
+    { feature: "Plugin System", values: [true, true, false] },
+    { feature: "RBAC", values: [true, false, true] },
+    { feature: "Auto Deploy", values: [true, false, false] },
+  ];
+  return (
+    <div className="py-20 bg-background">
+      <div className="max-w-5xl mx-auto px-6 space-y-10">
+        <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight text-center">{props.headline || "How we compare"}</h2>
+        <div className="rounded-2xl border border-border bg-card overflow-hidden">
+          <table className="w-full text-sm">
+            <thead><tr className="border-b border-border bg-muted/50">
+              <th className="text-left px-6 py-4 font-medium text-muted-foreground">Feature</th>
+              {columns.map((col: string, i: number) => (
+                <th key={i} className={cn("text-center px-4 py-4 font-semibold", i === 0 ? "text-primary" : "text-muted-foreground")}>{col}</th>
+              ))}
+            </tr></thead>
+            <tbody>
+              {rows.map((row: any, i: number) => (
+                <tr key={i} className="border-b border-border last:border-0">
+                  <td className="px-6 py-3 text-foreground font-medium">{row.feature}</td>
+                  {(row.values || []).map((v: boolean, j: number) => (
+                    <td key={j} className="text-center px-4 py-3">
+                      {v ? <Check className="w-4 h-4 text-primary mx-auto" /> : <X className="w-4 h-4 text-muted-foreground/30 mx-auto" />}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function IntegrationsGridPreview({ props }: { props: Record<string, any> }) {
+  const integrations = props.integrations || ["Slack", "GitHub", "Stripe", "Notion", "Figma", "Jira", "AWS", "Vercel"];
+  return (
+    <div className="py-20 bg-background">
+      <div className="max-w-5xl mx-auto px-6 text-center space-y-10">
+        <div className="space-y-3">
+          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">{props.headline || "Integrates with your tools"}</h2>
+          <p className="text-base text-muted-foreground max-w-xl mx-auto">{props.subtitle || "Connect with the tools you already use"}</p>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {integrations.map((name: string, i: number) => (
+            <div key={i} className="rounded-2xl border border-border bg-card p-6 flex flex-col items-center gap-3 hover:shadow-lg hover:border-primary/20 hover:-translate-y-1 transition-all duration-300">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Package className="w-5 h-5 text-primary" />
+              </div>
+              <span className="text-sm font-medium text-foreground">{typeof name === "string" ? name : (name as any).name || "Integration"}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ContactFormPreview({ props }: { props: Record<string, any> }) {
+  return (
+    <div className="py-20 bg-background">
+      <div className="max-w-5xl mx-auto px-6">
+        <div className="grid md:grid-cols-2 gap-12">
+          <div className="space-y-6">
+            <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">{props.headline || "Get in touch"}</h2>
+            <p className="text-base text-muted-foreground leading-relaxed">{props.subtitle || "We'd love to hear from you"}</p>
+            <div className="space-y-4">
+              {[{ icon: Mail, text: "hello@example.com" }, { icon: MapPin, text: "San Francisco, CA" }].map((item, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <item.icon className="w-4 h-4 text-primary" />
+                  </div>
+                  <span className="text-sm text-muted-foreground">{item.text}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
+            {["Name", "Email", "Message"].map((field) => (
+              <div key={field}>
+                <label className="block text-xs font-medium text-foreground mb-1.5">{field}</label>
+                {field === "Message" ? (
+                  <div className="w-full h-24 rounded-xl border border-input bg-background" />
+                ) : (
+                  <Input placeholder={`Your ${field.toLowerCase()}`} className="rounded-xl" />
+                )}
+              </div>
+            ))}
+            <Button className="w-full rounded-xl">{props.submit_text || "Send Message"}</Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function NewsletterCtaPreview({ props }: { props: Record<string, any> }) {
+  return (
+    <div className="py-20 bg-gradient-to-r from-primary/5 via-background to-primary/5">
+      <div className="max-w-3xl mx-auto px-6 text-center space-y-6">
+        <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">{props.headline || "Stay in the loop"}</h2>
+        <p className="text-base text-muted-foreground">{props.subtitle || "Get the latest updates delivered to your inbox"}</p>
+        <div className="flex gap-3 max-w-md mx-auto">
+          <Input placeholder={props.placeholder || "Enter your email"} className="flex-1 rounded-xl" />
+          <Button className="rounded-xl px-6">{props.button_text || "Subscribe"}</Button>
+        </div>
+        <p className="text-xs text-muted-foreground">No spam. Unsubscribe anytime.</p>
+      </div>
+    </div>
+  );
+}
+
+function BlogPreviewPreview({ props }: { props: Record<string, any> }) {
+  const posts = props.posts || [
+    { title: "Getting Started Guide", excerpt: "Learn how to set up your project in minutes", date: "Dec 10, 2024", category: "Tutorial" },
+    { title: "Best Practices for Scaling", excerpt: "Tips to grow your application effectively", date: "Dec 8, 2024", category: "Engineering" },
+    { title: "New Feature: AI Builder", excerpt: "Generate complete applications from a single prompt", date: "Dec 5, 2024", category: "Product" },
+  ];
+  return (
+    <div className="py-20 bg-background">
+      <div className="max-w-5xl mx-auto px-6 space-y-10">
+        <div className="text-center space-y-3">
+          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">{props.headline || "Latest from our blog"}</h2>
+          <p className="text-base text-muted-foreground max-w-xl mx-auto">{props.subtitle || "Insights and updates"}</p>
+        </div>
+        <div className="grid md:grid-cols-3 gap-6">
+          {posts.map((post: any, i: number) => (
+            <div key={i} className="rounded-2xl border border-border bg-card overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group">
+              <div className="h-40 bg-gradient-to-br from-primary/5 to-primary/10" />
+              <div className="p-5 space-y-3">
+                <Badge variant="secondary" className="text-[10px]">{post.category}</Badge>
+                <h3 className="font-bold text-foreground group-hover:text-primary transition-colors">{post.title}</h3>
+                <p className="text-xs text-muted-foreground">{post.excerpt}</p>
+                <p className="text-[10px] text-muted-foreground">{post.date}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function UseCasesPreview({ props }: { props: Record<string, any> }) {
+  const cases = props.cases || [
+    { title: "Startups", description: "Launch your MVP in hours, not months", icon: "🚀" },
+    { title: "Agencies", description: "Deliver client projects faster than ever", icon: "🏢" },
+    { title: "Enterprise", description: "Scale with confidence and compliance", icon: "🏗️" },
+  ];
+  return (
+    <div className="py-20 bg-background">
+      <div className="max-w-5xl mx-auto px-6 text-center space-y-10">
+        <div className="space-y-3">
+          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">{props.headline || "Built for every team"}</h2>
+          <p className="text-base text-muted-foreground max-w-xl mx-auto">{props.subtitle || "See how teams use our platform"}</p>
+        </div>
+        <div className="grid md:grid-cols-3 gap-6">
+          {cases.map((c: any, i: number) => (
+            <div key={i} className="rounded-2xl border border-border bg-card p-8 text-center space-y-4 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+              <span className="text-4xl">{c.icon}</span>
+              <h3 className="text-lg font-bold text-foreground">{c.title}</h3>
+              <p className="text-sm text-muted-foreground">{c.description}</p>
+              <Button variant="ghost" size="sm" className="text-primary text-xs">Learn more <ArrowRight className="w-3 h-3 ml-1" /></Button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TeamSectionPreview({ props }: { props: Record<string, any> }) {
+  const members = props.members || [
+    { name: "Alex Chen", role: "CEO & Founder", initials: "AC" },
+    { name: "Sarah Kim", role: "CTO", initials: "SK" },
+    { name: "David Park", role: "Head of Design", initials: "DP" },
+    { name: "Lisa Wang", role: "Lead Engineer", initials: "LW" },
+  ];
+  return (
+    <div className="py-20 bg-background">
+      <div className="max-w-5xl mx-auto px-6 text-center space-y-10">
+        <div className="space-y-3">
+          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">{props.headline || "Meet our team"}</h2>
+          <p className="text-base text-muted-foreground max-w-xl mx-auto">{props.subtitle || "The people behind the product"}</p>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          {members.map((m: any, i: number) => (
+            <div key={i} className="text-center space-y-3">
+              <div className="w-20 h-20 rounded-full bg-gradient-primary mx-auto flex items-center justify-center text-primary-foreground font-bold text-lg">
+                {m.initials || m.name?.charAt(0)}
+              </div>
+              <div>
+                <p className="font-semibold text-foreground text-sm">{m.name}</p>
+                <p className="text-xs text-muted-foreground">{m.role}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CtaWithImagePreview({ props }: { props: Record<string, any> }) {
+  const imageRight = props.image_side !== "left";
+  return (
+    <div className="py-20 bg-background">
+      <div className={cn("max-w-5xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center", !imageRight && "direction-rtl")}>
+        <div className="space-y-6">
+          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">{props.headline || "Ready to transform your workflow?"}</h2>
+          <p className="text-base text-muted-foreground leading-relaxed">{props.description || "Start building powerful applications today with our AI-powered platform."}</p>
+          <Button size="lg" className="rounded-xl shadow-sm">{props.cta_text || "Get Started"} <ArrowRight className="w-4 h-4 ml-2" /></Button>
+        </div>
+        <div className="rounded-2xl border border-border bg-card aspect-[4/3] flex items-center justify-center bg-gradient-to-br from-primary/5 to-primary/10">
+          <div className="text-center space-y-2">
+            <Image className="w-12 h-12 text-primary/30 mx-auto" />
+            <p className="text-xs text-muted-foreground">Visual Asset</p>
+          </div>
+        </div>
       </div>
     </div>
   );
