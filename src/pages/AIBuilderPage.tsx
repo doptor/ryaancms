@@ -73,6 +73,7 @@ import { ComponentMarketplacePanel } from "@/components/ai-builder/ComponentMark
 import { TeamWorkspacePanel } from "@/components/ai-builder/TeamWorkspacePanel";
 import { ApiDocsGeneratorPanel } from "@/components/ai-builder/ApiDocsGeneratorPanel";
 import { WorkflowAutomationPanel } from "@/components/ai-builder/WorkflowAutomationPanel";
+import { AdvancedAnalyticsPanel } from "@/components/ai-builder/AdvancedAnalyticsPanel";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getThemePreset } from "@/lib/engine/theme-generator";
@@ -2119,6 +2120,13 @@ export default function AIBuilderPage() {
                           <TabsTrigger value="automation" className={tabTriggerClass}>
                             <GitBranch className="w-3.5 h-3.5" /> Automate
                           </TabsTrigger>
+
+                          <div className="w-px h-5 bg-border mx-1 self-center shrink-0" />
+
+                          {/* Phase 15: Analytics */}
+                          <TabsTrigger value="analytics" className={tabTriggerClass}>
+                            <BarChart3 className="w-3.5 h-3.5" /> Analytics
+                          </TabsTrigger>
                         </TabsList>
                       </div>
                     </Tabs>
@@ -2329,6 +2337,9 @@ export default function AIBuilderPage() {
                     {desktopRightTab === "automation" && (
                       <WorkflowAutomationPanel pipelineState={pipelineState} />
                     )}
+                    {desktopRightTab === "analytics" && (
+                      <AdvancedAnalyticsPanel pipelineState={pipelineState} />
+                    )}
                   </div>
                 </div>
               </ResizablePanel>
@@ -2393,6 +2404,7 @@ export default function AIBuilderPage() {
                         { value: "team", icon: Users, label: "Team" },
                         { value: "api-docs", icon: FileText, label: "API" },
                         { value: "automation", icon: GitBranch, label: "Automate" },
+                        { value: "analytics", icon: BarChart3, label: "Analytics" },
                       ].map((tab) => (
                         <DropdownMenuItem
                           key={tab.value}
@@ -2564,6 +2576,9 @@ export default function AIBuilderPage() {
               )}
               {effectiveTab === "automation" && (
                 <WorkflowAutomationPanel pipelineState={pipelineState} />
+              )}
+              {effectiveTab === "analytics" && (
+                <AdvancedAnalyticsPanel pipelineState={pipelineState} />
               )}
             </div>
           </div>
