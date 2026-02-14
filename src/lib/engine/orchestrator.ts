@@ -132,6 +132,7 @@ const INITIAL_STATE: PipelineState = {
 export class AIPipelineOrchestrator {
   private listeners: PipelineListener[] = [];
   private state: PipelineState = { ...INITIAL_STATE };
+  private themePreset: import("./theme-generator").ThemePreset | null = null;
 
   on(listener: PipelineListener) {
     this.listeners.push(listener);
@@ -150,6 +151,10 @@ export class AIPipelineOrchestrator {
 
   getState(): PipelineState {
     return { ...this.state };
+  }
+
+  setThemePreset(preset: import("./theme-generator").ThemePreset) {
+    this.themePreset = preset;
   }
 
   async execute(prompt: string): Promise<PipelineState> {
@@ -239,8 +244,23 @@ export class AIPipelineOrchestrator {
         const docs = generateDocumentation(this.state.config, schema, validation, rbac);
         this.state.docs = docs;
 
-        // Engine 8: Theme Generator
-        if (this.state.config.style) {
+        // Engine 8: Theme Generator — use preset if selected, else from config style
+        if (this.themePreset) {
+          this.emit("finalizing", "Applying theme preset...");
+          const { generateTheme } = await import("./theme-generator");
+          const theme = generateTheme(this.themePreset.tokens);
+          this.state.theme = theme;
+          // Also inject style into config
+          const radiusMap: Record<string, "none" | "sm" | "md" | "lg" | "full"> = {
+            "0": "none", "0.25rem": "sm", "0.375rem": "sm", "0.5rem": "md", "0.75rem": "lg", "1rem": "lg", "9999px": "full",
+          };
+          this.state.config!.style = {
+            primary_color: this.themePreset.tokens.primary_color,
+            font: this.themePreset.tokens.font,
+            border_radius: radiusMap[this.themePreset.tokens.border_radius] || "lg",
+            theme: this.themePreset.tokens.theme_mode,
+          };
+        } else if (this.state.config.style) {
           this.emit("finalizing", "Generating theme tokens...");
           const theme = generateThemeFromStyle(this.state.config.style);
           this.state.theme = theme;
