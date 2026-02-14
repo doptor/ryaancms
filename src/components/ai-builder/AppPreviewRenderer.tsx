@@ -298,6 +298,8 @@ function ComponentRenderer({ component, config }: { component: ComponentConfig; 
     case "use_cases": return <UseCasesPreview props={props} />;
     case "team_section": return <TeamSectionPreview props={props} />;
     case "cta_with_image": return <CtaWithImagePreview props={props} />;
+    case "logo_carousel": return <LogoCarouselPreview props={props} />;
+    case "data_import": return <DataImportPreview props={props} />;
     case "sidebar": return null;
     case "dashboard_layout": return null;
     default:
@@ -2160,6 +2162,70 @@ function CtaWithImagePreview({ props }: { props: Record<string, any> }) {
             <p className="text-xs text-muted-foreground">Visual Asset</p>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function LogoCarouselPreview({ props }: { props: Record<string, any> }) {
+  const logos = props.logos || ["Stripe", "Notion", "Linear", "Vercel", "Figma", "GitHub", "Slack", "Discord"];
+  return (
+    <div className="py-16 bg-muted/30 overflow-hidden">
+      <div className="max-w-5xl mx-auto px-6">
+        <p className="text-center text-sm text-muted-foreground mb-8">{props.title || "Trusted by innovative teams worldwide"}</p>
+        <div className="flex items-center gap-12 animate-[scroll_20s_linear_infinite]">
+          {[...logos, ...logos].map((name: string, i: number) => (
+            <div key={i} className="flex items-center gap-2 shrink-0 opacity-40 hover:opacity-70 transition-opacity">
+              <div className="w-8 h-8 rounded-lg bg-foreground/10 flex items-center justify-center">
+                <Globe className="w-4 h-4 text-foreground/50" />
+              </div>
+              <span className="text-sm font-semibold text-foreground/60 whitespace-nowrap">{name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DataImportPreview({ props }: { props: Record<string, any> }) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-semibold text-foreground">{props.title || "Import Data"}</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">Upload CSV, Excel, or JSON files</p>
+        </div>
+        <Badge variant="secondary" className="text-[10px]">Beta</Badge>
+      </div>
+      <div className="border-2 border-dashed border-border rounded-xl p-8 text-center space-y-3 hover:border-primary/30 transition-colors cursor-pointer">
+        <Upload className="w-10 h-10 text-muted-foreground/30 mx-auto" />
+        <div>
+          <p className="text-sm font-medium text-foreground">Drop files here or click to browse</p>
+          <p className="text-xs text-muted-foreground mt-1">Supports .csv, .xlsx, .json (max 10MB)</p>
+        </div>
+      </div>
+      <div className="space-y-2">
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+          <FileText className="w-4 h-4 text-primary" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-foreground truncate">customers_2025.csv</p>
+            <p className="text-[10px] text-muted-foreground">2,847 rows • 12 columns</p>
+          </div>
+          <Badge variant="outline" className="text-[10px] text-primary border-primary/30">Ready</Badge>
+        </div>
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+          <FileText className="w-4 h-4 text-muted-foreground" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-foreground truncate">products.json</p>
+            <p className="text-[10px] text-muted-foreground">156 records</p>
+          </div>
+          <Progress value={65} className="w-16 h-1.5" />
+        </div>
+      </div>
+      <div className="flex justify-end gap-2 pt-2">
+        <Button variant="outline" size="sm" className="text-xs h-8">Map Columns</Button>
+        <Button size="sm" className="text-xs h-8">Import All</Button>
       </div>
     </div>
   );

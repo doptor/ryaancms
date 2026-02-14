@@ -4,3 +4,7 @@ export * from "./database-generator";
 export * from "./security-validator";
 export * from "./orchestrator";
 export * from "./section-factory";
+export * from "./rbac-generator";
+export * from "./test-generator";
+export * from "./docs-generator";
+export * from "./theme-generator";

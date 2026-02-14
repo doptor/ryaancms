@@ -6,6 +6,10 @@
 import type { AppConfig } from "./component-registry";
 import { validateAppConfig, ValidationResult } from "./security-validator";
 import { generateDatabaseSchema, GeneratedSchema } from "./database-generator";
+import { generateRBAC, RBACOutput } from "./rbac-generator";
+import { generateTestSuite, TestSuite } from "./test-generator";
+import { generateDocumentation, GeneratedDocs } from "./docs-generator";
+import { generateThemeFromStyle, GeneratedTheme } from "./theme-generator";
 
 export type PipelineStage =
   | "idle"
@@ -34,6 +38,10 @@ export interface PipelineState {
   config: AppConfig | null;
   validation: ValidationResult | null;
   schema: GeneratedSchema | null;
+  rbac: RBACOutput | null;
+  testSuite: TestSuite | null;
+  docs: GeneratedDocs | null;
+  theme: GeneratedTheme | null;
   error: string | null;
   // Multi-agent extended data
   requirements: string[];
@@ -84,6 +92,10 @@ const INITIAL_STATE: PipelineState = {
   config: null,
   validation: null,
   schema: null,
+  rbac: null,
+  testSuite: null,
+  docs: null,
+  theme: null,
   error: null,
   requirements: [],
   taskPlan: [],
@@ -212,6 +224,28 @@ export class AIPipelineOrchestrator {
         const validation = validateAppConfig(this.state.config);
         this.state.validation = validation;
 
+        // Engine 5: RBAC Generator
+        this.emit("validating_security", "Generating RBAC system...");
+        const rbac = generateRBAC(this.state.config);
+        this.state.rbac = rbac;
+
+        // Engine 6: Test Suite Generator
+        this.emit("generating", "Generating test scenarios...");
+        const testSuite = generateTestSuite(this.state.config);
+        this.state.testSuite = testSuite;
+
+        // Engine 7: Documentation Generator
+        this.emit("finalizing", "Generating documentation...");
+        const docs = generateDocumentation(this.state.config, schema, validation, rbac);
+        this.state.docs = docs;
+
+        // Engine 8: Theme Generator
+        if (this.state.config.style) {
+          this.emit("finalizing", "Generating theme tokens...");
+          const theme = generateThemeFromStyle(this.state.config.style);
+          this.state.theme = theme;
+        }
+
         // Complete
         this.emit("complete", "✅ Multi-agent pipeline complete!");
         this.state.stage = "complete";
@@ -339,6 +373,14 @@ export class AIPipelineOrchestrator {
         validation: this.state.validation
           ? { score: this.state.validation.score, errors: this.state.validation.errors.length, warnings: this.state.validation.warnings.length }
           : null,
+        rbac: this.state.rbac
+          ? { roles: this.state.rbac.roles.length, permissions: this.state.rbac.permissions.length, policies: this.state.rbac.policies.length }
+          : null,
+        test_suite: this.state.testSuite
+          ? { scenarios: this.state.testSuite.coverage_summary.total_scenarios, coverage: this.state.testSuite.coverage_summary.estimated_coverage }
+          : null,
+        docs: this.state.docs ? this.state.docs.checklist : null,
+        theme: this.state.theme ? this.state.theme.preset_name : null,
       },
       null,
       2
