@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -433,23 +433,69 @@ function AutoUpdateSettings({ values, onChange }: SectionProps) {
   const [installing, setInstalling] = useState(false);
   const [installProgress, setInstallProgress] = useState(0);
   const [installStep, setInstallStep] = useState("");
-  const [updateAvailable, setUpdateAvailable] = useState<null | { version: string; changelog: string[] }>(null);
-  const [currentVersion, setCurrentVersion] = useState(values.currentVersion || "2.3.1");
-  const [updateHistory, setUpdateHistory] = useState<{ version: string; date: string; status: string; type: string }[]>(
-    values.updateHistory || [
-      { version: "2.3.1", date: "2026-02-10", status: "success", type: "Patch" },
-      { version: "2.3.0", date: "2026-02-01", status: "success", type: "Minor" },
-      { version: "2.2.5", date: "2026-01-20", status: "success", type: "Patch" },
-    ]
-  );
+  const [updateAvailable, setUpdateAvailable] = useState<null | { version: string; releaseUrl: string | null; changelog: string[] }>(null);
+  const [currentVersion, setCurrentVersion] = useState(values.currentVersion || "");
+  const [latestVersion, setLatestVersion] = useState("");
+  const [updateHistory, setUpdateHistory] = useState<{ version: string; date: string; status: string; type: string }[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  // Load real data from releases table on mount
+  useEffect(() => {
+    (async () => {
+      const { data: releases } = await supabase
+        .from("releases")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      if (releases && releases.length > 0) {
+        // Latest successful release = current installed version (if no persisted version)
+        const successReleases = releases.filter(r => r.status === "success");
+        const latestSuccessful = successReleases[0];
+        const latestOverall = releases[0];
+
+        // Use persisted currentVersion if available, otherwise use latest successful
+        const installed = values.currentVersion || (latestSuccessful?.version || "1.0.0");
+        setCurrentVersion(installed);
+        setLatestVersion(latestOverall?.version || installed);
+
+        // Build real history from releases table
+        const history = releases.slice(0, 10).map(r => ({
+          version: r.version,
+          date: new Date(r.created_at).toISOString().split("T")[0],
+          status: r.status === "success" ? "success" : "failed",
+          type: getVersionType(r.version),
+        }));
+        setUpdateHistory(history);
+      }
+      setLoaded(true);
+    })();
+  }, []);
+
+  function getVersionType(version: string): string {
+    const parts = version.split(".").map(Number);
+    if (parts[0] > 1) return "Major";
+    if (parts[1] > 0) return "Minor";
+    return "Patch";
+  }
+
+  function compareVersions(a: string, b: string): number {
+    const pa = a.split(".").map(Number);
+    const pb = b.split(".").map(Number);
+    for (let i = 0; i < 3; i++) {
+      if ((pa[i] || 0) > (pb[i] || 0)) return 1;
+      if ((pa[i] || 0) < (pb[i] || 0)) return -1;
+    }
+    return 0;
+  }
 
   const handleCheckUpdate = async () => {
     setCheckingUpdate(true);
     try {
-      // Fetch latest release from database
       const { data: latestRelease } = await supabase
         .from("releases")
         .select("*")
+        .eq("status", "success")
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -457,24 +503,11 @@ function AutoUpdateSettings({ values, onChange }: SectionProps) {
       const now = new Date().toLocaleString();
       onChange("lastChecked", now);
 
-      if (latestRelease && latestRelease.version !== currentVersion) {
+      if (latestRelease && compareVersions(latestRelease.version, currentVersion) > 0) {
+        setLatestVersion(latestRelease.version);
         setUpdateAvailable({
           version: latestRelease.version,
-          changelog: [
-            "Improved AI Builder performance & stability",
-            "New drag-and-drop component system",
-            "Security patches for authentication",
-            "Database migration improvements",
-            "Bug fixes and stability enhancements",
-          ],
-        });
-        toast({ title: "🔔 Update Available!", description: `Version ${latestRelease.version} is ready to install.` });
-      } else {
-        // Simulate a newer version available
-        const parts = currentVersion.split(".").map(Number);
-        const nextVersion = `${parts[0]}.${parts[1]}.${parts[2] + 1}`;
-        setUpdateAvailable({
-          version: nextVersion,
+          releaseUrl: latestRelease.release_url,
           changelog: [
             "Performance optimizations across all modules",
             "Enhanced AI model integration pipeline",
@@ -483,10 +516,13 @@ function AutoUpdateSettings({ values, onChange }: SectionProps) {
             "UI/UX refinements and bug fixes",
           ],
         });
-        toast({ title: "🔔 Update Available!", description: `Version ${nextVersion} is ready to install.` });
+        toast({ title: "🔔 Update Available!", description: `v${currentVersion} → v${latestRelease.version}` });
+      } else {
+        setUpdateAvailable(null);
+        toast({ title: "✅ Up to date!", description: `You're running the latest version (v${currentVersion}).` });
       }
     } catch (err) {
-      toast({ title: "Check failed", description: "Could not check for updates. Try again later.", variant: "destructive" });
+      toast({ title: "Check failed", description: "Could not check for updates.", variant: "destructive" });
     } finally {
       setCheckingUpdate(false);
     }
@@ -515,21 +551,24 @@ function AutoUpdateSettings({ values, onChange }: SectionProps) {
     }
 
     const newVersion = updateAvailable.version;
-    const vParts = newVersion.split(".").map(Number);
-    const type = vParts[2] > 0 ? "Patch" : vParts[1] > 0 ? "Minor" : "Major";
-    const newEntry = {
-      version: newVersion,
-      date: new Date().toISOString().split("T")[0],
-      status: "success",
-      type,
-    };
-
-    const newHistory = [newEntry, ...updateHistory];
-    setUpdateHistory(newHistory);
     setCurrentVersion(newVersion);
     onChange("currentVersion", newVersion);
-    onChange("updateHistory", newHistory);
     onChange("lastChecked", new Date().toLocaleString());
+
+    // Refresh history from DB
+    const { data: releases } = await supabase
+      .from("releases")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(10);
+    if (releases) {
+      setUpdateHistory(releases.map(r => ({
+        version: r.version,
+        date: new Date(r.created_at).toISOString().split("T")[0],
+        status: r.status === "success" ? "success" : "failed",
+        type: getVersionType(r.version),
+      })));
+    }
 
     setUpdateAvailable(null);
     setInstalling(false);
@@ -538,9 +577,17 @@ function AutoUpdateSettings({ values, onChange }: SectionProps) {
 
     toast({
       title: "✅ Update Installed!",
-      description: `Successfully updated to v${newVersion}. All systems operational.`,
+      description: `Successfully updated to v${newVersion}.`,
     });
   };
+
+  if (!loaded) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -551,7 +598,12 @@ function AutoUpdateSettings({ values, onChange }: SectionProps) {
             <RefreshCw className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-foreground">Current Version: <span className="text-primary">v{currentVersion}</span></p>
+            <p className="text-sm font-semibold text-foreground">
+              Current Version: <span className="text-primary">v{currentVersion}</span>
+              {latestVersion && compareVersions(latestVersion, currentVersion) > 0 && (
+                <span className="ml-2 text-xs text-muted-foreground">→ v{latestVersion} available</span>
+              )}
+            </p>
             <p className="text-xs text-muted-foreground">Last checked: {values.lastChecked || "Never"}</p>
           </div>
         </div>
@@ -586,7 +638,9 @@ function AutoUpdateSettings({ values, onChange }: SectionProps) {
         <div className="p-4 rounded-xl border border-primary/30 bg-primary/5 space-y-3">
           <div className="flex items-center gap-2">
             <Download className="w-4 h-4 text-primary" />
-            <span className="text-sm font-semibold text-primary">Update Available: v{updateAvailable.version}</span>
+            <span className="text-sm font-semibold text-primary">
+              Update Available: v{currentVersion} → v{updateAvailable.version}
+            </span>
           </div>
           <div className="space-y-1">
             <p className="text-xs font-medium text-foreground">Changelog:</p>
@@ -599,9 +653,14 @@ function AutoUpdateSettings({ values, onChange }: SectionProps) {
           </div>
           <div className="flex gap-2">
             <Button size="sm" className="gap-1.5" onClick={handleInstallUpdate}>
-              <Download className="w-3.5 h-3.5" /> Install Update
+              <Download className="w-3.5 h-3.5" /> Install v{updateAvailable.version}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setUpdateAvailable(null)}>Dismiss</Button>
+            {updateAvailable.releaseUrl && (
+              <Button variant="outline" size="sm" asChild>
+                <a href={updateAvailable.releaseUrl} target="_blank" rel="noopener noreferrer">View Release</a>
+              </Button>
+            )}
+            <Button variant="ghost" size="sm" onClick={() => setUpdateAvailable(null)}>Dismiss</Button>
           </div>
         </div>
       )}
