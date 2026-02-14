@@ -1819,68 +1819,69 @@ export default function AIBuilderPage() {
           {/* Mobile */}
           <div className="md:hidden flex flex-col h-full overflow-hidden">
             <div className="border-b border-border bg-card px-1 shrink-0">
-              <Tabs value={effectiveTab} onValueChange={setActiveTab}>
-                <TabsList className="bg-transparent h-10 p-0 gap-0 w-full justify-start overflow-x-auto scrollbar-none">
-                  <TabsTrigger value="chat" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2.5 gap-1 text-[11px] shrink-0">
-                    <Sparkles className="w-3 h-3" /> Chat
-                  </TabsTrigger>
-                  <TabsTrigger value="preview" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2.5 gap-1 text-[11px] shrink-0">
-                    <Eye className="w-3 h-3" /> Preview
-                  </TabsTrigger>
-                  <TabsTrigger value="code" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2.5 gap-1 text-[11px] shrink-0">
-                    <FileCode2 className="w-3 h-3" /> Code
-                  </TabsTrigger>
-                  <TabsTrigger value="deploy" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2.5 gap-1 text-[11px] shrink-0">
-                    <Rocket className="w-3 h-3" /> Deploy
-                  </TabsTrigger>
-                  <TabsTrigger value="quality" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2.5 gap-1 text-[11px] shrink-0">
-                    <TrendingUp className="w-3 h-3" /> Quality
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-              {/* More tabs via dropdown */}
-              <div className="flex items-center gap-1 px-1 pb-1.5 overflow-x-auto scrollbar-none">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-1 px-2 py-1 rounded-md border border-border text-[10px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors shrink-0">
-                      <Layers className="w-3 h-3" /> More
-                      <ChevronDown className="w-2.5 h-2.5" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="min-w-[160px] max-h-[300px] overflow-y-auto">
-                    {[
-                      { value: "config", icon: Code, label: "Config" },
-                      { value: "sql", icon: Database, label: "SQL" },
-                      { value: "security", icon: Shield, label: "Security" },
-                      { value: "summary", icon: Layers, label: "Summary" },
-                      { value: "live", icon: Eye, label: "Live" },
-                      { value: "autofix", icon: RefreshCw, label: "Auto-Fix" },
-                      { value: "plugin", icon: Package, label: "Plugin" },
-                      { value: "workflow", icon: GitBranch, label: "Workflow" },
-                      { value: "installer", icon: Settings, label: "Installer" },
-                      { value: "history", icon: History, label: "History" },
-                      { value: "timemachine", icon: Clock, label: "Versions" },
-                      { value: "docs", icon: Book, label: "Docs" },
-                      { value: "cicd", icon: Container, label: "CI/CD" },
-                      { value: "collab", icon: Users, label: "Team" },
-                      { value: "monitor", icon: Activity, label: "Monitor" },
-                      { value: "envs", icon: Server, label: "Envs" },
-                      { value: "webhooks", icon: Webhook, label: "Hooks" },
-                      { value: "branches", icon: GitFork, label: "Branch" },
-                    ].map((tab) => (
-                      <DropdownMenuItem
-                        key={tab.value}
-                        onClick={() => setActiveTab(tab.value)}
-                        className={cn("gap-2 text-xs", effectiveTab === tab.value && "bg-primary/10 text-primary")}
-                      >
-                        <tab.icon className="w-3.5 h-3.5" /> {tab.label}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                {/* Show theme selector on mobile via small button */}
-                <div className="sm:hidden shrink-0">
-                  <ThemeSelector selectedTheme={selectedThemeId} onSelect={setSelectedThemeId} />
+              <div className="flex items-center h-10 w-full overflow-x-auto scrollbar-none">
+                <Tabs value={effectiveTab} onValueChange={setActiveTab} className="flex-1 min-w-0">
+                  <TabsList className="bg-transparent h-10 p-0 gap-0 justify-start inline-flex">
+                    <TabsTrigger value="chat" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2.5 gap-1 text-[11px] shrink-0">
+                      <Sparkles className="w-3 h-3" /> Chat
+                    </TabsTrigger>
+                    <TabsTrigger value="preview" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2.5 gap-1 text-[11px] shrink-0">
+                      <Eye className="w-3 h-3" /> Preview
+                    </TabsTrigger>
+                    <TabsTrigger value="code" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2.5 gap-1 text-[11px] shrink-0">
+                      <FileCode2 className="w-3 h-3" /> Code
+                    </TabsTrigger>
+                    <TabsTrigger value="deploy" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2.5 gap-1 text-[11px] shrink-0">
+                      <Rocket className="w-3 h-3" /> Deploy
+                    </TabsTrigger>
+                    <TabsTrigger value="quality" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2.5 gap-1 text-[11px] shrink-0">
+                      <TrendingUp className="w-3 h-3" /> Quality
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+                {/* More dropdown + Theme — inline with tabs */}
+                <div className="flex items-center gap-1 shrink-0 pr-1">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="flex items-center gap-1 px-2 py-1 rounded-md border border-border text-[10px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors shrink-0">
+                        <Layers className="w-3 h-3" /> More
+                        <ChevronDown className="w-2.5 h-2.5" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="min-w-[160px] max-h-[300px] overflow-y-auto">
+                      {[
+                        { value: "config", icon: Code, label: "Config" },
+                        { value: "sql", icon: Database, label: "SQL" },
+                        { value: "security", icon: Shield, label: "Security" },
+                        { value: "summary", icon: Layers, label: "Summary" },
+                        { value: "live", icon: Eye, label: "Live" },
+                        { value: "autofix", icon: RefreshCw, label: "Auto-Fix" },
+                        { value: "plugin", icon: Package, label: "Plugin" },
+                        { value: "workflow", icon: GitBranch, label: "Workflow" },
+                        { value: "installer", icon: Settings, label: "Installer" },
+                        { value: "history", icon: History, label: "History" },
+                        { value: "timemachine", icon: Clock, label: "Versions" },
+                        { value: "docs", icon: Book, label: "Docs" },
+                        { value: "cicd", icon: Container, label: "CI/CD" },
+                        { value: "collab", icon: Users, label: "Team" },
+                        { value: "monitor", icon: Activity, label: "Monitor" },
+                        { value: "envs", icon: Server, label: "Envs" },
+                        { value: "webhooks", icon: Webhook, label: "Hooks" },
+                        { value: "branches", icon: GitFork, label: "Branch" },
+                      ].map((tab) => (
+                        <DropdownMenuItem
+                          key={tab.value}
+                          onClick={() => setActiveTab(tab.value)}
+                          className={cn("gap-2 text-xs", effectiveTab === tab.value && "bg-primary/10 text-primary")}
+                        >
+                          <tab.icon className="w-3.5 h-3.5" /> {tab.label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <div className="sm:hidden shrink-0">
+                    <ThemeSelector selectedTheme={selectedThemeId} onSelect={setSelectedThemeId} />
+                  </div>
                 </div>
               </div>
             </div>
