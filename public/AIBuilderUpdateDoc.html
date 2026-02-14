@@ -68,8 +68,10 @@
       <div class="stat"><div class="stat-value">14</div><div class="stat-label">Engine Modules</div></div>
       <div class="stat"><div class="stat-value">22</div><div class="stat-label">UI Panels</div></div>
       <div class="stat"><div class="stat-value">11</div><div class="stat-label">Starter Templates</div></div>
-      <div class="stat"><div class="stat-value">22+</div><div class="stat-label">Builder Tabs</div></div>
+      <div class="stat"><div class="stat-value">21</div><div class="stat-label">Pages</div></div>
       <div class="stat"><div class="stat-value">10</div><div class="stat-label">Edge Functions</div></div>
+      <div class="stat"><div class="stat-value">17</div><div class="stat-label">DB Tables</div></div>
+      <div class="stat"><div class="stat-value">7</div><div class="stat-label">Platform Modules</div></div>
     </div>
 
     <hr class="divider" />
@@ -226,6 +228,154 @@
 
     <hr class="divider" />
 
+    <!-- ==================== AI BUILDER RELATED PLATFORM FEATURES ==================== -->
+    <h2><span class="emoji">🔗</span> AI Builder Related — Platform Features</h2>
+
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-number">PLATFORM</span>
+        <span class="phase-title">AI Integration & API Orchestration</span>
+        <span class="phase-status status-done">✅ Complete</span>
+      </div>
+      <ul>
+        <li><strong>AIIntegrationPage.tsx</strong> — Full AI provider management page. Configure API keys for OpenAI, Google, Anthropic, OpenRouter. Test connection, view usage stats.</li>
+        <li><strong>AIIntegrationSettings.tsx</strong> — Settings component for AI provider config. Task-based model selection: assign different models/providers to speech_to_text, code_gen, app_builder categories.</li>
+        <li><strong>API Orchestration</strong> — Automatic fallback system: if Lovable AI Gateway returns 402 (no credits), Edge Functions fetch user-provided API keys from site_settings and retry. Multi-provider support.</li>
+        <li><strong>test-ai-connection Edge Function</strong> — Tests configured AI API keys and returns model availability.</li>
+      </ul>
+    </div>
+
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-number">PLATFORM</span>
+        <span class="phase-title">Voice Input & Speech-to-Text</span>
+        <span class="phase-status status-done">✅ Complete</span>
+      </div>
+      <ul>
+        <li><strong>speech-to-text Edge Function</strong> — Handles large audio files via chunked base64 encoding. Uses google/gemini-2.5-flash model. Optimized for multilingual accuracy (high-quality Bangla). Explicit instructions to transcribe in spoken language without translation.</li>
+        <li><strong>Voice Input UI</strong> — Mic button in AI Builder chat. Recording indicator. Auto-sends transcribed text to chat input. Credit-check handling (402 → toast with settings link).</li>
+      </ul>
+    </div>
+
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-number">PLATFORM</span>
+        <span class="phase-title">Build Analytics & Dashboard</span>
+        <span class="phase-status status-done">✅ Complete</span>
+      </div>
+      <ul>
+        <li><strong>BuildAnalyticsPage.tsx</strong> — Build metrics dashboard with charts (Recharts). Shows: total builds, avg duration, security scores, component usage, project types. Data from build_analytics table.</li>
+        <li><strong>DashboardOverview.tsx</strong> — Main dashboard with project stats, recent builds, quick actions, activity feed.</li>
+        <li><strong>build_analytics DB table</strong> — Stores: prompt, status, duration_ms, page_count, collection_count, component_count, security_score, components_used (JSON). RLS per user.</li>
+      </ul>
+    </div>
+
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-number">PLATFORM</span>
+        <span class="phase-title">Plugin Marketplace & Approvals</span>
+        <span class="phase-status status-done">✅ Complete</span>
+      </div>
+      <ul>
+        <li><strong>MarketplacePage.tsx</strong> — Plugin marketplace with search, category filters, pricing, install counts, ratings.</li>
+        <li><strong>PluginsPage.tsx</strong> — User's plugin management. Lists installed, available, and submitted plugins.</li>
+        <li><strong>PluginDetailPage.tsx</strong> — Individual plugin detail view: description, screenshots, config schema, reviews, install button.</li>
+        <li><strong>PluginApprovalsPage.tsx</strong> — Admin plugin review queue. Approve/reject submitted plugins with notes.</li>
+        <li><strong>MyInstalledTab.tsx</strong> — Installed plugins list with activate/deactivate toggle, config editor, uninstall.</li>
+        <li><strong>marketplace-api Edge Function</strong> — API for marketplace CRUD operations, install tracking, license key generation.</li>
+        <li><strong>marketplace-config.ts</strong> — Marketplace categories, pricing tiers, commission rates configuration.</li>
+        <li><strong>DB Tables</strong> — plugins, user_plugins, orders, developer_payouts. All with RLS.</li>
+      </ul>
+    </div>
+
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-number">PLATFORM</span>
+        <span class="phase-title">Deploy, Approvals & Release Management</span>
+        <span class="phase-status status-done">✅ Complete</span>
+      </div>
+      <ul>
+        <li><strong>ApprovalsPage.tsx</strong> — Deploy approval review queue for admins. Approve/reject with reviewer notes.</li>
+        <li><strong>auto-release Edge Function</strong> — Automated release pipeline. Creates versioned releases with tag names.</li>
+        <li><strong>github-push Edge Function</strong> — Push generated code to GitHub repositories.</li>
+        <li><strong>generate-code Edge Function</strong> — AI-powered code generation endpoint for the builder pipeline.</li>
+        <li><strong>generate-brand Edge Function</strong> — AI-generated branding: name, tagline, colors, logo suggestions.</li>
+        <li><strong>generate-title Edge Function</strong> — AI-generated project titles from prompts.</li>
+        <li><strong>DB Tables</strong> — deploy_approvals, releases. All with RLS.</li>
+      </ul>
+    </div>
+
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-number">PLATFORM</span>
+        <span class="phase-title">Auth, Settings & Branding</span>
+        <span class="phase-status status-done">✅ Complete</span>
+      </div>
+      <ul>
+        <li><strong>AuthContext.tsx</strong> — Global auth state management. Supabase Auth integration. Session persistence, auto-refresh, user object.</li>
+        <li><strong>AuthPage.tsx</strong> — Login/signup page with email + password. Protected route redirect.</li>
+        <li><strong>ProtectedRoute.tsx</strong> — Route guard component. Redirects unauthenticated users to /auth.</li>
+        <li><strong>BrandingContext.tsx</strong> — Global branding state: brand name, tagline, logo, favicon, copyright. Loaded from site_settings.</li>
+        <li><strong>SettingsPage.tsx</strong> — Tabbed settings hub: General (branding + assets), AI Integration, Schema. Persists to site_settings table.</li>
+        <li><strong>SchemaSettings.tsx</strong> — Database schema editor/viewer in settings.</li>
+        <li><strong>useSettings.ts hook</strong> — Custom hook for reading/writing site_settings with caching.</li>
+        <li><strong>DB Tables</strong> — profiles, site_settings, user_roles. All with RLS.</li>
+      </ul>
+    </div>
+
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-number">PLATFORM</span>
+        <span class="phase-title">Navigation, Menu Builder & Schema</span>
+        <span class="phase-status status-done">✅ Complete</span>
+      </div>
+      <ul>
+        <li><strong>DashboardLayout.tsx</strong> — Main app shell with sidebar navigation, top bar, user menu, mobile responsive drawer.</li>
+        <li><strong>NavLink.tsx</strong> — Active-state-aware navigation link component.</li>
+        <li><strong>MenuBuilderPage.tsx</strong> — Visual drag-and-drop menu builder. Create menu groups, add items, set positions, icons, link types, nested items.</li>
+        <li><strong>SchemaPage.tsx</strong> — Database schema visualization and management page.</li>
+        <li><strong>IconPicker.tsx</strong> — Searchable icon picker component using Lucide icons.</li>
+        <li><strong>DB Tables</strong> — menu_groups, menu_items (with parent_id for nesting). All with RLS.</li>
+      </ul>
+    </div>
+
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-number">PLATFORM</span>
+        <span class="phase-title">Developer Tools & Finance</span>
+        <span class="phase-status status-done">✅ Complete</span>
+      </div>
+      <ul>
+        <li><strong>DeveloperKeysPage.tsx</strong> — API key management: generate, revoke, label, track last usage. Key hash stored (not plain text).</li>
+        <li><strong>FinanceDashboardPage.tsx</strong> — Revenue tracking, commission calculations, payout management, order history charts.</li>
+        <li><strong>DB Tables</strong> — developer_api_keys, developer_payouts, orders. All with RLS.</li>
+      </ul>
+    </div>
+
+    <div class="phase">
+      <div class="phase-header">
+        <span class="phase-number">PLATFORM</span>
+        <span class="phase-title">Landing Page, PWA & Documentation</span>
+        <span class="phase-status status-done">✅ Complete</span>
+      </div>
+      <ul>
+        <li><strong>LandingPage.tsx</strong> — Public marketing landing page with hero, features, demos, pricing, CTA sections.</li>
+        <li><strong>MirrorDemo.tsx</strong> — Interactive demo component showing AI mirror/clone capability.</li>
+        <li><strong>PulseDemo.tsx</strong> — Interactive demo component showing real-time monitoring.</li>
+        <li><strong>VaultDemo.tsx</strong> — Interactive demo component showing secure data vault.</li>
+        <li><strong>DocumentationPage.tsx</strong> — Single-page searchable documentation with nested sidebar navigation. Technical manual.</li>
+        <li><strong>PreviewPage.tsx</strong> — Standalone preview/embed page for generated apps.</li>
+        <li><strong>PWAInstallPrompt.tsx</strong> — Progressive Web App install prompt banner.</li>
+        <li><strong>InstallDialog.tsx</strong> — PWA installation dialog with platform-specific instructions.</li>
+        <li><strong>OfflineIndicator.tsx</strong> — Shows offline status banner when network is unavailable.</li>
+        <li><strong>useOnlineStatus.ts hook</strong> — Custom hook tracking navigator.onLine status with event listeners.</li>
+        <li><strong>use-mobile.tsx hook</strong> — Custom hook detecting mobile viewport for responsive behavior.</li>
+        <li><strong>PWA Config</strong> — vite-plugin-pwa with manifest, icons (192x192, 512x512), service worker, offline support.</li>
+      </ul>
+    </div>
+
+    <hr class="divider" />
+
     <!-- ==================== FILE REGISTRY ==================== -->
     <h2><span class="emoji">📁</span> Complete File Registry</h2>
 
@@ -271,6 +421,54 @@
       <div class="file-item"><span class="icon">🧩</span> TimeMachinePanel.tsx</div>
       <div class="file-item"><span class="icon">🧩</span> WebhookNotificationPanel.tsx</div>
       <div class="file-item"><span class="icon">🧩</span> WorkflowApiPanel.tsx</div>
+    </div>
+
+    <h3>Pages (src/pages/)</h3>
+    <div class="file-grid">
+      <div class="file-item"><span class="icon">📄</span> AIBuilderPage.tsx</div>
+      <div class="file-item"><span class="icon">📄</span> AIIntegrationPage.tsx</div>
+      <div class="file-item"><span class="icon">📄</span> ApprovalsPage.tsx</div>
+      <div class="file-item"><span class="icon">📄</span> AuthPage.tsx</div>
+      <div class="file-item"><span class="icon">📄</span> BuildAnalyticsPage.tsx</div>
+      <div class="file-item"><span class="icon">📄</span> DashboardOverview.tsx</div>
+      <div class="file-item"><span class="icon">📄</span> DeveloperKeysPage.tsx</div>
+      <div class="file-item"><span class="icon">📄</span> DocumentationPage.tsx</div>
+      <div class="file-item"><span class="icon">📄</span> FinanceDashboardPage.tsx</div>
+      <div class="file-item"><span class="icon">📄</span> Index.tsx</div>
+      <div class="file-item"><span class="icon">📄</span> InstallerPage.tsx</div>
+      <div class="file-item"><span class="icon">📄</span> LandingPage.tsx</div>
+      <div class="file-item"><span class="icon">📄</span> MarketplacePage.tsx</div>
+      <div class="file-item"><span class="icon">📄</span> MenuBuilderPage.tsx</div>
+      <div class="file-item"><span class="icon">📄</span> NotFound.tsx</div>
+      <div class="file-item"><span class="icon">📄</span> PluginApprovalsPage.tsx</div>
+      <div class="file-item"><span class="icon">📄</span> PluginDetailPage.tsx</div>
+      <div class="file-item"><span class="icon">📄</span> PluginsPage.tsx</div>
+      <div class="file-item"><span class="icon">📄</span> PreviewPage.tsx</div>
+      <div class="file-item"><span class="icon">📄</span> SchemaPage.tsx</div>
+      <div class="file-item"><span class="icon">📄</span> SettingsPage.tsx</div>
+    </div>
+
+    <h3>Core Components & Hooks</h3>
+    <div class="file-grid">
+      <div class="file-item"><span class="icon">🔧</span> DashboardLayout.tsx</div>
+      <div class="file-item"><span class="icon">🔧</span> ProtectedRoute.tsx</div>
+      <div class="file-item"><span class="icon">🔧</span> NavLink.tsx</div>
+      <div class="file-item"><span class="icon">🔧</span> IconPicker.tsx</div>
+      <div class="file-item"><span class="icon">🔧</span> OfflineIndicator.tsx</div>
+      <div class="file-item"><span class="icon">🔧</span> PWAInstallPrompt.tsx</div>
+      <div class="file-item"><span class="icon">🔧</span> InstallDialog.tsx</div>
+      <div class="file-item"><span class="icon">🔧</span> AuthContext.tsx</div>
+      <div class="file-item"><span class="icon">🔧</span> BrandingContext.tsx</div>
+      <div class="file-item"><span class="icon">🔧</span> useSettings.ts</div>
+      <div class="file-item"><span class="icon">🔧</span> useOnlineStatus.ts</div>
+      <div class="file-item"><span class="icon">🔧</span> use-mobile.tsx</div>
+      <div class="file-item"><span class="icon">🔧</span> AIIntegrationSettings.tsx</div>
+      <div class="file-item"><span class="icon">🔧</span> SchemaSettings.tsx</div>
+      <div class="file-item"><span class="icon">🔧</span> MyInstalledTab.tsx</div>
+      <div class="file-item"><span class="icon">🔧</span> MirrorDemo.tsx</div>
+      <div class="file-item"><span class="icon">🔧</span> PulseDemo.tsx</div>
+      <div class="file-item"><span class="icon">🔧</span> VaultDemo.tsx</div>
+      <div class="file-item"><span class="icon">🔧</span> marketplace-config.ts</div>
     </div>
 
     <h3>Edge Functions (supabase/functions/)</h3>
@@ -357,6 +555,25 @@
       <tr><td>Plugin Generator Wizard</td><td>✅</td><td>PluginGeneratorWizard.tsx</td></tr>
       <tr><td>Quality Score Panel</td><td>✅</td><td>QualityScorePanel.tsx</td></tr>
       <tr><td>Scrollable Grouped Tabs</td><td>✅</td><td>AIBuilderPage.tsx</td></tr>
+      <tr><td colspan="3" style="background:var(--card);color:var(--primary-light);font-weight:600;">Platform Features (AI Builder Related)</td></tr>
+      <tr><td>AI Provider Management</td><td>✅</td><td>AIIntegrationPage.tsx, AIIntegrationSettings.tsx</td></tr>
+      <tr><td>API Key Fallback Orchestration</td><td>✅</td><td>Edge Functions + site_settings</td></tr>
+      <tr><td>Speech-to-Text (Multilingual)</td><td>✅</td><td>speech-to-text Edge Function</td></tr>
+      <tr><td>Build Analytics Dashboard</td><td>✅</td><td>BuildAnalyticsPage.tsx</td></tr>
+      <tr><td>Plugin Marketplace</td><td>✅</td><td>MarketplacePage, PluginsPage, PluginDetailPage</td></tr>
+      <tr><td>Plugin Approvals</td><td>✅</td><td>PluginApprovalsPage.tsx</td></tr>
+      <tr><td>Deploy Approval Queue</td><td>✅</td><td>ApprovalsPage.tsx</td></tr>
+      <tr><td>GitHub Push</td><td>✅</td><td>github-push Edge Function</td></tr>
+      <tr><td>Auto Release Pipeline</td><td>✅</td><td>auto-release Edge Function</td></tr>
+      <tr><td>Auth System</td><td>✅</td><td>AuthContext, AuthPage, ProtectedRoute</td></tr>
+      <tr><td>Branding System</td><td>✅</td><td>BrandingContext, SettingsPage</td></tr>
+      <tr><td>Menu Builder</td><td>✅</td><td>MenuBuilderPage.tsx</td></tr>
+      <tr><td>Schema Editor</td><td>✅</td><td>SchemaPage.tsx, SchemaSettings.tsx</td></tr>
+      <tr><td>Developer API Keys</td><td>✅</td><td>DeveloperKeysPage.tsx</td></tr>
+      <tr><td>Finance Dashboard</td><td>✅</td><td>FinanceDashboardPage.tsx</td></tr>
+      <tr><td>Documentation System</td><td>✅</td><td>DocumentationPage.tsx</td></tr>
+      <tr><td>Landing Page + Demos</td><td>✅</td><td>LandingPage, MirrorDemo, PulseDemo, VaultDemo</td></tr>
+      <tr><td>PWA Support</td><td>✅</td><td>PWAInstallPrompt, InstallDialog, OfflineIndicator</td></tr>
     </table>
 
     <div class="footer">
