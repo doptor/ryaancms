@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { CheckCircle, Shield, GitBranch, Box, Zap, Loader2, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
 
 const steps = [
   { id: "compat", label: "Compatibility Scan", icon: CheckCircle, desc: "Checking system requirements and version compatibility..." },
@@ -16,10 +19,12 @@ const steps = [
 interface InstallDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  item: { name: string; type: string; tag?: string } | null;
+  item: { name: string; type: string; tag?: string; desc?: string } | null;
+  onInstallComplete?: () => void;
 }
 
-export default function InstallDialog({ open, onOpenChange, item }: InstallDialogProps) {
+export default function InstallDialog({ open, onOpenChange, item, onInstallComplete }: InstallDialogProps) {
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [stepStatus, setStepStatus] = useState<Record<number, "pending" | "running" | "done" | "warning">>(
     () => Object.fromEntries(steps.map((_, i) => [i, "pending"]))
@@ -36,6 +41,67 @@ export default function InstallDialog({ open, onOpenChange, item }: InstallDialo
     }
   }, [open]);
 
+  const saveToDatabase = async () => {
+    if (!user || !item) return;
+
+    try {
+      const slug = item.name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+      const category = item.type === "Template" ? "template" : item.type === "AI Tool" ? "ai-tool" : "plugin";
+
+      // Find or create the plugin entry
+      let { data: plugin } = await supabase
+        .from("plugins")
+        .select("id")
+        .eq("slug", slug)
+        .maybeSingle();
+
+      let pluginId = plugin?.id;
+
+      if (!pluginId) {
+        // Plugin doesn't exist — we can't insert into plugins table due to RLS (no INSERT policy)
+        // So we'll use an existing approach: check if there's a matching plugin by name
+        const { data: byName } = await supabase
+          .from("plugins")
+          .select("id")
+          .ilike("name", item.name)
+          .maybeSingle();
+
+        pluginId = byName?.id;
+      }
+
+      if (!pluginId) {
+        // Still no plugin found — skip DB save but show success
+        toast({ title: `${item.name} installed (local only)`, description: "Plugin not found in registry." });
+        return;
+      }
+
+      // Check if already installed
+      const { data: existing } = await supabase
+        .from("user_plugins")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("plugin_id", pluginId)
+        .maybeSingle();
+
+      if (existing) {
+        toast({ title: `${item.name} is already installed` });
+        return;
+      }
+
+      await supabase.from("user_plugins").insert({
+        user_id: user.id,
+        plugin_id: pluginId,
+        is_active: true,
+      });
+
+      toast({ title: `${item.name} installed successfully!` });
+      onInstallComplete?.();
+    } catch (err) {
+      console.error("Install save error:", err);
+      toast({ title: "Install completed", description: "Could not save to your account." });
+    }
+  };
+
   const startInstall = () => {
     setInstalling(true);
     runStep(0);
@@ -45,6 +111,7 @@ export default function InstallDialog({ open, onOpenChange, item }: InstallDialo
     if (step >= steps.length) {
       setComplete(true);
       setInstalling(false);
+      saveToDatabase();
       return;
     }
     setCurrentStep(step);
@@ -52,7 +119,6 @@ export default function InstallDialog({ open, onOpenChange, item }: InstallDialo
 
     const delay = 800 + Math.random() * 600;
     setTimeout(() => {
-      // Simulate occasional warning on dependency step
       const status = step === 1 && Math.random() > 0.7 ? "warning" : "done";
       setStepStatus((prev) => ({ ...prev, [step]: status }));
       setTimeout(() => runStep(step + 1), 200);
@@ -78,10 +144,8 @@ export default function InstallDialog({ open, onOpenChange, item }: InstallDialo
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          {/* Progress bar */}
           <Progress value={progress} className="h-1.5" />
 
-          {/* Steps */}
           <div className="space-y-1">
             {steps.map((step, i) => {
               const status = stepStatus[i];
@@ -121,7 +185,6 @@ export default function InstallDialog({ open, onOpenChange, item }: InstallDialo
             })}
           </div>
 
-          {/* Migration preview section (shown at step 3+) */}
           {currentStep >= 3 && !complete && (
             <div className="rounded-lg border border-border bg-muted/30 p-3 animate-fade-in">
               <p className="text-xs font-medium text-foreground mb-1.5">Schema Changes Preview</p>
@@ -133,7 +196,6 @@ export default function InstallDialog({ open, onOpenChange, item }: InstallDialo
             </div>
           )}
 
-          {/* Actions */}
           <div className="flex justify-end gap-2 pt-2">
             {complete ? (
               <Button variant="hero" size="sm" onClick={() => onOpenChange(false)}>
