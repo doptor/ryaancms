@@ -7,7 +7,7 @@ import {
   Search, Download, Star, Puzzle, Layout, Sparkles,
   Upload, FileArchive, Link2, CheckCircle, ArrowRight,
   Loader2, Play, RotateCcw, CheckCircle2, XCircle,
-  Terminal, Package,
+  Terminal, Package, ExternalLink, ShoppingCart,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import InstallDialog from "@/components/InstallDialog";
@@ -17,15 +17,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 const marketplaceItems = [
-  { name: "SEO Pro", type: "Plugin", rating: 4.9, installs: "12.4K", tag: "Popular", desc: "Advanced SEO toolkit with AI-powered suggestions." },
-  { name: "E-Commerce Starter", type: "Template", rating: 4.8, installs: "8.2K", tag: "Featured", desc: "Complete storefront with cart, checkout, and product pages." },
-  { name: "AI Content Writer", type: "AI Tool", rating: 4.7, installs: "15.1K", tag: "AI", desc: "Generate blog posts, product descriptions, and more." },
-  { name: "Analytics Dashboard", type: "Plugin", rating: 4.6, installs: "6.3K", tag: "New", desc: "Real-time analytics with custom dashboards and reports." },
-  { name: "SaaS Landing Page", type: "Template", rating: 4.9, installs: "9.8K", tag: "Popular", desc: "Conversion-optimized landing page with pricing tables." },
-  { name: "AI Image Tagger", type: "AI Tool", rating: 4.5, installs: "4.1K", tag: "AI", desc: "Auto-tag images with AI for better media management." },
-  { name: "Form Builder", type: "Plugin", rating: 4.7, installs: "11.2K", tag: "Popular", desc: "Drag-and-drop form builder with validation and webhooks." },
-  { name: "Blog Theme", type: "Template", rating: 4.6, installs: "7.5K", tag: "Featured", desc: "Clean, minimal blog template with dark mode support." },
-  { name: "Multi-Language", type: "Plugin", rating: 4.4, installs: "5.9K", tag: "New", desc: "i18n plugin with AI-powered translation support." },
+  { name: "SEO Pro", type: "Plugin", rating: 4.9, installs: "12.4K", tag: "Popular", desc: "Advanced SEO toolkit with AI-powered suggestions.", price: 0, demoUrl: "https://seo-pro-demo.example.com" },
+  { name: "E-Commerce Starter", type: "Template", rating: 4.8, installs: "8.2K", tag: "Featured", desc: "Complete storefront with cart, checkout, and product pages.", price: 29, demoUrl: "https://ecommerce-starter-demo.example.com" },
+  { name: "AI Content Writer", type: "AI Tool", rating: 4.7, installs: "15.1K", tag: "AI", desc: "Generate blog posts, product descriptions, and more.", price: 19, demoUrl: "https://ai-content-writer-demo.example.com" },
+  { name: "Analytics Dashboard", type: "Plugin", rating: 4.6, installs: "6.3K", tag: "New", desc: "Real-time analytics with custom dashboards and reports.", price: 0, demoUrl: "https://analytics-dashboard-demo.example.com" },
+  { name: "SaaS Landing Page", type: "Template", rating: 4.9, installs: "9.8K", tag: "Popular", desc: "Conversion-optimized landing page with pricing tables.", price: 39, demoUrl: "https://saas-landing-demo.example.com" },
+  { name: "AI Image Tagger", type: "AI Tool", rating: 4.5, installs: "4.1K", tag: "AI", desc: "Auto-tag images with AI for better media management.", price: 0, demoUrl: "https://ai-image-tagger-demo.example.com" },
+  { name: "Form Builder", type: "Plugin", rating: 4.7, installs: "11.2K", tag: "Popular", desc: "Drag-and-drop form builder with validation and webhooks.", price: 15, demoUrl: "https://form-builder-demo.example.com" },
+  { name: "Blog Theme", type: "Template", rating: 4.6, installs: "7.5K", tag: "Featured", desc: "Clean, minimal blog template with dark mode support.", price: 0, demoUrl: "https://blog-theme-demo.example.com" },
+  { name: "Multi-Language", type: "Plugin", rating: 4.4, installs: "5.9K", tag: "New", desc: "i18n plugin with AI-powered translation support.", price: 9, demoUrl: "https://multi-language-demo.example.com" },
 ];
 
 const typeFilters = ["All", "Plugins", "Templates", "AI Tools"] as const;
@@ -97,7 +97,7 @@ export default function InstallerPage() {
     const file = e.target.files?.[0];
     if (file) {
       setUploadFile(file.name);
-      setInstallItem({ name: file.name.replace(".rypkg", ""), type: "Plugin", rating: 0, installs: "—", tag: "Local", desc: "Uploaded package" });
+      setInstallItem({ name: file.name.replace(".rypkg", ""), type: "Plugin", rating: 0, installs: "—", tag: "Local", desc: "Uploaded package", price: 0, demoUrl: "" });
       setDialogOpen(true);
     }
   };
@@ -105,7 +105,7 @@ export default function InstallerPage() {
   const handleUrlInstall = () => {
     if (!urlInput.trim()) return;
     const name = urlInput.split("/").pop()?.replace(".rypkg", "") || "Package";
-    setInstallItem({ name, type: "Plugin", rating: 0, installs: "—", tag: "Remote", desc: `Installed from ${urlInput}` });
+    setInstallItem({ name, type: "Plugin", rating: 0, installs: "—", tag: "Remote", desc: `Installed from ${urlInput}`, price: 0, demoUrl: "" });
     setDialogOpen(true);
     setUrlInput("");
   };
@@ -311,15 +311,42 @@ export default function InstallerPage() {
                       <h3 className="font-semibold text-foreground">{item.name}</h3>
                     </div>
                     <p className="text-xs text-muted-foreground mb-4 leading-relaxed flex-1">{item.desc}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground"><Download className="w-3 h-3 inline mr-1" />{item.installs}</span>
+                    
+                    {/* Price + Demo row */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground"><Download className="w-3 h-3 inline mr-1" />{item.installs}</span>
+                        {item.price > 0 ? (
+                          <Badge className="text-xs bg-chart-5/20 text-chart-5 border-chart-5/30 font-semibold">${item.price}</Badge>
+                        ) : (
+                          <Badge className="text-xs bg-chart-4/20 text-chart-4 border-chart-4/30">Free</Badge>
+                        )}
+                      </div>
+                      {item.demoUrl && (
+                        <a
+                          href={item.demoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:text-primary/80 flex items-center gap-1 transition-colors"
+                        >
+                          <ExternalLink className="w-3 h-3" /> Live Demo
+                        </a>
+                      )}
+                    </div>
+
+                    {/* Action button */}
+                    <div>
                       {isInstalled ? (
-                        <Button size="sm" variant="outline" disabled className="gap-1 opacity-70">
+                        <Button size="sm" variant="outline" disabled className="w-full gap-1 opacity-70">
                           <CheckCircle className="w-3.5 h-3.5 text-chart-4" /> Installed
                         </Button>
+                      ) : item.price > 0 ? (
+                        <Button size="sm" className="w-full gap-1.5 shadow-primary-lg" style={{ background: "linear-gradient(135deg, hsl(var(--chart-5)), hsl(var(--chart-2)))" }} onClick={() => handleInstall(item)}>
+                          <ShoppingCart className="w-3.5 h-3.5" /> Buy ${item.price}
+                        </Button>
                       ) : (
-                        <Button size="sm" onClick={() => handleInstall(item)} className="shadow-primary-lg">
-                          <ArrowRight className="w-3.5 h-3.5" /> Install
+                        <Button size="sm" onClick={() => handleInstall(item)} className="w-full shadow-primary-lg">
+                          <ArrowRight className="w-3.5 h-3.5" /> Install Free
                         </Button>
                       )}
                     </div>
