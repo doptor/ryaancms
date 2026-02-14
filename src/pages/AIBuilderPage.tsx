@@ -12,7 +12,7 @@ import {
   Shield, AlertTriangle, Info, Image, Upload, FileCode2,
   TrendingUp, Link2, X, Eye, ChevronDown, ChevronUp,
   ArrowUp, Plus, Layers, RefreshCw, Package,
-  GitBranch, Settings,
+  GitBranch, Settings, History,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useLocation } from "react-router-dom";
@@ -41,6 +41,8 @@ import { AutoFixLoopPanel } from "@/components/ai-builder/AutoFixLoopPanel";
 import { PluginGeneratorWizard } from "@/components/ai-builder/PluginGeneratorWizard";
 import { WorkflowApiPanel } from "@/components/ai-builder/WorkflowApiPanel";
 import { InstallerArchitecturePanel } from "@/components/ai-builder/InstallerArchitecturePanel";
+import { ProjectHistoryPanel } from "@/components/ai-builder/ProjectHistoryPanel";
+import { TimeMachinePanel } from "@/components/ai-builder/TimeMachinePanel";
 import { supabase } from "@/integrations/supabase/client";
 import { getThemePreset } from "@/lib/engine/theme-generator";
 
@@ -432,6 +434,37 @@ export default function AIBuilderPage() {
     const improvementPrompt = `Improve the current project "${pipelineState.config.title}" based on these quality issues:\n${improvements.join("\n")}\n\nFix all issues and re-generate an improved version.`;
     await sendMessage(improvementPrompt);
     setIsAutoImproving(false);
+  };
+
+  const handleLoadProjectMemory = (memory: any) => {
+    const restored: PipelineState = {
+      stage: "complete", config: null, validation: null, schema: null, rbac: null,
+      testSuite: null, docs: null, theme: null, error: null,
+      requirements: memory.requirements || [], taskPlan: memory.task_plan || [],
+      suggestions: memory.suggestions || [], apiEndpoints: memory.api_list || [],
+      qualityScore: memory.quality_score || {}, qualityIssues: [], qualityImprovements: [],
+      qualityVerdict: "", agentLog: memory.agent_log || [],
+      workflows: memory.workflow ? [memory.workflow] : [], businessRules: [], permissionMatrix: [],
+      folderStructure: memory.folder_structure || {}, testScenarios: [], seedData: [],
+      bugs: [], autoFixes: [], riskScore: 0, webhooks: [], edgeFunctions: [],
+      errorFixMemory: [], documentationPlan: [], documentationChecklist: {},
+      securityChecklist: {}, defaultAdminCredentials: { email: "admin@admin.com", password: "admin123" },
+      installerSteps: [], pluginHooks: [], middlewareStack: [], reusableComponents: [], prismaSchemaHint: "",
+    };
+    if (memory.modules || memory.page_layouts || memory.db_schema) {
+      restored.config = {
+        project_type: "saas", title: "Restored Project", description: "Loaded from project memory",
+        modules: memory.modules || [], roles: [], features: [],
+        pages: memory.page_layouts || [], collections: memory.db_schema || [],
+        style: {}, multi_tenant: false,
+      };
+    }
+    setPipelineState(restored);
+    setActiveTab("preview");
+  };
+
+  const handleRestoreSnapshot = (snapshot: any) => {
+    toast({ title: "Version selected", description: `"${snapshot.project_title}" — ${snapshot.page_count || 0} pages. Use Build History to fully reload.` });
   };
 
   const handleScreenshotUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1051,6 +1084,12 @@ export default function AIBuilderPage() {
                         <TabsTrigger value="installer" className={tabTriggerClass}>
                           <Settings className="w-3.5 h-3.5" /> Installer
                         </TabsTrigger>
+                        <TabsTrigger value="history" className={tabTriggerClass}>
+                          <History className="w-3.5 h-3.5" /> History
+                        </TabsTrigger>
+                        <TabsTrigger value="timemachine" className={tabTriggerClass}>
+                          <Clock className="w-3.5 h-3.5" /> Versions
+                        </TabsTrigger>
                       </TabsList>
                     </Tabs>
                   </div>
@@ -1165,6 +1204,12 @@ export default function AIBuilderPage() {
                     {activeTab === "installer" && (
                       <InstallerArchitecturePanel pipelineState={pipelineState} />
                     )}
+                    {activeTab === "history" && (
+                      <ProjectHistoryPanel onLoadProject={handleLoadProjectMemory} />
+                    )}
+                    {activeTab === "timemachine" && (
+                      <TimeMachinePanel onRestoreSnapshot={handleRestoreSnapshot} />
+                    )}
                   </div>
                 </div>
               </ResizablePanel>
@@ -1214,6 +1259,12 @@ export default function AIBuilderPage() {
                   </TabsTrigger>
                   <TabsTrigger value="installer" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
                     <Settings className="w-3.5 h-3.5" /> Arch
+                  </TabsTrigger>
+                  <TabsTrigger value="history" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
+                    <History className="w-3.5 h-3.5" /> History
+                  </TabsTrigger>
+                  <TabsTrigger value="timemachine" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
+                    <Clock className="w-3.5 h-3.5" /> Time
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -1277,6 +1328,12 @@ export default function AIBuilderPage() {
               )}
               {activeTab === "installer" && (
                 <InstallerArchitecturePanel pipelineState={pipelineState} />
+              )}
+              {activeTab === "history" && (
+                <ProjectHistoryPanel onLoadProject={handleLoadProjectMemory} />
+              )}
+              {activeTab === "timemachine" && (
+                <TimeMachinePanel onRestoreSnapshot={handleRestoreSnapshot} />
               )}
             </div>
           </div>
