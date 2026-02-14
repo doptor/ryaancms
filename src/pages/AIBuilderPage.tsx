@@ -11,7 +11,7 @@ import {
   Calendar, Columns, Clock, MapPin, Download,
   Shield, AlertTriangle, Info, Image, Upload, FileCode2,
   TrendingUp, Link2, X, Eye, ChevronDown, ChevronUp,
-  ArrowUp, Plus, Layers,
+  ArrowUp, Plus, Layers, RefreshCw, Package,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useLocation } from "react-router-dom";
@@ -36,6 +36,8 @@ import { QualityScorePanel } from "@/components/ai-builder/QualityScorePanel";
 import { LivePreviewPanel } from "@/components/ai-builder/LivePreviewPanel";
 import { ThemeSelector } from "@/components/ai-builder/ThemeSelector";
 import { BuildSummaryPanel } from "@/components/ai-builder/BuildSummaryPanel";
+import { AutoFixLoopPanel } from "@/components/ai-builder/AutoFixLoopPanel";
+import { PluginGeneratorWizard } from "@/components/ai-builder/PluginGeneratorWizard";
 import { supabase } from "@/integrations/supabase/client";
 import { getThemePreset } from "@/lib/engine/theme-generator";
 
@@ -1034,6 +1036,12 @@ export default function AIBuilderPage() {
                           <Eye className="w-3.5 h-3.5" /> Live
                           {generatedFiles.length > 0 && <Badge variant="secondary" className="text-[10px] h-4 ml-1">⚡</Badge>}
                         </TabsTrigger>
+                        <TabsTrigger value="autofix" className={tabTriggerClass}>
+                          <RefreshCw className="w-3.5 h-3.5" /> Auto-Fix
+                        </TabsTrigger>
+                        <TabsTrigger value="plugin" className={tabTriggerClass}>
+                          <Package className="w-3.5 h-3.5" /> Plugin
+                        </TabsTrigger>
                       </TabsList>
                     </Tabs>
                   </div>
@@ -1126,6 +1134,22 @@ export default function AIBuilderPage() {
                         hasConfig={!!pipelineState?.config}
                       />
                     )}
+                    {activeTab === "autofix" && (
+                      <AutoFixLoopPanel
+                        pipelineState={pipelineState}
+                        onRetryBuild={() => pipelineState?.config && sendMessage(`Fix all issues and rebuild "${pipelineState.config.title}"`)}
+                        isBuilding={isBuilding}
+                      />
+                    )}
+                    {activeTab === "plugin" && (
+                      <PluginGeneratorWizard
+                        onGenerate={(plugin) => {
+                          const prompt = `Generate a "${plugin.name}" plugin with entities: ${plugin.entities.map(e => e.name).join(", ")}. Include full CRUD, dashboard pages, permissions: ${plugin.permissions.join(", ")}. Slug: ${plugin.slug}`;
+                          sendMessage(prompt);
+                          toast({ title: "Plugin generation started!", description: `Building ${plugin.name} plugin...` });
+                        }}
+                      />
+                    )}
                   </div>
                 </div>
               </ResizablePanel>
@@ -1163,6 +1187,12 @@ export default function AIBuilderPage() {
                   </TabsTrigger>
                   <TabsTrigger value="live" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
                     <Eye className="w-3.5 h-3.5" /> Live
+                  </TabsTrigger>
+                  <TabsTrigger value="autofix" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
+                    <RefreshCw className="w-3.5 h-3.5" /> Fix
+                  </TabsTrigger>
+                  <TabsTrigger value="plugin" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
+                    <Package className="w-3.5 h-3.5" /> Plugin
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -1203,6 +1233,22 @@ export default function AIBuilderPage() {
                   isGenerating={isGeneratingCode}
                   onGenerate={handleGenerateCode}
                   hasConfig={!!pipelineState?.config}
+                />
+              )}
+              {activeTab === "autofix" && (
+                <AutoFixLoopPanel
+                  pipelineState={pipelineState}
+                  onRetryBuild={() => pipelineState?.config && sendMessage(`Fix all issues and rebuild "${pipelineState.config.title}"`)}
+                  isBuilding={isBuilding}
+                />
+              )}
+              {activeTab === "plugin" && (
+                <PluginGeneratorWizard
+                  onGenerate={(plugin) => {
+                    const prompt = `Generate a "${plugin.name}" plugin with entities: ${plugin.entities.map(e => e.name).join(", ")}. Include full CRUD, dashboard pages, permissions: ${plugin.permissions.join(", ")}. Slug: ${plugin.slug}`;
+                    sendMessage(prompt);
+                    toast({ title: "Plugin generation started!", description: `Building ${plugin.name} plugin...` });
+                  }}
                 />
               )}
             </div>
