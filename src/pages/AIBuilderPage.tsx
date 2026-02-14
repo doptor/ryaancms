@@ -1543,7 +1543,13 @@ export default function AIBuilderPage() {
   const tabTriggerClass = "data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 gap-1.5";
 
   // Mobile: default to chat tab
-  const effectiveTab = typeof window !== "undefined" && window.innerWidth < 768 && activeTab === "preview" && !hasStarted ? "chat" : activeTab;
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+  // Mobile: default to chat if no build yet; Desktop: "chat" isn't valid for right panel, use "preview"
+  const effectiveTab = isMobile
+    ? (activeTab === "preview" && !hasStarted ? "chat" : activeTab)
+    : activeTab;
+  // Desktop right panel: if activeTab is "chat", show "preview" instead (chat is always visible on left)
+  const desktopRightTab = activeTab === "chat" ? "preview" : activeTab;
 
   return (
     <DashboardLayout>
@@ -1618,7 +1624,7 @@ export default function AIBuilderPage() {
               <ResizablePanel defaultSize={62} minSize={35}>
                 <div className="flex flex-col h-full">
                   <div className="border-b border-border bg-card px-4">
-                    <Tabs value={activeTab} onValueChange={setActiveTab}>
+                    <Tabs value={desktopRightTab} onValueChange={setActiveTab}>
                       <TabsList className="bg-transparent h-11 p-0 gap-0">
                         <TabsTrigger value="preview" className={tabTriggerClass}>
                           <Eye className="w-3.5 h-3.5" /> Preview
@@ -1692,10 +1698,10 @@ export default function AIBuilderPage() {
                     </Tabs>
                   </div>
                   <div className="flex-1 min-h-0 overflow-hidden">
-                    {activeTab === "preview" && renderPreview()}
-                    {activeTab === "config" && renderConfig()}
-                    {activeTab === "sql" && renderSQL()}
-                    {activeTab === "security" && (
+                    {desktopRightTab === "preview" && renderPreview()}
+                    {desktopRightTab === "config" && renderConfig()}
+                    {desktopRightTab === "sql" && renderSQL()}
+                    {desktopRightTab === "security" && (
                       <ScrollArea className="h-full">
                         {pipelineState?.validation ? (
                           <div className="p-4 space-y-4">
@@ -1746,14 +1752,14 @@ export default function AIBuilderPage() {
                         )}
                       </ScrollArea>
                     )}
-                    {activeTab === "quality" && (
+                    {desktopRightTab === "quality" && (
                       <QualityScorePanel
                         pipelineState={pipelineState}
                         onAutoImprove={handleAutoImprove}
                         isImproving={isAutoImproving}
                       />
                     )}
-                    {activeTab === "deploy" && (
+                    {desktopRightTab === "deploy" && (
                       <DeployPanel
                         config={pipelineState?.config || null}
                         sql={pipelineState?.schema?.sql}
@@ -1761,10 +1767,10 @@ export default function AIBuilderPage() {
                         onExportSQL={handleExportSQL}
                       />
                     )}
-                    {activeTab === "summary" && (
+                    {desktopRightTab === "summary" && (
                       <BuildSummaryPanel pipelineState={pipelineState} />
                     )}
-                    {activeTab === "code" && (
+                    {desktopRightTab === "code" && (
                       <CodePanel
                         files={generatedFiles}
                         isGenerating={isGeneratingCode}
@@ -1772,7 +1778,7 @@ export default function AIBuilderPage() {
                         hasConfig={!!pipelineState?.config}
                       />
                     )}
-                    {activeTab === "live" && (
+                    {desktopRightTab === "live" && (
                       <LivePreviewPanel
                         files={generatedFiles}
                         isGenerating={isGeneratingCode}
@@ -1780,14 +1786,14 @@ export default function AIBuilderPage() {
                         hasConfig={!!pipelineState?.config}
                       />
                     )}
-                    {activeTab === "autofix" && (
+                    {desktopRightTab === "autofix" && (
                       <AutoFixLoopPanel
                         pipelineState={pipelineState}
                         onRetryBuild={() => pipelineState?.config && sendMessage(`Fix all issues and rebuild "${pipelineState.config.title}"`)}
                         isBuilding={isBuilding}
                       />
                     )}
-                    {activeTab === "plugin" && (
+                    {desktopRightTab === "plugin" && (
                       <PluginGeneratorWizard
                         onGenerate={(plugin) => {
                           const prompt = `Generate a "${plugin.name}" plugin with entities: ${plugin.entities.map(e => e.name).join(", ")}. Include full CRUD, dashboard pages, permissions: ${plugin.permissions.join(", ")}. Slug: ${plugin.slug}`;
@@ -1796,37 +1802,37 @@ export default function AIBuilderPage() {
                         }}
                       />
                     )}
-                    {activeTab === "workflow" && (
+                    {desktopRightTab === "workflow" && (
                       <WorkflowApiPanel pipelineState={pipelineState} />
                     )}
-                    {activeTab === "installer" && (
+                    {desktopRightTab === "installer" && (
                       <InstallerArchitecturePanel pipelineState={pipelineState} />
                     )}
-                    {activeTab === "history" && (
+                    {desktopRightTab === "history" && (
                       <ProjectHistoryPanel onLoadProject={handleLoadProjectMemory} />
                     )}
-                    {activeTab === "timemachine" && (
+                    {desktopRightTab === "timemachine" && (
                       <TimeMachinePanel onRestoreSnapshot={handleRestoreSnapshot} />
                     )}
-                    {activeTab === "docs" && (
+                    {desktopRightTab === "docs" && (
                       <DocsGeneratorPanel pipelineState={pipelineState} />
                     )}
-                    {activeTab === "cicd" && (
+                    {desktopRightTab === "cicd" && (
                       <CICDExportPanel pipelineState={pipelineState} />
                     )}
-                    {activeTab === "collab" && (
+                    {desktopRightTab === "collab" && (
                       <CollaborationPanel pipelineState={pipelineState} isBuilding={isBuilding} projectId={currentProject?.id || null} />
                     )}
-                    {activeTab === "monitor" && (
+                    {desktopRightTab === "monitor" && (
                       <MonitoringPanel pipelineState={pipelineState} isBuilding={isBuilding} />
                     )}
-                    {activeTab === "envs" && (
+                    {desktopRightTab === "envs" && (
                       <EnvironmentManagerPanel pipelineState={pipelineState} />
                     )}
-                    {activeTab === "webhooks" && (
+                    {desktopRightTab === "webhooks" && (
                       <WebhookNotificationPanel pipelineState={pipelineState} isBuilding={isBuilding} projectId={currentProject?.id || null} />
                     )}
-                    {activeTab === "branches" && (
+                    {desktopRightTab === "branches" && (
                       <ProjectBranchingPanel
                         pipelineState={pipelineState}
                         currentProject={currentProject}
