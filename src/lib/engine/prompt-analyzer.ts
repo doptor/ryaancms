@@ -6,6 +6,14 @@
 
 export type BuildScope = "full" | "moderate" | "light" | "micro";
 
+export type BuildTarget = 
+  | "website" 
+  | "application" 
+  | "plugin" 
+  | "website+application" 
+  | "application+plugin" 
+  | "full";
+
 export interface ProjectPhase {
   phase: number;
   title: string;
@@ -15,6 +23,7 @@ export interface ProjectPhase {
 
 export interface PromptAnalysis {
   scope: BuildScope;
+  buildTarget: BuildTarget;
   stepsNeeded: number[];
   reason: string;
   phases?: ProjectPhase[];
@@ -41,6 +50,44 @@ const MODERATE_PATTERNS = [
   /^(add|create|implement)\s+(a\s+)?(search|filter|sort|pagination)/i,
   /^(redesign|rebuild|improve|upgrade)\s+(the\s+)?(page|section|component)/i,
 ];
+
+// Build target detection patterns
+const WEBSITE_KEYWORDS = [
+  "website", "site", "landing", "blog", "portfolio", "homepage", "seo",
+  "static site", "brochure", "marketing site", "web page", "ওয়েবসাইট", "সাইট",
+];
+
+const APPLICATION_KEYWORDS = [
+  "app", "application", "dashboard", "saas", "crm", "erp", "admin panel",
+  "management system", "portal", "platform", "tool", "অ্যাপ", "অ্যাপ্লিকেশন",
+];
+
+const PLUGIN_KEYWORDS = [
+  "plugin", "extension", "module", "addon", "add-on", "widget",
+  "integration", "প্লাগিন", "মডিউল",
+];
+
+function detectBuildTarget(prompt: string): BuildTarget {
+  const lower = prompt.toLowerCase();
+  const hasWebsite = WEBSITE_KEYWORDS.some(k => lower.includes(k));
+  const hasApp = APPLICATION_KEYWORDS.some(k => lower.includes(k));
+  const hasPlugin = PLUGIN_KEYWORDS.some(k => lower.includes(k));
+
+  if (hasWebsite && hasApp && hasPlugin) return "full";
+  if (hasWebsite && hasApp) return "website+application";
+  if (hasApp && hasPlugin) return "application+plugin";
+  if (hasWebsite) return "website";
+  if (hasPlugin) return "plugin";
+  if (hasApp) return "application";
+
+  // Default: infer from project type keywords
+  const ecommercePattern = /e-?commerce|shop|store|cart|checkout/i;
+  const dashboardPattern = /dashboard|analytics|admin|manage/i;
+  if (ecommercePattern.test(lower)) return "website+application";
+  if (dashboardPattern.test(lower)) return "application";
+
+  return "application"; // safe default
+}
 
 // All 17 step indices
 const ALL_STEPS = Array.from({ length: 17 }, (_, i) => i);
@@ -132,6 +179,7 @@ function generatePhases(prompt: string): ProjectPhase[] {
 export function analyzePrompt(prompt: string): PromptAnalysis {
   const trimmed = prompt.trim();
   const wordCount = trimmed.split(/\s+/).length;
+  const buildTarget = detectBuildTarget(trimmed);
 
   // Check for phase continuation commands
   const phaseCommands = [
@@ -141,7 +189,7 @@ export function analyzePrompt(prompt: string): PromptAnalysis {
   ];
   for (const pattern of phaseCommands) {
     if (pattern.test(trimmed)) {
-      return { scope: "moderate", stepsNeeded: ALL_STEPS, reason: "Phase continuation" };
+      return { scope: "moderate", buildTarget, stepsNeeded: ALL_STEPS, reason: "Phase continuation" };
     }
   }
 
@@ -149,7 +197,7 @@ export function analyzePrompt(prompt: string): PromptAnalysis {
   if (wordCount <= 12) {
     for (const pattern of MICRO_PATTERNS) {
       if (pattern.test(trimmed)) {
-        return { scope: "micro", stepsNeeded: MICRO_STEPS, reason: "Simple text/style change detected" };
+        return { scope: "micro", buildTarget, stepsNeeded: MICRO_STEPS, reason: "Simple text/style change detected" };
       }
     }
   }
@@ -157,7 +205,7 @@ export function analyzePrompt(prompt: string): PromptAnalysis {
   if (wordCount <= 20) {
     for (const pattern of LIGHT_PATTERNS) {
       if (pattern.test(trimmed)) {
-        return { scope: "light", stepsNeeded: LIGHT_STEPS, reason: "Minor UI adjustment detected" };
+        return { scope: "light", buildTarget, stepsNeeded: LIGHT_STEPS, reason: "Minor UI adjustment detected" };
       }
     }
   }
@@ -165,7 +213,7 @@ export function analyzePrompt(prompt: string): PromptAnalysis {
   if (wordCount <= 40) {
     for (const pattern of MODERATE_PATTERNS) {
       if (pattern.test(trimmed)) {
-        return { scope: "moderate", stepsNeeded: MODERATE_STEPS, reason: "Component/section-level change detected" };
+        return { scope: "moderate", buildTarget, stepsNeeded: MODERATE_STEPS, reason: "Component/section-level change detected" };
       }
     }
   }
@@ -185,6 +233,7 @@ export function analyzePrompt(prompt: string): PromptAnalysis {
     const appreciation = APPRECIATIONS[Math.floor(Math.random() * APPRECIATIONS.length)];
     return {
       scope: "full",
+      buildTarget,
       stepsNeeded: ALL_STEPS,
       reason: "Full application build required",
       phases,
@@ -194,9 +243,9 @@ export function analyzePrompt(prompt: string): PromptAnalysis {
 
   // Default to moderate for medium-length prompts
   if (wordCount > 20) {
-    return { scope: "moderate", stepsNeeded: MODERATE_STEPS, reason: "Moderate complexity detected" };
+    return { scope: "moderate", buildTarget, stepsNeeded: MODERATE_STEPS, reason: "Moderate complexity detected" };
   }
 
   // Short but unmatched — default to light
-  return { scope: "light", stepsNeeded: LIGHT_STEPS, reason: "Standard change detected" };
+  return { scope: "light", buildTarget, stepsNeeded: LIGHT_STEPS, reason: "Standard change detected" };
 }
