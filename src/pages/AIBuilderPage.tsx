@@ -229,8 +229,12 @@ export default function AIBuilderPage() {
   // Load project from navigation state (clicked from dashboard)
   useEffect(() => {
     if (!user || !incomingProjectId) return;
-    hasProcessedIncoming.current = true;
-    window.history.replaceState({}, document.title);
+    // For NEW projects (from dashboard prompt), do NOT set hasProcessedIncoming here
+    // — let the auto-send effect handle it so the build starts automatically.
+    if (!incomingIsNew) {
+      hasProcessedIncoming.current = true;
+      window.history.replaceState({}, document.title);
+    }
     if (currentProject?.id === incomingProjectId) { setIsRestoring(false); return; }
     const loadIncomingProject = async () => {
       try {
@@ -729,6 +733,9 @@ export default function AIBuilderPage() {
   };
 
   const handlePublish = () => {
+    if (pipelineState?.config) {
+      localStorage.setItem("ai-builder-preview-config", JSON.stringify(pipelineState.config));
+    }
     toast({ title: "🚀 Published!", description: "Configuration saved successfully." });
   };
 
