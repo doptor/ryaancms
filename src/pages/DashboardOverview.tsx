@@ -217,69 +217,7 @@ export default function DashboardOverview() {
             </h1>
 
             <div className="w-full max-w-2xl rounded-2xl border border-border bg-card shadow-lg">
-              {/* Toolbar: Content Type + Color Presets */}
-              <div className="flex items-center gap-2 flex-wrap px-4 pt-3">
-                {/* Content Type Selector */}
-                <div className="relative">
-                  <button
-                    onClick={() => { setShowContentType(!showContentType); setShowColorPresets(false); }}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
-                  >
-                    {CONTENT_TYPES.find(c => c.value === selectedContentType)?.label || "🌐 Website"}
-                    <ChevronDown className="w-3 h-3" />
-                  </button>
-                  {showContentType && (
-                    <div className="absolute top-full left-0 mt-1 bg-popover border border-border rounded-lg shadow-lg p-1 z-50 min-w-[180px]">
-                      {CONTENT_TYPES.map((ct) => (
-                        <button
-                          key={ct.value}
-                          onClick={() => { setSelectedContentType(ct.value); setShowContentType(false); }}
-                          className={cn(
-                            "flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-xs text-left transition-colors",
-                            selectedContentType === ct.value ? "bg-primary/10 text-primary" : "text-foreground hover:bg-accent"
-                          )}
-                        >
-                          <ct.icon className="w-3.5 h-3.5" />
-                          {ct.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Color Presets */}
-                <div className="relative">
-                  <button
-                    onClick={() => { setShowColorPresets(!showColorPresets); setShowContentType(false); }}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
-                  >
-                    <Palette className="w-3 h-3" /> Colors
-                  </button>
-                  {showColorPresets && (
-                    <div className="absolute top-full left-0 mt-1 bg-popover border border-border rounded-lg shadow-lg p-2 z-50">
-                      <div className="flex gap-1.5">
-                        {COLOR_PRESETS.map((cp) => (
-                          <button
-                            key={cp.name}
-                            onClick={() => {
-                              setPrompt((prev) => prev + ` Use ${cp.name.toLowerCase()} as primary color.`);
-                              setShowColorPresets(false);
-                            }}
-                            className="group flex flex-col items-center gap-1"
-                            title={cp.name}
-                          >
-                            <div
-                              className="w-6 h-6 rounded-full border-2 border-border group-hover:border-foreground/50 transition-colors"
-                              style={{ backgroundColor: cp.color }}
-                            />
-                            <span className="text-[9px] text-muted-foreground">{cp.name}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
+              {/* (Content Type & Colors moved to bottom bar) */}
 
               {/* URL input for replication */}
               {showUrlInput && (
@@ -371,8 +309,70 @@ export default function DashboardOverview() {
                   </Button>
                 </div>
 
-                {/* Right: templates dropdown + send */}
+                {/* Right: content type + colors + templates + send */}
                 <div className="flex items-center gap-1.5">
+                  {/* Content Type Selector */}
+                  <div className="relative">
+                    <button
+                      onClick={() => { setShowContentType(!showContentType); setShowColorPresets(false); }}
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors whitespace-nowrap shrink-0"
+                    >
+                      {CONTENT_TYPES.find(c => c.value === selectedContentType)?.label || "🌐 Website"}
+                      <ChevronDown className="w-3 h-3" />
+                    </button>
+                    {showContentType && (
+                      <div className="absolute bottom-full left-0 mb-1 bg-popover border border-border rounded-lg shadow-lg p-1 z-50 min-w-[180px]">
+                        {CONTENT_TYPES.map((ct) => (
+                          <button
+                            key={ct.value}
+                            onClick={() => { setSelectedContentType(ct.value); setShowContentType(false); }}
+                            className={cn(
+                              "flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-xs text-left transition-colors",
+                              selectedContentType === ct.value ? "bg-primary/10 text-primary" : "text-foreground hover:bg-accent"
+                            )}
+                          >
+                            <ct.icon className="w-3.5 h-3.5" />
+                            {ct.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Color Presets */}
+                  <div className="relative">
+                    <button
+                      onClick={() => { setShowColorPresets(!showColorPresets); setShowContentType(false); }}
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors whitespace-nowrap shrink-0"
+                    >
+                      <Palette className="w-3 h-3" /> Colors
+                    </button>
+                    {showColorPresets && (
+                      <div className="absolute bottom-full left-0 mb-1 bg-popover border border-border rounded-lg shadow-lg p-2 z-50">
+                        <div className="flex gap-1.5">
+                          {COLOR_PRESETS.map((cp) => (
+                            <button
+                              key={cp.name}
+                              onClick={() => {
+                                setPrompt((prev) => prev + ` Use ${cp.name.toLowerCase()} as primary color.`);
+                                setShowColorPresets(false);
+                              }}
+                              className="group flex flex-col items-center gap-1"
+                              title={cp.name}
+                            >
+                              <div
+                                className="w-6 h-6 rounded-full border-2 border-border group-hover:border-foreground/50 transition-colors"
+                                style={{ backgroundColor: cp.color }}
+                              />
+                              <span className="text-[9px] text-muted-foreground">{cp.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Templates */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors whitespace-nowrap shrink-0">
