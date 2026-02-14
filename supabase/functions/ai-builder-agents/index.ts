@@ -455,6 +455,26 @@ MICRO-INTERACTIONS (always include in style):
 - Smooth transitions: transition-all duration-300
 - Navbar: sticky top
 
+=== LANDING PAGE GENERATION FLOW (MANDATORY) ===
+When user provides a prompt for a landing page:
+1. Extract business type and target audience
+2. Generate a marketing positioning statement
+3. Write premium copy (headline, subheadline, CTA) — benefit-driven, not feature-driven
+4. Choose the best section order from the standard formula
+5. Build full landing page with consistent spacing (py-20 per section)
+6. Ensure responsive mobile-first design
+7. Ensure strong conversion-focused CTA placement (hero + final_cta minimum)
+
+=== FORBIDDEN OUTPUT (STRICT) ===
+- No childish or amateur UI
+- No excessive colors (max 1 primary + neutrals)
+- No random fonts (Inter ONLY)
+- No inconsistent padding (py-20 always)
+- No ugly plain HTML — ALWAYS use section components
+- No unfinished placeholders or "Lorem ipsum"
+- No generic text like "We provide best service" or "Welcome to our website"
+- No outline buttons with white text on white background
+
 Rules:
 - Landing pages MUST use the Section Composer — never build raw HTML sections
 - Dashboard pages use sidebar + header + content layout
