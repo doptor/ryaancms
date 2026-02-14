@@ -12,7 +12,7 @@ import {
   Shield, AlertTriangle, Info, Image, Upload, FileCode2,
   TrendingUp, Link2, X, Eye, ChevronDown, ChevronUp,
   ArrowUp, Plus, Layers, RefreshCw, Package,
-  GitBranch, Settings, History,
+  GitBranch, Settings, History, Book, Container,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useLocation } from "react-router-dom";
@@ -43,6 +43,8 @@ import { WorkflowApiPanel } from "@/components/ai-builder/WorkflowApiPanel";
 import { InstallerArchitecturePanel } from "@/components/ai-builder/InstallerArchitecturePanel";
 import { ProjectHistoryPanel } from "@/components/ai-builder/ProjectHistoryPanel";
 import { TimeMachinePanel } from "@/components/ai-builder/TimeMachinePanel";
+import { DocsGeneratorPanel } from "@/components/ai-builder/DocsGeneratorPanel";
+import { CICDExportPanel } from "@/components/ai-builder/CICDExportPanel";
 import { supabase } from "@/integrations/supabase/client";
 import { getThemePreset } from "@/lib/engine/theme-generator";
 
@@ -1090,6 +1092,12 @@ export default function AIBuilderPage() {
                         <TabsTrigger value="timemachine" className={tabTriggerClass}>
                           <Clock className="w-3.5 h-3.5" /> Versions
                         </TabsTrigger>
+                        <TabsTrigger value="docs" className={tabTriggerClass}>
+                          <Book className="w-3.5 h-3.5" /> Docs
+                        </TabsTrigger>
+                        <TabsTrigger value="cicd" className={tabTriggerClass}>
+                          <Container className="w-3.5 h-3.5" /> CI/CD
+                        </TabsTrigger>
                       </TabsList>
                     </Tabs>
                   </div>
@@ -1210,6 +1218,12 @@ export default function AIBuilderPage() {
                     {activeTab === "timemachine" && (
                       <TimeMachinePanel onRestoreSnapshot={handleRestoreSnapshot} />
                     )}
+                    {activeTab === "docs" && (
+                      <DocsGeneratorPanel pipelineState={pipelineState} />
+                    )}
+                    {activeTab === "cicd" && (
+                      <CICDExportPanel pipelineState={pipelineState} />
+                    )}
                   </div>
                 </div>
               </ResizablePanel>
@@ -1265,6 +1279,12 @@ export default function AIBuilderPage() {
                   </TabsTrigger>
                   <TabsTrigger value="timemachine" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
                     <Clock className="w-3.5 h-3.5" /> Time
+                  </TabsTrigger>
+                  <TabsTrigger value="docs" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
+                    <Book className="w-3.5 h-3.5" /> Docs
+                  </TabsTrigger>
+                  <TabsTrigger value="cicd" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
+                    <Container className="w-3.5 h-3.5" /> CI/CD
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -1334,6 +1354,12 @@ export default function AIBuilderPage() {
               )}
               {activeTab === "timemachine" && (
                 <TimeMachinePanel onRestoreSnapshot={handleRestoreSnapshot} />
+              )}
+              {activeTab === "docs" && (
+                <DocsGeneratorPanel pipelineState={pipelineState} />
+              )}
+              {activeTab === "cicd" && (
+                <CICDExportPanel pipelineState={pipelineState} />
               )}
             </div>
           </div>
