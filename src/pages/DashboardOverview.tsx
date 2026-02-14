@@ -209,10 +209,10 @@ export default function DashboardOverview() {
           <div className="absolute top-0 right-1/3 w-[250px] h-[250px] rounded-full blur-[80px]" style={{ backgroundColor: `${branding.accentColor}22` }} />
         </div>
 
-        <div className="relative z-10 w-full px-4 sm:px-6 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8">
+        <div className="relative z-10 w-full px-3 sm:px-6 py-4 sm:py-8 flex flex-col gap-4 sm:gap-8">
           {/* Greeting + Prompt */}
-          <div className="flex flex-col items-center gap-4 sm:gap-6 pt-[20vh] sm:pt-[25vh]">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground text-center">
+          <div className="flex flex-col items-center gap-3 sm:gap-6 pt-[12vh] sm:pt-[25vh]">
+            <h1 className="text-lg sm:text-2xl md:text-3xl font-bold text-foreground text-center px-2">
               Ready to build, {displayName}?
             </h1>
 
@@ -273,49 +273,14 @@ export default function DashboardOverview() {
                   if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); }
                 }}
               />
-              <div className="flex items-center justify-between px-4 pb-3">
-                {/* Left: action buttons */}
-                <div className="flex items-center gap-0.5">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
-                        title="Add"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="min-w-[180px]">
-                      <DropdownMenuItem onClick={() => fileInputRef.current?.click()} className="gap-2">
-                        <Paperclip className="w-4 h-4" />
-                        Attachment
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setShowUrlInput(!showUrlInput)} className="gap-2">
-                        <Link2 className="w-4 h-4" />
-                        Website URL
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  <Button
-                    variant="ghost" size="icon"
-                    className={cn(
-                      "h-8 w-8 rounded-lg transition-colors",
-                      isRecording ? "text-destructive bg-destructive/10 hover:bg-destructive/20" : "text-muted-foreground hover:text-foreground"
-                    )}
-                    onClick={handleMicToggle}
-                    title={isRecording ? "Stop recording" : "Voice input"}
-                  >
-                    {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                  </Button>
-                </div>
-
-                {/* Right: content type + colors + templates + send */}
-                <div className="flex items-center gap-1.5">
+              <div className="flex flex-col gap-2 px-3 sm:px-4 pb-3">
+                {/* Top row on mobile: content type + colors + templates */}
+                <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
                   {/* Content Type Selector */}
-                  <div className="relative">
+                  <div className="relative shrink-0">
                     <button
                       onClick={() => { setShowContentType(!showContentType); setShowColorPresets(false); }}
-                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors whitespace-nowrap shrink-0"
+                      className="flex items-center gap-1 px-2 py-1 rounded-full border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors whitespace-nowrap"
                     >
                       {CONTENT_TYPES.find(c => c.value === selectedContentType)?.label || "🌐 Website"}
                       <ChevronDown className="w-3 h-3" />
@@ -340,10 +305,10 @@ export default function DashboardOverview() {
                   </div>
 
                   {/* Color Presets */}
-                  <div className="relative">
+                  <div className="relative shrink-0">
                     <button
                       onClick={() => { setShowColorPresets(!showColorPresets); setShowContentType(false); }}
-                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors whitespace-nowrap shrink-0"
+                      className="flex items-center gap-1 px-2 py-1 rounded-full border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors whitespace-nowrap"
                     >
                       <Palette className="w-3 h-3" /> Colors
                     </button>
@@ -375,7 +340,7 @@ export default function DashboardOverview() {
                   {/* Templates */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors whitespace-nowrap shrink-0">
+                      <button className="flex items-center gap-1 px-2 py-1 rounded-full border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors whitespace-nowrap shrink-0">
                         <Sparkles className="w-3 h-3" />
                         Templates
                         <ChevronDown className="w-3 h-3" />
@@ -390,10 +355,47 @@ export default function DashboardOverview() {
                       ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
+                </div>
+
+                {/* Bottom row: action buttons + send */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-0.5">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
+                          title="Add"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="min-w-[180px]">
+                        <DropdownMenuItem onClick={() => fileInputRef.current?.click()} className="gap-2">
+                          <Paperclip className="w-4 h-4" />
+                          Attachment
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setShowUrlInput(!showUrlInput)} className="gap-2">
+                          <Link2 className="w-4 h-4" />
+                          Website URL
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button
+                      variant="ghost" size="icon"
+                      className={cn(
+                        "h-8 w-8 rounded-lg transition-colors",
+                        isRecording ? "text-destructive bg-destructive/10 hover:bg-destructive/20" : "text-muted-foreground hover:text-foreground"
+                      )}
+                      onClick={handleMicToggle}
+                      title={isRecording ? "Stop recording" : "Voice input"}
+                    >
+                      {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                    </Button>
+                  </div>
                   <button
                     onClick={handleSubmit}
                     disabled={!prompt.trim() || createProject.isPending}
-                    className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground disabled:opacity-40 hover:opacity-90 transition-opacity shrink-0 ml-1"
+                    className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground disabled:opacity-40 hover:opacity-90 transition-opacity shrink-0"
                   >
                     <Send className="w-4 h-4" />
                   </button>
@@ -423,7 +425,7 @@ export default function DashboardOverview() {
               </div>
 
               {/* Card Grid */}
-              <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
+              <div className="grid gap-3 grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                 {filtered.map((p) => (
                   <Card
                     key={p.id}
