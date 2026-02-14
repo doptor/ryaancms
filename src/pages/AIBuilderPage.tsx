@@ -14,6 +14,7 @@ import {
   ArrowUp, Plus, Layers, RefreshCw, Package,
   GitBranch, Settings, History, Book, Container,
   Users, Activity, FolderOpen, Server,
+  Webhook, Bell as BellIcon, GitFork,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useLocation } from "react-router-dom";
@@ -50,6 +51,8 @@ import { CollaborationPanel } from "@/components/ai-builder/CollaborationPanel";
 import { MonitoringPanel } from "@/components/ai-builder/MonitoringPanel";
 import { ProjectSelector } from "@/components/ai-builder/ProjectSelector";
 import { EnvironmentManagerPanel } from "@/components/ai-builder/EnvironmentManagerPanel";
+import { WebhookNotificationPanel } from "@/components/ai-builder/WebhookNotificationPanel";
+import { ProjectBranchingPanel } from "@/components/ai-builder/ProjectBranchingPanel";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getThemePreset } from "@/lib/engine/theme-generator";
@@ -549,6 +552,51 @@ export default function AIBuilderPage() {
     if (!file) return;
     const prompt = `Replicate the UI layout from the uploaded screenshot "${file.name}". Create a similar design with matching structure, spacing, and component layout. Use modern React components.`;
     sendMessage(prompt);
+  };
+
+  const handleForkProject = async (title: string, fromProjectId: string) => {
+    if (!user) return;
+    try {
+      // Get source project memory
+      const { data: memory } = await supabase
+        .from("project_memory")
+        .select("*")
+        .eq("project_id", fromProjectId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      // Create forked project
+      const { data: project } = await supabase.from("projects").insert({
+        user_id: user.id,
+        prompt: memory?.requirements ? JSON.stringify(memory.requirements) : "",
+        title,
+        status: "draft",
+      }).select("*").single();
+
+      if (project && memory) {
+        await supabase.from("project_memory").insert({
+          user_id: user.id,
+          project_id: project.id,
+          requirements: memory.requirements,
+          modules: memory.modules,
+          db_schema: memory.db_schema,
+          api_list: memory.api_list,
+          ui_components: memory.ui_components,
+          page_layouts: memory.page_layouts,
+          task_plan: memory.task_plan,
+          quality_score: memory.quality_score,
+          suggestions: memory.suggestions,
+          agent_log: memory.agent_log,
+          folder_structure: memory.folder_structure,
+          status: "forked",
+        } as any);
+      }
+
+      toast({ title: "Project forked!", description: title });
+    } catch {
+      toast({ title: "Fork failed", variant: "destructive" });
+    }
   };
 
   const handleUrlReplicate = () => {
@@ -1188,6 +1236,12 @@ export default function AIBuilderPage() {
                         <TabsTrigger value="envs" className={tabTriggerClass}>
                           <Server className="w-3.5 h-3.5" /> Envs
                         </TabsTrigger>
+                        <TabsTrigger value="webhooks" className={tabTriggerClass}>
+                          <Webhook className="w-3.5 h-3.5" /> Hooks
+                        </TabsTrigger>
+                        <TabsTrigger value="branches" className={tabTriggerClass}>
+                          <GitFork className="w-3.5 h-3.5" /> Branch
+                        </TabsTrigger>
                       </TabsList>
                     </Tabs>
                   </div>
@@ -1323,6 +1377,16 @@ export default function AIBuilderPage() {
                     {activeTab === "envs" && (
                       <EnvironmentManagerPanel pipelineState={pipelineState} />
                     )}
+                    {activeTab === "webhooks" && (
+                      <WebhookNotificationPanel pipelineState={pipelineState} isBuilding={isBuilding} />
+                    )}
+                    {activeTab === "branches" && (
+                      <ProjectBranchingPanel
+                        pipelineState={pipelineState}
+                        currentProject={currentProject}
+                        onForkProject={handleForkProject}
+                      />
+                    )}
                   </div>
                 </div>
               </ResizablePanel>
@@ -1393,6 +1457,12 @@ export default function AIBuilderPage() {
                   </TabsTrigger>
                   <TabsTrigger value="envs" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
                     <Server className="w-3.5 h-3.5" /> Envs
+                  </TabsTrigger>
+                  <TabsTrigger value="webhooks" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
+                    <Webhook className="w-3.5 h-3.5" /> Hooks
+                  </TabsTrigger>
+                  <TabsTrigger value="branches" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
+                    <GitFork className="w-3.5 h-3.5" /> Branch
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
@@ -1477,6 +1547,16 @@ export default function AIBuilderPage() {
               )}
               {activeTab === "envs" && (
                 <EnvironmentManagerPanel pipelineState={pipelineState} />
+              )}
+              {activeTab === "webhooks" && (
+                <WebhookNotificationPanel pipelineState={pipelineState} isBuilding={isBuilding} />
+              )}
+              {activeTab === "branches" && (
+                <ProjectBranchingPanel
+                  pipelineState={pipelineState}
+                  currentProject={currentProject}
+                  onForkProject={handleForkProject}
+                />
               )}
             </div>
           </div>
