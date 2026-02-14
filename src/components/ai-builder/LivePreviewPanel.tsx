@@ -103,8 +103,9 @@ function buildPreviewHtml(files: GeneratedFile[]): string {
   <script src="https://cdn.tailwindcss.com"><\/script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; overflow: auto; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #fff; }
-    #root { padding: 1rem; }
+    #root { padding: 1rem; min-height: 100%; }
     .preview-error { padding: 2rem; text-align: center; color: #e55; }
   </style>
   <script>
@@ -371,11 +372,12 @@ export function LivePreviewPanel({ files, hasConfig, isGenerating, onGenerate }:
       {/* Preview area */}
       <div className="flex-1 min-h-0 bg-muted/30 flex items-start justify-center overflow-auto p-4 relative">
         <div
-          className="bg-background rounded-lg border border-border shadow-lg overflow-hidden transition-all duration-300"
+          className="bg-background rounded-lg border border-border shadow-lg overflow-hidden transition-all duration-300 flex flex-col"
           style={{
             width: viewport === "desktop" ? "100%" : `${currentViewport.width}px`,
             maxWidth: "100%",
             height: "100%",
+            minHeight: 0,
           }}
         >
           {isLoading && (
@@ -388,7 +390,8 @@ export function LivePreviewPanel({ files, hasConfig, isGenerating, onGenerate }:
             ref={iframeRef}
             srcDoc={previewHtml}
             sandbox="allow-scripts"
-            className="w-full h-full border-0"
+            className="w-full border-0 flex-1"
+            style={{ minHeight: 0, height: "100%" }}
             title="Live Preview"
             onLoad={handleIframeLoad}
           />
