@@ -500,12 +500,74 @@ Rules:
     },
   },
 
-  // Agent 8: Testing Agent
+  // Agent 8: Copywriter Agent (NEW - Premium Marketing Copy)
+  copywriter: {
+    name: "Copywriter Agent",
+    system: `${MASTER_SYSTEM_PREFIX}
+
+AGENT ROLE: You are the Marketing Copywriter (Agent 8/12).
+You receive the UI design and rewrite ALL text content to be premium, conversion-focused marketing copy.
+You MUST call the "rewrite_copy" tool.
+
+COPYWRITING RULES:
+- Hero headline: 6-10 words, benefit-first, no jargon. Power words: "effortless", "instant", "powerful", "seamless"
+  Examples: "Ship faster. Build smarter. Scale effortlessly." / "The modern platform teams love."
+- Hero subtitle: 1-2 sentences, clear value proposition with specific outcome
+  Example: "Join 2,000+ teams who reduced their development time by 60%."
+- CTA text: Action-oriented, 2-4 words. "Get Started Free", "Start Building Today", "Try It Now"
+- Secondary CTA: Softer. "Watch Demo", "See How It Works", "Talk to Sales"
+- Feature titles: 2-3 words, benefit-focused. "Lightning Fast", "Zero Config", "Built-in Security"
+- Feature descriptions: 15-25 words, outcome-focused. Start with what the user GETS, not what the product DOES.
+- Testimonial quotes: Include specific results with numbers. "Reduced our deploy time from 2 hours to 5 minutes."
+- FAQ answers: 1-2 sentences max. Clear, helpful, confidence-building.
+- Trusted By label: "Trusted by 2,000+ teams worldwide" or "Powering the world's best teams"
+
+TONE: Professional but approachable. Confident but not arrogant. Clear and concise.
+AVOID: Generic phrases like "Welcome to our platform", buzzwords without substance, exclamation marks.`,
+    tool: {
+      name: "rewrite_copy",
+      description: "Rewrite all UI text content with premium marketing copy",
+      parameters: {
+        type: "object",
+        properties: {
+          page_copy: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                page_name: { type: "string" },
+                components: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      type: { type: "string" },
+                      updated_props: { type: "object" },
+                    },
+                    required: ["type", "updated_props"],
+                    additionalProperties: false,
+                  },
+                },
+              },
+              required: ["page_name", "components"],
+              additionalProperties: false,
+            },
+          },
+          brand_voice: { type: "string" },
+          tagline: { type: "string" },
+        },
+        required: ["page_copy", "brand_voice", "tagline"],
+        additionalProperties: false,
+      },
+    },
+  },
+
+  // Agent 9: Testing Agent
   testing: {
     name: "Testing Agent",
     system: `${MASTER_SYSTEM_PREFIX}
 
-AGENT ROLE: You are the QA/Test Engineer (Agent 8/10).
+AGENT ROLE: You are the QA/Test Engineer (Agent 9/12).
 You MUST call the "generate_tests" tool.
 
 Rules:
@@ -559,12 +621,12 @@ Rules:
     },
   },
 
-  // Agent 9: Debugger Agent
+  // Agent 10: Debugger Agent
   debugger: {
     name: "Debugger Agent",
     system: `${MASTER_SYSTEM_PREFIX}
 
-AGENT ROLE: You are the Debugger/Auto-Fixer (Agent 9/10).
+AGENT ROLE: You are the Debugger/Auto-Fixer (Agent 10/12).
 You MUST call the "debug_analysis" tool.
 
 Rules:
@@ -624,12 +686,68 @@ Rules:
     },
   },
 
-  // Agent 10: Quality Reviewer
+  // Agent 11: UI Reviewer Agent (NEW - Visual Quality Gate)
+  ui_reviewer: {
+    name: "UI Reviewer Agent",
+    system: `${MASTER_SYSTEM_PREFIX}
+
+AGENT ROLE: You are the UI Reviewer (Agent 11/12).
+You receive the complete UI design and copy, then perform a strict visual quality audit.
+You MUST call the "review_ui" tool.
+
+CHECK EVERY ITEM:
+1. SPACING: All sections have py-20? Header margins mb-14? 8px grid respected?
+2. TYPOGRAPHY: Hero uses text-4xl md:text-6xl font-extrabold? Section headings text-3xl md:text-4xl? Body text-sm text-muted-foreground?
+3. CONTAINER: All content within max-w-5xl mx-auto (1200px)?
+4. BUTTONS: Primary + secondary CTA pair? Consistent styling? Shadow on primary?
+5. CARDS: All use rounded-2xl border border-border bg-card? hover:shadow-lg hover:-translate-y-1?
+6. CONTRAST: Text readable? CTA buttons visible? No white-on-white?
+7. ALIGNMENT: Marketing sections text-center? Dashboard content text-left?
+8. SECTION ORDER: Landing pages follow formula? navbar→hero→sections→footer?
+9. MISSING SECTIONS: Does landing page have at least navbar, hero, features_grid, final_cta, footer?
+10. MICRO-INTERACTIONS: hover effects on cards? button transitions? smooth animations?
+11. COPY QUALITY: Headlines benefit-first? CTAs action-oriented? No generic text?
+12. RESPONSIVE: Grid columns adjust for mobile?
+
+For each issue found, provide a specific fix instruction.
+If score is below 90, mark must_fix issues.`,
+    tool: {
+      name: "review_ui",
+      description: "Audit UI design for visual quality and consistency",
+      parameters: {
+        type: "object",
+        properties: {
+          ui_score: { type: "integer" },
+          checks: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                check: { type: "string" },
+                passed: { type: "boolean" },
+                issue: { type: "string" },
+                fix: { type: "string" },
+                severity: { type: "string", enum: ["critical", "warning", "info"] },
+              },
+              required: ["check", "passed"],
+              additionalProperties: false,
+            },
+          },
+          must_fix: { type: "array", items: { type: "string" } },
+          overall_verdict: { type: "string", enum: ["professional", "acceptable", "needs_work"] },
+        },
+        required: ["ui_score", "checks", "overall_verdict"],
+        additionalProperties: false,
+      },
+    },
+  },
+
+  // Agent 12: Quality Reviewer
   reviewer: {
     name: "Quality Reviewer",
     system: `${MASTER_SYSTEM_PREFIX}
 
-AGENT ROLE: You are the Security & Performance Reviewer + Quality Reviewer (Agent 10/10).
+AGENT ROLE: You are the Security & Performance Reviewer + Quality Reviewer (Agent 12/12).
 You MUST call the "quality_review" tool.
 
 Rules:
@@ -737,8 +855,10 @@ const PIPELINE: { key: AgentName; fatal: boolean }[] = [
   { key: "database", fatal: true },
   { key: "backend", fatal: false },
   { key: "uiux", fatal: true },
+  { key: "copywriter", fatal: false },
   { key: "testing", fatal: false },
   { key: "debugger", fatal: false },
+  { key: "ui_reviewer", fatal: false },
   { key: "reviewer", fatal: false },
 ];
 
@@ -778,8 +898,10 @@ serve(async (req) => {
           database: "database_design",
           backend: "backend_design",
           uiux: "ui_design",
+          copywriter: "copywriter_output",
           testing: "test_plan",
           debugger: "debug_analysis",
+          ui_reviewer: "ui_review",
           reviewer: "quality_review",
         };
 
@@ -819,9 +941,26 @@ serve(async (req) => {
         const db_data = (context.database_design || {}) as any;
         const api_data = (context.backend_design || {}) as any;
         const ui_data = (context.ui_design || {}) as any;
+        const copy_data = (context.copywriter_output || {}) as any;
         const test_data = (context.test_plan || {}) as any;
         const debug_data = (context.debug_analysis || {}) as any;
+        const ui_review_data = (context.ui_review || {}) as any;
         const review_data = (context.quality_review || { scores: {}, issues: [], improvements: [], verdict: "pass" }) as any;
+
+        // Merge copywriter output into pages (update component props with polished copy)
+        let finalPages = ui_data.pages || [];
+        if (copy_data.page_copy && Array.isArray(copy_data.page_copy)) {
+          finalPages = finalPages.map((page: any) => {
+            const copyPage = copy_data.page_copy.find((cp: any) => cp.page_name === page.name);
+            if (!copyPage) return page;
+            const updatedComponents = page.components.map((comp: any) => {
+              const copyComp = copyPage.components.find((cc: any) => cc.type === comp.type);
+              if (!copyComp) return comp;
+              return { ...comp, props: { ...comp.props, ...copyComp.updated_props } };
+            });
+            return { ...page, components: updatedComponents };
+          });
+        }
 
         const finalConfig = {
           project_type: req_data.project_type,
@@ -830,9 +969,16 @@ serve(async (req) => {
           modules: req_data.modules || [],
           roles: req_data.roles || [],
           features: req_data.features || [],
-          pages: ui_data.pages || [],
+          pages: finalPages,
           collections: db_data.collections || [],
           style: ui_data.style || {},
+          // Copywriter data
+          brand_voice: copy_data.brand_voice || "",
+          tagline: copy_data.tagline || "",
+          // UI Review data
+          ui_review_score: ui_review_data.ui_score || 0,
+          ui_review_checks: ui_review_data.checks || [],
+          ui_review_verdict: ui_review_data.overall_verdict || "",
           // Extended multi-agent data
           requirements: req_data.functional_requirements || [],
           non_functional_requirements: req_data.non_functional_requirements || [],
@@ -885,7 +1031,7 @@ serve(async (req) => {
       },
     });
   } catch (error) {
-    console.error("10-agent pipeline error:", error);
+    console.error("12-agent pipeline error:", error);
     return new Response(
       JSON.stringify({ success: false, error: error instanceof Error ? error.message : "Unknown error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
