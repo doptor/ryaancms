@@ -11,6 +11,7 @@ import AuthPage from "./pages/AuthPage";
 import DashboardOverview from "./pages/DashboardOverview";
 import AIBuilderPage from "./pages/AIBuilderPage";
 import MarketplacePage from "./pages/MarketplacePage";
+import PluginDetailPage from "./pages/PluginDetailPage";
 import InstallerPage from "./pages/InstallerPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
@@ -38,6 +39,7 @@ const App = () => (
               <Route path="/dashboard" element={<ProtectedRoute><DashboardOverview /></ProtectedRoute>} />
               <Route path="/dashboard/ai" element={<ProtectedRoute><AIBuilderPage /></ProtectedRoute>} />
               <Route path="/dashboard/marketplace" element={<ProtectedRoute><MarketplacePage /></ProtectedRoute>} />
+              <Route path="/dashboard/marketplace/:slug" element={<ProtectedRoute><PluginDetailPage /></ProtectedRoute>} />
               <Route path="/dashboard/installer" element={<ProtectedRoute><InstallerPage /></ProtectedRoute>} />
               <Route path="/dashboard/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
               <Route path="/dashboard/menus" element={<ProtectedRoute><MenuBuilderPage /></ProtectedRoute>} />

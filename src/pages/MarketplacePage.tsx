@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Search, Download, Star, Puzzle, Sparkles, CheckCircle2, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
@@ -32,6 +33,7 @@ interface Plugin {
 
 export default function MarketplacePage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<typeof tabs[number]>("All");
   const [search, setSearch] = useState("");
   const [plugins, setPlugins] = useState<Plugin[]>([]);
@@ -128,7 +130,7 @@ export default function MarketplacePage() {
             {filtered.map((plugin) => {
               const isInstalled = installedIds.has(plugin.id);
               return (
-                <div key={plugin.id} className="rounded-xl border border-border bg-card p-5 hover:border-primary/30 transition-all duration-300">
+                <div key={plugin.id} className="rounded-xl border border-border bg-card p-5 hover:border-primary/30 transition-all duration-300 cursor-pointer" onClick={() => navigate(`/dashboard/marketplace/${plugin.slug}`)}>
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex gap-1.5">
                       {plugin.is_official && <Badge variant="secondary" className="text-[10px]">Official</Badge>}
@@ -152,12 +154,12 @@ export default function MarketplacePage() {
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-muted-foreground"><Download className="w-3 h-3 inline mr-1" />{(plugin.install_count / 1000).toFixed(1)}K</span>
                     {isInstalled ? (
-                      <Button variant="outline" size="sm" onClick={() => handleUninstall(plugin)} disabled={installing === plugin.id} className="gap-1">
+                      <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); handleUninstall(plugin); }} disabled={installing === plugin.id} className="gap-1">
                         {installing === plugin.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3 text-primary" />}
                         Installed
                       </Button>
                     ) : (
-                      <Button size="sm" onClick={() => handleInstall(plugin)} disabled={installing === plugin.id} className="gap-1">
+                      <Button size="sm" onClick={(e) => { e.stopPropagation(); handleInstall(plugin); }} disabled={installing === plugin.id} className="gap-1">
                         {installing === plugin.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
                         Install
                       </Button>
