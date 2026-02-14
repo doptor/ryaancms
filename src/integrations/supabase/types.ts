@@ -590,6 +590,33 @@ export type Database = {
         }
         Relationships: []
       }
+      published_previews: {
+        Row: {
+          config: Json
+          created_at: string
+          id: string
+          project_title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          id?: string
+          project_title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          id?: string
+          project_title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       releases: {
         Row: {
           created_at: string

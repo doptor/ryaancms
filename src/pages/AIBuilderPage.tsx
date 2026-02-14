@@ -897,9 +897,35 @@ export default function AIBuilderPage() {
     }
   };
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
     if (pipelineState?.config) {
       localStorage.setItem("ai-builder-preview-config", JSON.stringify(pipelineState.config));
+      // Also persist to database for published URL access
+      if (user) {
+        try {
+          const { data: existing } = await supabase
+            .from("published_previews")
+            .select("id")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (existing) {
+            await supabase.from("published_previews").update({
+              config: pipelineState.config as any,
+              project_title: pipelineState.config.title || "Untitled",
+              updated_at: new Date().toISOString(),
+            }).eq("id", existing.id);
+          } else {
+            await supabase.from("published_previews").insert({
+              user_id: user.id,
+              config: pipelineState.config as any,
+              project_title: pipelineState.config.title || "Untitled",
+            });
+          }
+        } catch (err) {
+          console.error("Failed to persist preview config:", err);
+        }
+      }
     }
     toast({ title: "🚀 Published!", description: "Configuration saved successfully." });
   };
@@ -2081,9 +2107,19 @@ export default function AIBuilderPage() {
             )}
             <Button
               variant="ghost" size="sm"
-              onClick={() => {
+              onClick={async () => {
                 if (pipelineState?.config) {
                   localStorage.setItem("ai-builder-preview-config", JSON.stringify(pipelineState.config));
+                  if (user) {
+                    try {
+                      const { data: existing } = await supabase.from("published_previews").select("id").eq("user_id", user.id).maybeSingle();
+                      if (existing) {
+                        await supabase.from("published_previews").update({ config: pipelineState.config as any, project_title: pipelineState.config.title || "Untitled", updated_at: new Date().toISOString() }).eq("id", existing.id);
+                      } else {
+                        await supabase.from("published_previews").insert({ user_id: user.id, config: pipelineState.config as any, project_title: pipelineState.config.title || "Untitled" });
+                      }
+                    } catch {}
+                  }
                   window.open("/preview", "_blank");
                 }
               }}
