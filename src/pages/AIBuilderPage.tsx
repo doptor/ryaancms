@@ -207,13 +207,14 @@ export default function AIBuilderPage() {
   }, [messages]);
 
   useEffect(() => {
-    if (incomingPrompt && !hasProcessedIncoming.current && !isRestoring) {
+    // Only auto-send prompt for NEW projects (created from dashboard prompt box).
+    // If incomingProjectId exists, the project was clicked from the dashboard grid — don't re-build.
+    if (incomingPrompt && !hasProcessedIncoming.current && !isRestoring && !incomingProjectId) {
       hasProcessedIncoming.current = true;
-      // Clear location state to prevent re-triggering on refresh
       window.history.replaceState({}, document.title);
       setTimeout(() => sendMessage(incomingPrompt), 300);
     }
-  }, [incomingPrompt, isRestoring]);
+  }, [incomingPrompt, isRestoring, incomingProjectId]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -227,6 +228,8 @@ export default function AIBuilderPage() {
   // Load project from navigation state (clicked from dashboard)
   useEffect(() => {
     if (!user || !incomingProjectId) return;
+    hasProcessedIncoming.current = true;
+    window.history.replaceState({}, document.title);
     if (currentProject?.id === incomingProjectId) { setIsRestoring(false); return; }
     const loadIncomingProject = async () => {
       try {
