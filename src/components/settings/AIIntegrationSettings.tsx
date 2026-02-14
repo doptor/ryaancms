@@ -24,6 +24,16 @@ import {
 
 type AIStatus = "active" | "inactive" | "error";
 type AIProvider = "openai" | "gemini" | "anthropic" | "mistral" | "cohere" | "meta" | "deepseek" | "groq" | "perplexity" | "xai" | "custom";
+type AITaskType = "app_builder" | "code_gen" | "speech_to_text" | "branding" | "content" | "general";
+
+const TASK_LABELS: Record<AITaskType, { label: string; description: string }> = {
+  app_builder: { label: "App Builder", description: "AI Builder prompt → config generation" },
+  code_gen: { label: "Code Generation", description: "Page code & component generation" },
+  speech_to_text: { label: "Speech-to-Text", description: "Voice input transcription" },
+  branding: { label: "Branding", description: "Brand name & logo generation" },
+  content: { label: "Content Writing", description: "Text, SEO, copywriting" },
+  general: { label: "General / Fallback", description: "Default for all other AI tasks" },
+};
 
 interface AIIntegration {
   id: string;
@@ -36,6 +46,7 @@ interface AIIntegration {
   usageCount: number;
   lastUsed: string;
   createdAt: string;
+  useFor?: AITaskType[];
 }
 
 interface ProviderConfig {
@@ -266,12 +277,12 @@ const PROVIDERS: ProviderConfig[] = [
 ];
 
 const seedData: AIIntegration[] = [
-  { id: "1", name: "Content Writer", provider: "openai", model: "gpt-4o", apiEndpoint: "https://api.openai.com/v1", apiKey: "sk-...abc1", status: "active", usageCount: 12480, lastUsed: "2026-02-13", createdAt: "2025-11-01" },
-  { id: "2", name: "Schema Generator", provider: "gemini", model: "gemini-2.5-pro", apiEndpoint: "https://generativelanguage.googleapis.com", apiKey: "AIza...xyz2", status: "active", usageCount: 3210, lastUsed: "2026-02-12", createdAt: "2025-12-15" },
-  { id: "3", name: "SEO Optimizer", provider: "anthropic", model: "claude-3-opus-20240229", apiEndpoint: "https://api.anthropic.com/v1", apiKey: "sk-ant...def3", status: "inactive", usageCount: 870, lastUsed: "2026-01-28", createdAt: "2026-01-05" },
-  { id: "4", name: "Image Tagger", provider: "gemini", model: "gemini-2.5-flash", apiEndpoint: "https://generativelanguage.googleapis.com", apiKey: "AIza...ghi4", status: "active", usageCount: 5640, lastUsed: "2026-02-13", createdAt: "2025-10-20" },
-  { id: "5", name: "Layout AI", provider: "openai", model: "gpt-4o-mini", apiEndpoint: "https://api.openai.com/v1", apiKey: "sk-...jkl5", status: "error", usageCount: 142, lastUsed: "2026-02-10", createdAt: "2026-02-01" },
-  { id: "6", name: "Workflow Bot", provider: "mistral", model: "mistral-large-latest", apiEndpoint: "https://api.mistral.ai/v1", apiKey: "mist-...mno6", status: "active", usageCount: 980, lastUsed: "2026-02-11", createdAt: "2026-01-18" },
+  { id: "1", name: "Content Writer", provider: "openai", model: "gpt-4o", apiEndpoint: "https://api.openai.com/v1", apiKey: "sk-...abc1", status: "active", usageCount: 12480, lastUsed: "2026-02-13", createdAt: "2025-11-01", useFor: ["content", "general"] },
+  { id: "2", name: "Schema Generator", provider: "gemini", model: "gemini-2.5-pro", apiEndpoint: "https://generativelanguage.googleapis.com", apiKey: "AIza...xyz2", status: "active", usageCount: 3210, lastUsed: "2026-02-12", createdAt: "2025-12-15", useFor: ["app_builder"] },
+  { id: "3", name: "SEO Optimizer", provider: "anthropic", model: "claude-3-opus-20240229", apiEndpoint: "https://api.anthropic.com/v1", apiKey: "sk-ant...def3", status: "inactive", usageCount: 870, lastUsed: "2026-01-28", createdAt: "2026-01-05", useFor: ["content"] },
+  { id: "4", name: "Image Tagger", provider: "gemini", model: "gemini-2.5-flash", apiEndpoint: "https://generativelanguage.googleapis.com", apiKey: "AIza...ghi4", status: "active", usageCount: 5640, lastUsed: "2026-02-13", createdAt: "2025-10-20", useFor: ["speech_to_text", "general"] },
+  { id: "5", name: "Layout AI", provider: "openai", model: "gpt-4o-mini", apiEndpoint: "https://api.openai.com/v1", apiKey: "sk-...jkl5", status: "error", usageCount: 142, lastUsed: "2026-02-10", createdAt: "2026-02-01", useFor: ["code_gen"] },
+  { id: "6", name: "Workflow Bot", provider: "mistral", model: "mistral-large-latest", apiEndpoint: "https://api.mistral.ai/v1", apiKey: "mist-...mno6", status: "active", usageCount: 980, lastUsed: "2026-02-11", createdAt: "2026-01-18", useFor: ["general"] },
 ];
 
 const PAGE_SIZE = 5;
@@ -286,7 +297,7 @@ const getProviderConfig = (provider: AIProvider): ProviderConfig =>
   PROVIDERS.find((p) => p.value === provider) || PROVIDERS[PROVIDERS.length - 1];
 
 const emptyForm = (): Omit<AIIntegration, "id" | "usageCount" | "lastUsed" | "createdAt"> => ({
-  name: "", provider: "openai", model: "", apiEndpoint: PROVIDERS[0].defaultEndpoint, apiKey: "", status: "active",
+  name: "", provider: "openai", model: "", apiEndpoint: PROVIDERS[0].defaultEndpoint, apiKey: "", status: "active", useFor: ["general"],
 });
 
 function CopyButton({ text }: { text: string }) {
@@ -427,7 +438,7 @@ export default function AIIntegrationSettings() {
   const paged = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const openCreate = () => { setForm(emptyForm()); setDialogMode("create"); setEditId(null); setConnectionResult(null); setDialogOpen(true); };
-  const openEdit = (item: AIIntegration) => { setForm({ name: item.name, provider: item.provider, model: item.model, apiEndpoint: item.apiEndpoint, apiKey: item.apiKey, status: item.status }); setDialogMode("edit"); setEditId(item.id); setConnectionResult(null); setDialogOpen(true); };
+  const openEdit = (item: AIIntegration) => { setForm({ name: item.name, provider: item.provider, model: item.model, apiEndpoint: item.apiEndpoint, apiKey: item.apiKey, status: item.status, useFor: item.useFor || ["general"] }); setDialogMode("edit"); setEditId(item.id); setConnectionResult(null); setDialogOpen(true); };
 
   const handleProviderChange = (provider: AIProvider) => {
     const config = getProviderConfig(provider);
@@ -600,6 +611,7 @@ export default function AIIntegrationSettings() {
               <TableHead>Name</TableHead>
               <TableHead>Provider</TableHead>
               <TableHead>Model</TableHead>
+              <TableHead>Use For</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Usage</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -607,7 +619,7 @@ export default function AIIntegrationSettings() {
           </TableHeader>
           <TableBody>
             {paged.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No integrations found.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No integrations found.</TableCell></TableRow>
             ) : paged.map((item) => {
               const sc = statusConfig[item.status];
               const StatusIcon = sc.icon;
@@ -616,6 +628,14 @@ export default function AIIntegrationSettings() {
                   <TableCell className="font-medium text-foreground">{item.name}</TableCell>
                   <TableCell><Badge variant="outline" className="capitalize">{PROVIDERS.find(p => p.value === item.provider)?.label || item.provider}</Badge></TableCell>
                   <TableCell className="text-muted-foreground text-xs font-mono">{item.model}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {(item.useFor || []).map((t) => (
+                        <Badge key={t} variant="outline" className="text-[10px]">{TASK_LABELS[t]?.label || t}</Badge>
+                      ))}
+                      {(!item.useFor || item.useFor.length === 0) && <span className="text-muted-foreground text-xs">—</span>}
+                    </div>
+                  </TableCell>
                   <TableCell><Badge variant={sc.variant} className="gap-1"><StatusIcon className="w-3 h-3" /> {sc.label}</Badge></TableCell>
                   <TableCell className="text-right tabular-nums text-muted-foreground">{item.usageCount.toLocaleString()}</TableCell>
                   <TableCell className="text-right">
@@ -727,6 +747,39 @@ export default function AIIntegrationSettings() {
                 value={form.apiKey}
                 onChange={(e) => setForm({ ...form, apiKey: e.target.value })}
               />
+            </div>
+
+            {/* Use For (Task Assignment) */}
+            <div className="grid gap-2">
+              <Label>Use For (assign tasks to this API)</Label>
+              <div className="flex flex-wrap gap-2">
+                {(Object.entries(TASK_LABELS) as [AITaskType, { label: string; description: string }][]).map(([key, { label, description }]) => {
+                  const selected = form.useFor?.includes(key) || false;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => {
+                        setForm((prev) => {
+                          const current = prev.useFor || [];
+                          const next = selected ? current.filter((t) => t !== key) : [...current, key];
+                          return { ...prev, useFor: next };
+                        });
+                      }}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                        selected
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-muted text-muted-foreground border-border hover:border-primary/50"
+                      }`}
+                      title={description}
+                    >
+                      {selected && <Check className="w-3 h-3" />}
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-muted-foreground">Select which tasks should use this API. The system picks the best matching integration per task.</p>
             </div>
 
             {/* Instructions accordion */}

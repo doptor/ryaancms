@@ -907,7 +907,7 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    // Fetch user's own API keys from site_settings for fallback
+    // Fetch user's own API keys from site_settings for fallback (task: app_builder)
     let userApiConfig: UserApiConfig | null = null;
     try {
       const authHeader = req.headers.get("authorization");
@@ -916,29 +916,17 @@ serve(async (req) => {
         const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
         const settingsRes = await fetch(
           `${SUPABASE_URL}/rest/v1/site_settings?key=eq.ai_integrations&select=value`,
-          {
-            headers: {
-              Authorization: authHeader,
-              apikey: SUPABASE_ANON_KEY,
-              "Content-Type": "application/json",
-            },
-          }
+          { headers: { Authorization: authHeader, apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" } }
         );
         if (settingsRes.ok) {
           const rows = await settingsRes.json();
-          if (rows?.[0]?.value?.items) {
-            const activeIntegration = rows[0].value.items.find(
-              (i: any) => i.status === "active" && i.apiKey && i.apiKey.length > 5
-            );
-            if (activeIntegration) {
-              userApiConfig = {
-                provider: activeIntegration.provider,
-                endpoint: activeIntegration.apiEndpoint,
-                apiKey: activeIntegration.apiKey,
-                model: activeIntegration.model,
-              };
-              console.log(`User API fallback available: ${activeIntegration.provider}/${activeIntegration.model}`);
-            }
+          const items = rows?.[0]?.value?.items?.filter((i: any) => i.status === "active" && i.apiKey?.length > 5) || [];
+          const byTask = items.find((i: any) => i.useFor?.includes("app_builder"));
+          const general = items.find((i: any) => i.useFor?.includes("general"));
+          const pick = byTask || general || items[0];
+          if (pick) {
+            userApiConfig = { provider: pick.provider, endpoint: pick.apiEndpoint, apiKey: pick.apiKey, model: pick.model };
+            console.log(`User API fallback available: ${pick.provider}/${pick.model} (task: app_builder)`);
           }
         }
       }
