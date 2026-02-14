@@ -21,6 +21,7 @@ import BuildAnalyticsPage from "./pages/BuildAnalyticsPage";
 import ApprovalsPage from "./pages/ApprovalsPage";
 import PreviewPage from "./pages/PreviewPage";
 import PluginApprovalsPage from "./pages/PluginApprovalsPage";
+import FinanceDashboardPage from "./pages/FinanceDashboardPage";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="/dashboard/analytics" element={<ProtectedRoute><BuildAnalyticsPage /></ProtectedRoute>} />
               <Route path="/dashboard/approvals" element={<ProtectedRoute><ApprovalsPage /></ProtectedRoute>} />
               <Route path="/dashboard/plugin-approvals" element={<ProtectedRoute><PluginApprovalsPage /></ProtectedRoute>} />
+              <Route path="/dashboard/finance" element={<ProtectedRoute><FinanceDashboardPage /></ProtectedRoute>} />
               <Route path="/preview" element={<PreviewPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
