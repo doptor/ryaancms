@@ -67,7 +67,7 @@ export default function MyInstalledTab() {
   const openInBuilder = (p: InstalledPlugin) => {
     const typeLabel = p.plugin.category === "template" ? "template" : p.plugin.category === "ai-tool" ? "AI tool" : p.plugin.category === "application" ? "application" : "plugin";
     const prompt = `Customize the "${p.plugin.name}" ${typeLabel} — ${p.plugin.description}`;
-    navigate(`/dashboard/ai-builder?type=${encodeURIComponent(typeLabel)}&slug=${p.plugin.slug}&prompt=${encodeURIComponent(prompt)}`);
+    navigate(`/dashboard/ai?type=${encodeURIComponent(typeLabel)}&slug=${p.plugin.slug}&prompt=${encodeURIComponent(prompt)}`);
   };
 
   const categoryIcon = (cat: string) => {
