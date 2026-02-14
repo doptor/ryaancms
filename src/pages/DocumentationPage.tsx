@@ -56,6 +56,10 @@ const docMenu: DocSection[] = [
       { id: "approval-workflows", title: "Approval Workflows" },
       { id: "build-analytics", title: "Build Analytics" },
       { id: "live-preview", title: "Live Sandboxed Preview" },
+      { id: "theme-selector", title: "Theme Selector" },
+      { id: "build-summary", title: "Build Summary Panel" },
+      { id: "auto-fix-loop", title: "Auto-Fix Loop" },
+      { id: "plugin-generator", title: "Plugin Generator Wizard" },
     ],
   },
   {
@@ -958,6 +962,136 @@ Built with React, TypeScript, and Tailwind CSS for a modern, responsive experien
 ### Data Safety
 
 Every change is tracked, versioned, and reversible. Your data is always safe.`,
+  },
+  "theme-selector": {
+    title: "Theme Selector",
+    content: `### Overview
+
+The Theme Selector lets you choose a visual theme preset **before** generating your app. It appears in the AI Builder top bar.
+
+### Available Presets
+
+| Preset | Primary Color | Style |
+|--------|--------------|-------|
+| SaaS Clean | Indigo #6366f1 | Modern SaaS with clean whites |
+| Corporate Blue | Blue #2563eb | Professional corporate |
+| Startup Gradient | Purple #8b5cf6 | Bold vibrant purple-pink |
+| Dark Neon | Green #10b981 | Dark theme with neon accent |
+| Minimal Mono | Black #18181b | Minimalist monochrome |
+| Warm Sunset | Orange #ea580c | Warm tones with amber |
+
+### How It Works
+
+1. Click the **Theme** dropdown in the AI Builder top bar
+2. Select a preset — see the color swatch and description
+3. Build your app — the selected theme is applied to the generated config
+4. Theme tokens (CSS variables) are generated automatically
+5. View the applied theme details in the **Summary** tab`,
+  },
+  "build-summary": {
+    title: "Build Summary Panel",
+    content: `### Overview
+
+The **Summary** tab provides a comprehensive view of everything generated after a build.
+
+### Sections
+
+| Section | Description |
+|---------|-------------|
+| **RBAC System** | Roles, permissions, and RLS policies generated |
+| **Test Suite** | Coverage %, scenario counts by category |
+| **Documentation** | Checklist of generated docs with download button |
+| **Theme & Branding** | Applied theme preset, colors, font, radius, mode |
+
+### Download Documentation
+
+Click **Download Docs** in the Documentation section to export a ZIP containing:
+- \`README.md\` — Project overview and setup instructions
+- \`INSTALL.md\` — Step-by-step installation guide
+- \`API.md\` — REST API endpoint documentation
+- \`DB_SCHEMA.md\` — Database schema reference`,
+  },
+  "auto-fix-loop": {
+    title: "Auto-Fix Loop",
+    content: `### Overview
+
+The **Auto-Fix** tab shows the status of the automated build error detection and correction system.
+
+### Features
+
+- **Risk Score**: 0-100 score indicating overall build risk level
+- **Errors Detected**: List of bugs found during the build with severity levels
+- **Fixes Applied**: Automatic corrections made by the Debugger agent
+- **Error Fix Memory**: Learned patterns from past builds for instant fixes
+- **Retry Build**: One-click button to rebuild with all fixes applied
+
+### Loop Flow
+
+\`\`\`
+BUILD → DETECT ERRORS → APPLY FIXES → RETRY → SUCCESS
+\`\`\`
+
+### Risk Score Levels
+
+| Score | Level | Action |
+|-------|-------|--------|
+| 0-20 | Low | Production ready |
+| 21-50 | Medium | Review recommended |
+| 51-100 | High | Fixes required |
+
+### Error Fix Memory
+
+When a build error is fixed, the system remembers:
+- The error pattern/signature
+- The fix that was applied
+
+Future builds use this memory to fix known errors instantly, making each build faster and more reliable.`,
+  },
+  "plugin-generator": {
+    title: "Plugin Generator Wizard",
+    content: `### Overview
+
+The **Plugin** tab provides a step-by-step wizard to define and generate complete plugin scaffolds.
+
+### Wizard Steps
+
+| Step | Description |
+|------|-------------|
+| 1. Plugin Info | Name, slug, and description |
+| 2. Entities | Define database tables with fields and types |
+| 3. Permissions | Custom permission keys (CRUD auto-generated) |
+| 4. Review | Summary and generate button |
+
+### What Gets Generated
+
+For each entity in the plugin:
+- **Database table** with RLS policies
+- **5 REST API endpoints** (CRUD + List)
+- **Dashboard page** with stats and data table
+- **Permission keys** for role-based access
+
+### Entity Field Types
+
+| Type | Description |
+|------|-------------|
+| string | Short text |
+| text | Long text / textarea |
+| number | Integer or decimal |
+| boolean | True/false toggle |
+| date | Date picker |
+| email | Email address |
+| url | URL / link |
+| enum | Predefined options |
+| relation | Foreign key link |
+| json | Structured data |
+| media | File / image upload |
+
+### Plugin Hooks
+
+Every generated plugin includes lifecycle hooks:
+- \`onInstall\` — Runs when plugin is installed
+- \`onUninstall\` — Cleanup when removed
+- \`onActivate\` — When plugin is enabled`,
   },
 };
 
