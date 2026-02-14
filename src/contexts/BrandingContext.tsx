@@ -9,6 +9,7 @@ interface BrandingValues {
   bodyFont: string;
   darkMode: boolean;
   customCss: string;
+  siteName: string;
 }
 
 const DEFAULT_BRANDING: BrandingValues = {
@@ -18,6 +19,7 @@ const DEFAULT_BRANDING: BrandingValues = {
   bodyFont: "Inter",
   darkMode: false,
   customCss: "",
+  siteName: "RyaanCMS",
 };
 
 const FONT_OPTIONS = [
@@ -149,7 +151,10 @@ function applyBranding(branding: BrandingValues) {
     body { font-family: ${fontBody}; }
     h1, h2, h3, h4, h5, h6 { font-family: ${fontHeading} !important; }
     ${branding.customCss || ""}
-  `;
+   `;
+
+  // Update document title with site name
+  document.title = `${branding.siteName} — AI-Native CMS Platform`;
 
   // Dark mode + cache preference for instant load
   if (branding.darkMode) {
@@ -199,14 +204,23 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      const { data } = await supabase
-        .from("site_settings")
-        .select("value")
-        .eq("user_id", user.id)
-        .eq("key", "appearance")
-        .maybeSingle();
+      const [{ data: appearanceData }, { data: generalData }] = await Promise.all([
+        supabase
+          .from("site_settings")
+          .select("value")
+          .eq("user_id", user.id)
+          .eq("key", "appearance")
+          .maybeSingle(),
+        supabase
+          .from("site_settings")
+          .select("value")
+          .eq("user_id", user.id)
+          .eq("key", "general")
+          .maybeSingle(),
+      ]);
 
-      const values = data?.value as Record<string, any> | null;
+      const values = appearanceData?.value as Record<string, any> | null;
+      const generalValues = generalData?.value as Record<string, any> | null;
       const merged: BrandingValues = {
         primaryColor: values?.primaryColor || DEFAULT_BRANDING.primaryColor,
         accentColor: values?.accentColor || DEFAULT_BRANDING.accentColor,
@@ -214,6 +228,7 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
         bodyFont: values?.bodyFont || DEFAULT_BRANDING.bodyFont,
         darkMode: values?.darkMode ?? DEFAULT_BRANDING.darkMode,
         customCss: values?.customCss || DEFAULT_BRANDING.customCss,
+        siteName: generalValues?.siteName || DEFAULT_BRANDING.siteName,
       };
 
       setBranding(merged);
@@ -235,15 +250,23 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
     const handler = () => {
       // Re-fetch after save
       if (!user) return;
-      supabase
-        .from("site_settings")
-        .select("value")
-        .eq("user_id", user.id)
-        .eq("key", "appearance")
-        .maybeSingle()
-        .then(({ data }) => {
-          if (data?.value) {
-            const v = data.value as Record<string, any>;
+      Promise.all([
+        supabase
+          .from("site_settings")
+          .select("value")
+          .eq("user_id", user.id)
+          .eq("key", "appearance")
+          .maybeSingle(),
+        supabase
+          .from("site_settings")
+          .select("value")
+          .eq("user_id", user.id)
+          .eq("key", "general")
+          .maybeSingle(),
+      ]).then(([{ data: appearanceData }, { data: generalData }]) => {
+          if (appearanceData?.value || generalData?.value) {
+            const v = (appearanceData?.value || {}) as Record<string, any>;
+            const g = (generalData?.value || {}) as Record<string, any>;
             const merged: BrandingValues = {
               primaryColor: v.primaryColor || DEFAULT_BRANDING.primaryColor,
               accentColor: v.accentColor || DEFAULT_BRANDING.accentColor,
@@ -251,6 +274,7 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
               bodyFont: v.bodyFont || DEFAULT_BRANDING.bodyFont,
               darkMode: v.darkMode ?? DEFAULT_BRANDING.darkMode,
               customCss: v.customCss || DEFAULT_BRANDING.customCss,
+              siteName: g.siteName || DEFAULT_BRANDING.siteName,
             };
             setBranding(merged);
           }

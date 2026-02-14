@@ -4,6 +4,7 @@ import { Zap, ChevronRight, ChevronDown, Menu, X, ArrowLeft, Search } from "luci
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { useBranding } from "@/contexts/BrandingContext";
 
 interface DocSection {
   id: string;
@@ -1096,6 +1097,8 @@ Every generated plugin includes lifecycle hooks:
 };
 
 export default function DocumentationPage() {
+  const { branding } = useBranding();
+  const siteName = branding.siteName;
   const [activeId, setActiveId] = useState("introduction");
   const [expandedSections, setExpandedSections] = useState<string[]>(["getting-started"]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -1295,7 +1298,7 @@ export default function DocumentationPage() {
             <div className="w-7 h-7 rounded-lg bg-gradient-primary flex items-center justify-center">
               <Zap className="w-3.5 h-3.5 text-primary-foreground" />
             </div>
-            <span className="text-sm font-bold text-foreground hidden sm:inline">RyaanCMS</span>
+            <span className="text-sm font-bold text-foreground hidden sm:inline">{siteName}</span>
           </Link>
           <span className="text-muted-foreground text-sm">/</span>
           <span className="text-sm font-medium text-foreground">Documentation</span>
