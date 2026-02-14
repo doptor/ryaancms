@@ -1,61 +1,46 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Send, Plus, Pencil, Trash2, Clock, Paperclip, Palette, Layout, Globe, ShoppingCart, FileText, X, Image } from "lucide-react";
+import {
+  Send, Plus, Clock, Search, ChevronLeft, ChevronRight,
+  Layout, Globe, ShoppingCart, FileText, Sparkles, FolderOpen,
+  MoreVertical, Pencil, Trash2,
+} from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+const PROJECTS_PER_PAGE = 20;
 
 const preDesignTemplates = [
-  {
-    label: "Portfolio Website",
-    icon: Layout,
-    prompt: "Create a modern portfolio website with hero section, about me, projects gallery, skills section, and contact form.",
-    colors: ["#6366f1", "#8b5cf6", "#a78bfa"],
-  },
-  {
-    label: "E-Commerce Store",
-    icon: ShoppingCart,
-    prompt: "Build an e-commerce store with product listing, cart, checkout flow, and order history.",
-    colors: ["#f59e0b", "#f97316", "#ef4444"],
-  },
-  {
-    label: "Blog / Magazine",
-    icon: FileText,
-    prompt: "Create a blog platform with article listing, categories, search, and rich text editor for posts.",
-    colors: ["#10b981", "#14b8a6", "#06b6d4"],
-  },
-  {
-    label: "Landing Page",
-    icon: Globe,
-    prompt: "Design a high-converting landing page with hero, features, testimonials, pricing, and CTA sections.",
-    colors: ["#ec4899", "#f43f5e", "#e11d48"],
-  },
-  {
-    label: "Dashboard App",
-    icon: Layout,
-    prompt: "Build an analytics dashboard with charts, KPI cards, data tables, and filter controls.",
-    colors: ["#3b82f6", "#2563eb", "#1d4ed8"],
-  },
+  { label: "Portfolio Website", icon: Layout, prompt: "Create a modern portfolio website with hero section, about me, projects gallery, skills section, and contact form." },
+  { label: "E-Commerce Store", icon: ShoppingCart, prompt: "Build an e-commerce store with product listing, cart, checkout flow, and order history." },
+  { label: "Blog / Magazine", icon: FileText, prompt: "Create a blog platform with article listing, categories, search, and rich text editor for posts." },
+  { label: "Landing Page", icon: Globe, prompt: "Design a high-converting landing page with hero, features, testimonials, pricing, and CTA sections." },
+  { label: "Dashboard App", icon: Layout, prompt: "Build an analytics dashboard with charts, KPI cards, data tables, and filter controls." },
 ];
 
 export default function DashboardOverview() {
   const { user } = useAuth();
-  const [prompt, setPrompt] = useState("");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editPrompt, setEditPrompt] = useState("");
-  const [attachments, setAttachments] = useState<File[]>([]);
-  const [plusOpen, setPlusOpen] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [prompt, setPrompt] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
 
-  // Fetch display name from profiles
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
     queryFn: async () => {
@@ -72,20 +57,28 @@ export default function DashboardOverview() {
 
   const displayName = profile?.display_name || user?.user_metadata?.display_name || user?.email?.split("@")[0] || "User";
 
-  const { data: projects = [] } = useQuery({
+  const { data: allProjects = [] } = useQuery({
     queryKey: ["projects"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("projects")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("updated_at", { ascending: false });
       if (error) throw error;
       return data;
     },
     enabled: !!user,
   });
 
-  const navigate = useNavigate();
+  // Filter + paginate
+  const filtered = allProjects.filter((p) =>
+    (p.title || p.prompt).toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PROJECTS_PER_PAGE));
+  const paginated = filtered.slice(
+    (currentPage - 1) * PROJECTS_PER_PAGE,
+    currentPage * PROJECTS_PER_PAGE
+  );
 
   const createProject = useMutation({
     mutationFn: async (promptText: string) => {
@@ -100,25 +93,20 @@ export default function DashboardOverview() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       setPrompt("");
-      setAttachments([]);
-      // Navigate to AI Builder with the prompt
       navigate("/dashboard/ai", { state: { prompt: data.prompt, projectId: data.id } });
     },
     onError: () => toast({ title: "Failed to save", variant: "destructive" }),
   });
 
   const updateProject = useMutation({
-    mutationFn: async ({ id, prompt: p }: { id: string; prompt: string }) => {
-      const { error } = await supabase
-        .from("projects")
-        .update({ prompt: p, title: p.slice(0, 60) })
-        .eq("id", id);
+    mutationFn: async ({ id, title }: { id: string; title: string }) => {
+      const { error } = await supabase.from("projects").update({ title }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       setEditingId(null);
-      toast({ title: "Project updated!" });
+      toast({ title: "Project renamed!" });
     },
   });
 
@@ -138,205 +126,196 @@ export default function DashboardOverview() {
     createProject.mutate(prompt.trim());
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      setAttachments((prev) => [...prev, ...Array.from(files)]);
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "generated": return "bg-primary/10 text-primary";
+      case "deployed": return "bg-chart-2/10 text-chart-2";
+      default: return "bg-muted text-muted-foreground";
     }
-    setPlusOpen(false);
   };
 
-  const removeAttachment = (index: number) => {
-    setAttachments((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleTemplateSelect = (templatePrompt: string) => {
-    setPrompt(templatePrompt);
-    setPlusOpen(false);
+  const formatDate = (date: string) => {
+    const d = new Date(date);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffH = Math.floor(diffMs / 3600000);
+    if (diffH < 1) return "just now";
+    if (diffH < 24) return `${diffH}h ago`;
+    const diffD = Math.floor(diffH / 24);
+    if (diffD < 7) return `${diffD}d ago`;
+    return d.toLocaleDateString();
   };
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col items-center justify-center min-h-screen relative overflow-hidden">
+      <div className="flex flex-col min-h-screen relative overflow-hidden">
         {/* Gradient background */}
         <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-primary/20 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-primary/30 via-primary/10 to-transparent pointer-events-none" />
 
-        {/* Main content */}
-        <div className="relative z-10 w-full max-w-2xl px-4 flex flex-col items-center gap-6">
-          {/* Greeting */}
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground text-center">
-            Ready to build, {displayName}?
-          </h1>
+        <div className="relative z-10 w-full max-w-5xl mx-auto px-4 py-8 flex flex-col gap-8">
+          {/* Greeting + Prompt */}
+          <div className="flex flex-col items-center gap-6 pt-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground text-center">
+              Ready to build, {displayName}?
+            </h1>
 
-          {/* Prompt input */}
-          <div className="w-full rounded-2xl border border-border bg-card shadow-lg">
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Describe your project..."
-              rows={2}
-              className="w-full bg-transparent px-4 pt-4 pb-2 text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSubmit();
-                }
-              }}
-            />
-
-            {/* Attachments preview */}
-            {attachments.length > 0 && (
-              <div className="flex flex-wrap gap-2 px-4 pb-2">
-                {attachments.map((file, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-1.5 rounded-lg bg-muted px-2.5 py-1 text-xs text-muted-foreground"
-                  >
-                    {file.type.startsWith("image/") ? (
-                      <Image className="w-3 h-3 shrink-0" />
-                    ) : (
-                      <Paperclip className="w-3 h-3 shrink-0" />
-                    )}
-                    <span className="max-w-[120px] truncate">{file.name}</span>
-                    <button onClick={() => removeAttachment(i)} className="hover:text-foreground">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="flex items-center justify-between px-4 pb-3">
-              {/* + Button with Popover */}
-              <Popover open={plusOpen} onOpenChange={setPlusOpen}>
-                <PopoverTrigger asChild>
-                  <button className="w-8 h-8 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors">
-                    <Plus className="w-4 h-4" />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent align="start" className="w-72 p-2" sideOffset={8}>
-                  {/* Attachment option */}
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-foreground hover:bg-muted transition-colors"
-                  >
-                    <Paperclip className="w-4 h-4 text-muted-foreground" />
-                    <div className="text-left">
-                      <div className="font-medium">Attach File</div>
-                      <div className="text-xs text-muted-foreground">Upload images or documents</div>
-                    </div>
-                  </button>
-
-                  <div className="my-1 border-t border-border" />
-
-                  {/* Pre-designed templates */}
-                  <div className="px-3 py-1.5">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      Templates
-                    </span>
-                  </div>
+            <div className="w-full max-w-2xl rounded-2xl border border-border bg-card shadow-lg">
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="Describe your project..."
+                rows={2}
+                className="w-full bg-transparent px-4 pt-4 pb-2 text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); }
+                }}
+              />
+              <div className="flex items-center justify-between px-4 pb-3">
+                {/* Templates */}
+                <div className="flex items-center gap-1.5 overflow-x-auto">
                   {preDesignTemplates.map((tpl, i) => (
                     <button
                       key={i}
-                      onClick={() => handleTemplateSelect(tpl.prompt)}
-                      className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-foreground hover:bg-muted transition-colors"
+                      onClick={() => setPrompt(tpl.prompt)}
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors whitespace-nowrap shrink-0"
                     >
-                      <div className="flex items-center gap-0.5 shrink-0">
-                        {tpl.colors.map((c, ci) => (
-                          <div
-                            key={ci}
-                            className="w-2 h-5 rounded-sm"
-                            style={{ backgroundColor: c }}
-                          />
-                        ))}
-                      </div>
-                      <div className="text-left">
-                        <div className="font-medium">{tpl.label}</div>
-                      </div>
+                      <tpl.icon className="w-3 h-3" />
+                      {tpl.label}
                     </button>
                   ))}
-                </PopoverContent>
-              </Popover>
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                className="hidden"
-                multiple
-                accept="image/*,.pdf,.doc,.docx,.txt"
-                onChange={handleFileSelect}
-              />
-
-              <button
-                onClick={handleSubmit}
-                disabled={!prompt.trim() || createProject.isPending}
-                className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground disabled:opacity-40 hover:opacity-90 transition-opacity"
-              >
-                <Send className="w-4 h-4" />
-              </button>
+                </div>
+                <button
+                  onClick={handleSubmit}
+                  disabled={!prompt.trim() || createProject.isPending}
+                  className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground disabled:opacity-40 hover:opacity-90 transition-opacity shrink-0 ml-2"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Saved projects */}
-          {projects.length > 0 && (
-            <div className="w-full mt-4 space-y-2">
-              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">
-                Saved Projects
-              </h2>
-              {projects.map((p) => (
-                <div
-                  key={p.id}
-                  onClick={() => {
-                    if (editingId !== p.id) {
-                      navigate("/dashboard/ai", { state: { prompt: p.prompt, projectId: p.id } });
-                    }
-                  }}
-                  className="rounded-xl border border-border bg-card px-4 py-3 flex items-start gap-3 group hover:border-primary/30 transition-colors cursor-pointer"
-                >
-                  <Clock className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    {editingId === p.id ? (
-                      <div className="flex gap-2">
-                        <input
-                          value={editPrompt}
-                          onChange={(e) => setEditPrompt(e.target.value)}
-                          className="flex-1 bg-transparent border border-border rounded-lg px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+          {/* Projects Section */}
+          {allProjects.length > 0 && (
+            <div className="space-y-4">
+              {/* Header + Search */}
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <FolderOpen className="w-4 h-4 text-primary" />
+                  Projects ({filtered.length})
+                </h2>
+                <div className="relative w-64">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                    placeholder="Search projects..."
+                    className="h-8 text-xs pl-8"
+                  />
+                </div>
+              </div>
+
+              {/* Card Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                {paginated.map((p) => (
+                  <Card
+                    key={p.id}
+                    className="group cursor-pointer hover:border-primary/30 hover:shadow-md transition-all"
+                    onClick={() => {
+                      if (editingId !== p.id) {
+                        navigate("/dashboard/ai", { state: { prompt: p.prompt, projectId: p.id } });
+                      }
+                    }}
+                  >
+                    <CardContent className="p-4 space-y-3">
+                      {/* Top row: icon + menu */}
+                      <div className="flex items-start justify-between">
+                        <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                          <Sparkles className="w-4 h-4 text-primary" />
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <MoreVertical className="w-3.5 h-3.5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                            <DropdownMenuItem onClick={() => { setEditingId(p.id); setEditTitle(p.title || ""); }}>
+                              <Pencil className="w-3.5 h-3.5 mr-2" /> Rename
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive" onClick={() => deleteProject.mutate(p.id)}>
+                              <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+
+                      {/* Title */}
+                      {editingId === p.id ? (
+                        <Input
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
                           onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              updateProject.mutate({ id: p.id, prompt: editPrompt });
-                            }
+                            e.stopPropagation();
+                            if (e.key === "Enter") updateProject.mutate({ id: p.id, title: editTitle });
                             if (e.key === "Escape") setEditingId(null);
                           }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="h-7 text-xs"
                           autoFocus
                         />
+                      ) : (
+                        <h3 className="text-sm font-medium text-foreground truncate">
+                          {p.title || "Untitled"}
+                        </h3>
+                      )}
+
+                      {/* Prompt preview */}
+                      <p className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
+                        {p.prompt || "No description"}
+                      </p>
+
+                      {/* Footer: status + date */}
+                      <div className="flex items-center justify-between pt-1">
+                        <Badge variant="secondary" className={`text-[9px] ${getStatusColor(p.status)}`}>
+                          {p.status}
+                        </Badge>
+                        <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                          <Clock className="w-2.5 h-2.5" />
+                          {formatDate(p.updated_at)}
+                        </span>
                       </div>
-                    ) : (
-                      <p className="text-sm text-foreground truncate">{p.prompt}</p>
-                    )}
-                    <span className="text-[10px] text-muted-foreground">
-                      {new Date(p.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                    <button
-                      onClick={() => {
-                        setEditingId(p.id);
-                        setEditPrompt(p.prompt);
-                      }}
-                      className="p-1 text-muted-foreground hover:text-foreground"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => deleteProject.mutate(p.id)}
-                      className="p-1 text-muted-foreground hover:text-destructive"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage((p) => p - 1)}
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5 mr-1" /> Previous
+                  </Button>
+                  <span className="text-xs text-muted-foreground px-3">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage((p) => p + 1)}
+                  >
+                    Next <ChevronRight className="w-3.5 h-3.5 ml-1" />
+                  </Button>
                 </div>
-              ))}
+              )}
             </div>
           )}
         </div>

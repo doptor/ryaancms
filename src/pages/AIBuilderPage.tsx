@@ -56,6 +56,7 @@ import { ProjectBranchingPanel } from "@/components/ai-builder/ProjectBranchingP
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getThemePreset } from "@/lib/engine/theme-generator";
+import { analyzePrompt } from "@/lib/engine/prompt-analyzer";
 
 type Message = { role: "user" | "ai"; content: string };
 
@@ -196,12 +197,19 @@ export default function AIBuilderPage() {
     if (!text.trim() || isBuilding) return;
 
     setInput("");
-    setMessages((prev) => [...prev, { role: "user", content: text }]);
+    const newMessages: Message[] = [...messages, { role: "user", content: text }];
+    setMessages(newMessages);
     setIsBuilding(true);
     setPipelineState(null);
 
-    // Initialize progress
-    const steps: ProgressStep[] = ENGINE_LABELS.map((label) => ({ label, status: "pending" }));
+    // Smart step detection
+    const analysis = analyzePrompt(text);
+    const relevantSteps = analysis.stepsNeeded;
+    const steps: ProgressStep[] = ENGINE_LABELS
+      .map((label, i) => ({
+        label,
+        status: relevantSteps.includes(i) ? "pending" as const : "done" as const,
+      }));
     setProgress(steps);
 
     // Listen to pipeline events
@@ -337,7 +345,30 @@ export default function AIBuilderPage() {
           "Your app is ready! Check the **Preview** tab to see it.",
         ].filter(Boolean).join("\n");
 
-        setMessages((prev) => [...prev, { role: "ai", content: summary }]);
+        setMessages((prev) => {
+          const updated = [...prev, { role: "ai" as const, content: summary }];
+          // Save conversation to project memory
+          if (currentProject?.id && user) {
+            supabase.from("project_memory").upsert({
+              user_id: user.id,
+              project_id: currentProject.id,
+              requirements: result.requirements || [],
+              modules: config.modules || [],
+              db_schema: config.collections || [],
+              api_list: result.apiEndpoints || [],
+              ui_components: config.pages.flatMap((p) => p.components.map((c) => c.type)) || [],
+              page_layouts: config.pages || [],
+              task_plan: result.taskPlan || [],
+              total_steps: result.taskPlan?.length || 0,
+              current_step: result.taskPlan?.length || 0,
+              quality_score: result.qualityScore || {},
+              suggestions: result.suggestions || [],
+              agent_log: [...(result.agentLog || []), { type: "conversation", messages: updated }],
+              status: "complete",
+            } as any, { onConflict: "project_id" }).then(() => {});
+          }
+          return updated;
+        });
       } else if (result.error) {
         try {
           const { data: { user: currentUser } } = await supabase.auth.getUser();
@@ -512,7 +543,14 @@ export default function AIBuilderPage() {
           .single();
         if (memory) {
           handleLoadProjectMemory(memory);
-          setMessages([{ role: "ai", content: `📂 Loaded project **${project.title || "Untitled"}** with previous build data.` }]);
+          // Restore saved conversations from agent_log
+          const agentLog = memory.agent_log as any[] || [];
+          const convEntry = agentLog.find((e: any) => e?.type === "conversation");
+          if (convEntry?.messages?.length) {
+            setMessages(convEntry.messages);
+          } else {
+            setMessages([{ role: "ai", content: `📂 Loaded project **${project.title || "Untitled"}** with previous build data.` }]);
+          }
         } else {
           setMessages([{ role: "ai", content: `📂 Selected project **${project.title || "Untitled"}**. Send a prompt to start building.` }]);
           setPipelineState(null);
@@ -613,10 +651,13 @@ export default function AIBuilderPage() {
   const renderBuildingIndicator = () => {
     if (!isBuilding || progress.length === 0) return null;
 
+    const activeSteps = progress.filter(s => s.status !== "done" || progress.indexOf(s) === progress.length - 1);
+    const totalActive = progress.filter(s => s.status === "pending" || s.status === "in_progress" || s.status === "error").length;
     const doneCount = progress.filter(s => s.status === "done").length;
     const currentStep = progress.findIndex(s => s.status === "in_progress");
     const hasError = progress.some(s => s.status === "error");
-    const percent = Math.round((doneCount / progress.length) * 100);
+    const relevantTotal = totalActive + doneCount;
+    const percent = Math.round((doneCount / relevantTotal) * 100);
     const friendlyMsg = hasError
       ? "Something went wrong..."
       : currentStep >= 0
