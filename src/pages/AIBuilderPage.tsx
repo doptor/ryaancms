@@ -209,6 +209,44 @@ export default function AIBuilderPage() {
     }
   }, [input]);
 
+  // Auto-restore last project on mount (prevents data loss on refresh)
+  useEffect(() => {
+    if (!user || currentProject || incomingProjectId || hasProcessedIncoming.current) return;
+    const restoreLastProject = async () => {
+      try {
+        const { data: projects } = await supabase
+          .from("projects")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("updated_at", { ascending: false })
+          .limit(1);
+        if (projects && projects.length > 0) {
+          const project = projects[0];
+          setCurrentProject(project);
+          // Load project memory
+          const { data: memory } = await supabase
+            .from("project_memory")
+            .select("*")
+            .eq("project_id", project.id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .single();
+          if (memory) {
+            handleLoadProjectMemory(memory);
+            const agentLog = memory.agent_log as any[] || [];
+            const convEntry = agentLog.find((e: any) => e?.type === "conversation");
+            if (convEntry?.messages?.length) {
+              setMessages(convEntry.messages);
+            } else {
+              setMessages([{ role: "ai", content: `📂 Restored project **${project.title || "Untitled"}**. Continue building or start fresh!` }]);
+            }
+          }
+        }
+      } catch {}
+    };
+    restoreLastProject();
+  }, [user]);
+
   // Auto-save conversation to project memory
   const saveConversation = useCallback(async (msgs: Message[]) => {
     if (!currentProject?.id || !user) return;
@@ -304,31 +342,55 @@ export default function AIBuilderPage() {
 
     const analysis = analyzePrompt(buildPrompt);
     const relevantSteps = analysis.stepsNeeded;
+    // Only show relevant steps — don't expose all 17 to users
     const steps: ProgressStep[] = ENGINE_LABELS
-      .map((label, i) => ({
-        label,
-        status: relevantSteps.includes(i) ? "pending" as const : "done" as const,
-      }));
+      .map((label, i) => ({ label, index: i, status: relevantSteps.includes(i) ? "pending" as const : "done" as const }))
+      .filter(s => relevantSteps.includes(s.index))
+      .map(s => ({ label: s.label, status: s.status }));
     setProgress(steps);
 
     // Show scope info in chat for transparency
     if (analysis.scope === "micro" || analysis.scope === "light") {
       setMessages((prev) => [
         ...prev,
-        { role: "ai", content: `⚡ **${analysis.scope === "micro" ? "Quick Edit" : "Light Update"}** detected — running only ${relevantSteps.length} of 17 steps.\n_${analysis.reason}_` },
+        { role: "ai", content: `⚡ **${analysis.scope === "micro" ? "Quick Edit" : "Light Update"}** detected — running only ${relevantSteps.length} steps.\n_${analysis.reason}_` },
       ]);
     }
 
-    // Listen to pipeline events
+    // Listen to pipeline events — map stage to filtered step index
+    const stageToFilteredIndex = new Map<number, number>();
+    let filteredIdx = 0;
+    ENGINE_LABELS.forEach((_, i) => {
+      if (relevantSteps.includes(i)) {
+        stageToFilteredIndex.set(i, filteredIdx++);
+      }
+    });
+
     const unsub = orchestrator.on((event) => {
-      const stepIndex = STAGE_MAP[event.stage];
-      if (stepIndex >= 0) {
-        setProgress((prev) =>
-          prev.map((s, i) => ({
-            ...s,
-            status: i < stepIndex ? "done" : i === stepIndex ? "in_progress" : s.status === "done" ? "done" : "pending",
-          }))
-        );
+      const rawIndex = STAGE_MAP[event.stage];
+      // Find the closest filtered step
+      if (rawIndex >= 0) {
+        setProgress((prev) => {
+          const mappedIdx = stageToFilteredIndex.get(rawIndex);
+          if (mappedIdx !== undefined) {
+            return prev.map((s, i) => ({
+              ...s,
+              status: i < mappedIdx ? "done" : i === mappedIdx ? "in_progress" : s.status === "done" ? "done" : "pending",
+            }));
+          }
+          // If stage not in filtered, mark all before as done
+          let closestIdx = -1;
+          for (const [raw, filtered] of stageToFilteredIndex.entries()) {
+            if (raw <= rawIndex) closestIdx = Math.max(closestIdx, filtered);
+          }
+          if (closestIdx >= 0) {
+            return prev.map((s, i) => ({
+              ...s,
+              status: i <= closestIdx ? "done" : s.status,
+            }));
+          }
+          return prev;
+        });
       }
       if (event.stage === "complete") {
         setProgress((prev) => prev.map((s) => ({ ...s, status: "done" })));
