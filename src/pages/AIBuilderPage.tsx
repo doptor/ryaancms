@@ -21,7 +21,7 @@ import {
   GitBranch, Settings, History, Book, Container,
   Users, Activity, FolderOpen, Server,
   Webhook, Bell as BellIcon, GitFork,
-  Globe, Link, MicOff, MessageSquare,
+  Globe, Link, MicOff, MessageSquare, Smartphone,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useLocation } from "react-router-dom";
@@ -66,6 +66,9 @@ import { DatabaseDesignerPanel } from "@/components/ai-builder/DatabaseDesignerP
 import { I18nGeneratorPanel } from "@/components/ai-builder/I18nGeneratorPanel";
 import { SEOOptimizerPanel } from "@/components/ai-builder/SEOOptimizerPanel";
 import { PerformancePanel } from "@/components/ai-builder/PerformancePanel";
+import { MobileExportPanel } from "@/components/ai-builder/MobileExportPanel";
+import { PaymentIntegrationPanel } from "@/components/ai-builder/PaymentIntegrationPanel";
+import { CronJobPanel } from "@/components/ai-builder/CronJobPanel";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getThemePreset } from "@/lib/engine/theme-generator";
@@ -2079,6 +2082,19 @@ export default function AIBuilderPage() {
                           <TabsTrigger value="performance" className={tabTriggerClass}>
                             <Activity className="w-3.5 h-3.5" /> Perf
                           </TabsTrigger>
+
+                          <div className="w-px h-5 bg-border mx-1 self-center shrink-0" />
+
+                          {/* Phase 12: Mobile Export + Payment + Cron */}
+                          <TabsTrigger value="mobile-export" className={tabTriggerClass}>
+                            <Smartphone className="w-3.5 h-3.5" /> Mobile
+                          </TabsTrigger>
+                          <TabsTrigger value="payments" className={tabTriggerClass}>
+                            <CreditCard className="w-3.5 h-3.5" /> Payment
+                          </TabsTrigger>
+                          <TabsTrigger value="cron" className={tabTriggerClass}>
+                            <Clock className="w-3.5 h-3.5" /> Cron
+                          </TabsTrigger>
                         </TabsList>
                       </div>
                     </Tabs>
@@ -2268,6 +2284,15 @@ export default function AIBuilderPage() {
                     {desktopRightTab === "performance" && (
                       <PerformancePanel pipelineState={pipelineState} />
                     )}
+                    {desktopRightTab === "mobile-export" && (
+                      <MobileExportPanel pipelineState={pipelineState} />
+                    )}
+                    {desktopRightTab === "payments" && (
+                      <PaymentIntegrationPanel pipelineState={pipelineState} />
+                    )}
+                    {desktopRightTab === "cron" && (
+                      <CronJobPanel pipelineState={pipelineState} />
+                    )}
                   </div>
                 </div>
               </ResizablePanel>
@@ -2325,6 +2350,9 @@ export default function AIBuilderPage() {
                         { value: "i18n", icon: Globe, label: "i18n" },
                         { value: "seo", icon: Search, label: "SEO" },
                         { value: "performance", icon: Activity, label: "Perf" },
+                        { value: "mobile-export", icon: Smartphone, label: "Mobile" },
+                        { value: "payments", icon: CreditCard, label: "Payment" },
+                        { value: "cron", icon: Clock, label: "Cron" },
                       ].map((tab) => (
                         <DropdownMenuItem
                           key={tab.value}
@@ -2475,6 +2503,15 @@ export default function AIBuilderPage() {
               )}
               {effectiveTab === "performance" && (
                 <PerformancePanel pipelineState={pipelineState} />
+              )}
+              {effectiveTab === "mobile-export" && (
+                <MobileExportPanel pipelineState={pipelineState} />
+              )}
+              {effectiveTab === "payments" && (
+                <PaymentIntegrationPanel pipelineState={pipelineState} />
+              )}
+              {effectiveTab === "cron" && (
+                <CronJobPanel pipelineState={pipelineState} />
               )}
             </div>
           </div>
