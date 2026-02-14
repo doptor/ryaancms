@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -6,7 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Send, Plus, Clock, Search, ChevronLeft, ChevronRight,
   Layout, Globe, ShoppingCart, FileText, Sparkles, FolderOpen,
-  MoreVertical, Pencil, Trash2,
+  MoreVertical, Pencil, Trash2, Paperclip, Link2, Mic, MicOff,
+  Palette, ChevronDown, Package, Layers, LayoutGrid, X,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
@@ -14,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,6 +42,56 @@ export default function DashboardOverview() {
   const [currentPage, setCurrentPage] = useState(1);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
+  const [isRecording, setIsRecording] = useState(false);
+  const [showContentType, setShowContentType] = useState(false);
+  const [selectedContentType, setSelectedContentType] = useState("website");
+  const [showColorPresets, setShowColorPresets] = useState(false);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [urlValue, setUrlValue] = useState("");
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const CONTENT_TYPES = [
+    { value: "website", label: "🌐 Website", icon: Globe },
+    { value: "application", label: "📱 Application", icon: LayoutGrid },
+    { value: "plugin", label: "🧩 Plugin", icon: Package },
+    { value: "website+application", label: "🌐+📱 Website + App", icon: Layers },
+    { value: "application+plugin", label: "📱+🧩 App + Plugin", icon: Layers },
+    { value: "full", label: "🌐+📱+🧩 Full Stack", icon: Layers },
+  ];
+
+  const COLOR_PRESETS = [
+    { name: "Blue", color: "hsl(221, 83%, 53%)" },
+    { name: "Purple", color: "hsl(271, 76%, 53%)" },
+    { name: "Green", color: "hsl(142, 71%, 45%)" },
+    { name: "Orange", color: "hsl(24, 95%, 53%)" },
+    { name: "Rose", color: "hsl(346, 77%, 50%)" },
+    { name: "Cyan", color: "hsl(189, 94%, 43%)" },
+  ];
+
+  const handleMicToggle = async () => {
+    if (isRecording) {
+      mediaRecorderRef.current?.stop();
+      setIsRecording(false);
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      const chunks: Blob[] = [];
+      mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+      mediaRecorder.onstop = () => {
+        stream.getTracks().forEach(t => t.stop());
+        toast({ title: "🎤 Audio recorded!", description: "Audio-to-text feature will use AI transcription." });
+      };
+      mediaRecorderRef.current = mediaRecorder;
+      mediaRecorder.start();
+      setIsRecording(true);
+      toast({ title: "🎤 Recording...", description: "Click mic again to stop." });
+    } catch {
+      toast({ title: "Microphone access denied", variant: "destructive" });
+    }
+  };
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -167,37 +219,183 @@ export default function DashboardOverview() {
             </h1>
 
             <div className="w-full max-w-2xl rounded-2xl border border-border bg-card shadow-lg">
+              {/* Toolbar: Content Type + Color Presets */}
+              <div className="flex items-center gap-2 flex-wrap px-4 pt-3">
+                {/* Content Type Selector */}
+                <div className="relative">
+                  <button
+                    onClick={() => { setShowContentType(!showContentType); setShowColorPresets(false); }}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
+                  >
+                    {CONTENT_TYPES.find(c => c.value === selectedContentType)?.label || "🌐 Website"}
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                  {showContentType && (
+                    <div className="absolute top-full left-0 mt-1 bg-popover border border-border rounded-lg shadow-lg p-1 z-50 min-w-[180px]">
+                      {CONTENT_TYPES.map((ct) => (
+                        <button
+                          key={ct.value}
+                          onClick={() => { setSelectedContentType(ct.value); setShowContentType(false); }}
+                          className={cn(
+                            "flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-xs text-left transition-colors",
+                            selectedContentType === ct.value ? "bg-primary/10 text-primary" : "text-foreground hover:bg-accent"
+                          )}
+                        >
+                          <ct.icon className="w-3.5 h-3.5" />
+                          {ct.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Color Presets */}
+                <div className="relative">
+                  <button
+                    onClick={() => { setShowColorPresets(!showColorPresets); setShowContentType(false); }}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
+                  >
+                    <Palette className="w-3 h-3" /> Colors
+                  </button>
+                  {showColorPresets && (
+                    <div className="absolute top-full left-0 mt-1 bg-popover border border-border rounded-lg shadow-lg p-2 z-50">
+                      <div className="flex gap-1.5">
+                        {COLOR_PRESETS.map((cp) => (
+                          <button
+                            key={cp.name}
+                            onClick={() => {
+                              setPrompt((prev) => prev + ` Use ${cp.name.toLowerCase()} as primary color.`);
+                              setShowColorPresets(false);
+                            }}
+                            className="group flex flex-col items-center gap-1"
+                            title={cp.name}
+                          >
+                            <div
+                              className="w-6 h-6 rounded-full border-2 border-border group-hover:border-foreground/50 transition-colors"
+                              style={{ backgroundColor: cp.color }}
+                            />
+                            <span className="text-[9px] text-muted-foreground">{cp.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* URL input for replication */}
+              {showUrlInput && (
+                <div className="flex items-center gap-2 px-4 pt-2">
+                  <input
+                    value={urlValue}
+                    onChange={(e) => setUrlValue(e.target.value)}
+                    placeholder="Paste website URL to replicate..."
+                    className="flex-1 px-3 py-2 rounded-lg border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && urlValue.trim()) {
+                        setPrompt((prev) => prev + ` Replicate the design of ${urlValue.trim()}`);
+                        setUrlValue("");
+                        setShowUrlInput(false);
+                      }
+                    }}
+                  />
+                  <Button size="sm" variant="outline" onClick={() => {
+                    if (urlValue.trim()) {
+                      setPrompt((prev) => prev + ` Replicate the design of ${urlValue.trim()}`);
+                      setUrlValue("");
+                      setShowUrlInput(false);
+                    }
+                  }} className="gap-1">
+                    <Sparkles className="w-3.5 h-3.5" /> Go
+                  </Button>
+                  <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setShowUrlInput(false)}>
+                    <X className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              )}
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    toast({ title: "📎 File attached!", description: file.name });
+                  }
+                }}
+                className="hidden"
+              />
+
               <textarea
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Describe your project..."
+                placeholder={`Describe your ${selectedContentType}...`}
                 rows={2}
-                className="w-full bg-transparent px-4 pt-4 pb-2 text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none"
+                className="w-full bg-transparent px-4 pt-3 pb-2 text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); }
                 }}
               />
               <div className="flex items-center justify-between px-4 pb-3">
-                {/* Templates */}
-                <div className="flex items-center gap-1.5 overflow-x-auto">
-                  {preDesignTemplates.map((tpl, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setPrompt(tpl.prompt)}
-                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors whitespace-nowrap shrink-0"
-                    >
-                      <tpl.icon className="w-3 h-3" />
-                      {tpl.label}
-                    </button>
-                  ))}
+                {/* Left: action buttons */}
+                <div className="flex items-center gap-0.5">
+                  <Button
+                    variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
+                    onClick={() => fileInputRef.current?.click()}
+                    title="Upload file"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
+                    onClick={() => fileInputRef.current?.click()}
+                    title="Attach content"
+                  >
+                    <Paperclip className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowUrlInput(!showUrlInput)}
+                    title="Add URL to replicate"
+                  >
+                    <Link2 className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost" size="icon"
+                    className={cn(
+                      "h-8 w-8 rounded-lg transition-colors",
+                      isRecording ? "text-destructive bg-destructive/10 hover:bg-destructive/20" : "text-muted-foreground hover:text-foreground"
+                    )}
+                    onClick={handleMicToggle}
+                    title={isRecording ? "Stop recording" : "Voice input"}
+                  >
+                    {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                  </Button>
                 </div>
-                <button
-                  onClick={handleSubmit}
-                  disabled={!prompt.trim() || createProject.isPending}
-                  className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground disabled:opacity-40 hover:opacity-90 transition-opacity shrink-0 ml-2"
-                >
-                  <Send className="w-4 h-4" />
-                </button>
+
+                {/* Right: templates + send */}
+                <div className="flex items-center gap-1.5">
+                  <div className="hidden sm:flex items-center gap-1.5 overflow-x-auto">
+                    {preDesignTemplates.map((tpl, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setPrompt(tpl.prompt)}
+                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors whitespace-nowrap shrink-0"
+                      >
+                        <tpl.icon className="w-3 h-3" />
+                        {tpl.label}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={!prompt.trim() || createProject.isPending}
+                    className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground disabled:opacity-40 hover:opacity-90 transition-opacity shrink-0 ml-1"
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
