@@ -6,7 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-async function getUserApiConfig(req: Request) {
+async function getUserApiConfig(req: Request, taskType = "general") {
   try {
     const authHeader = req.headers.get("authorization");
     if (!authHeader) return null;
@@ -18,9 +18,15 @@ async function getUserApiConfig(req: Request) {
     );
     if (!res.ok) return null;
     const rows = await res.json();
-    const active = rows?.[0]?.value?.items?.find((i: any) => i.status === "active" && i.apiKey?.length > 5);
-    if (!active) return null;
-    return { provider: active.provider, endpoint: active.apiEndpoint, apiKey: active.apiKey, model: active.model };
+    const items = rows?.[0]?.value?.items?.filter((i: any) => i.status === "active" && i.apiKey?.length > 5) || [];
+    // Find best match: first by task type, then "general", then any active
+    const byTask = items.find((i: any) => i.useFor?.includes(taskType));
+    if (byTask) return { provider: byTask.provider, endpoint: byTask.apiEndpoint, apiKey: byTask.apiKey, model: byTask.model };
+    const general = items.find((i: any) => i.useFor?.includes("general"));
+    if (general) return { provider: general.provider, endpoint: general.apiEndpoint, apiKey: general.apiKey, model: general.model };
+    const any = items[0];
+    if (any) return { provider: any.provider, endpoint: any.apiEndpoint, apiKey: any.apiKey, model: any.model };
+    return null;
   } catch { return null; }
 }
 
@@ -80,7 +86,7 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const userApiConfig = await getUserApiConfig(req);
+    const userApiConfig = await getUserApiConfig(req, "app_builder");
 
     const tools = [
       {
