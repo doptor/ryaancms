@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -11,6 +11,9 @@ import { Save, Globe, Shield, Bell, Palette, Database, Loader2, Brain, Image, Up
 import { Card, CardContent } from "@/components/ui/card";
 import { useSettings } from "@/hooks/useSettings";
 import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
 
 import AIIntegrationSettings from "@/components/settings/AIIntegrationSettings";
 
@@ -98,6 +101,89 @@ function SearchableSelect({
   );
 }
 
+function FileUploadField({ label, value, onChange, fieldKey, accept, previewClass }: {
+  label: string;
+  value: string;
+  onChange: (key: string, value: string) => void;
+  fieldKey: string;
+  accept: string;
+  previewClass?: string;
+}) {
+  const { user } = useAuth();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    setUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const filePath = `${user.id}/${fieldKey}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('site-assets')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('site-assets')
+        .getPublicUrl(filePath);
+
+      onChange(fieldKey, publicUrl);
+      toast({ title: "Uploaded", description: `${label} uploaded successfully.` });
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <div className="flex gap-2">
+        <Input
+          value={value || ""}
+          onChange={(e) => onChange(fieldKey, e.target.value)}
+          placeholder={`https://example.com/${fieldKey}.png`}
+          className="flex-1"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          disabled={uploading}
+          onClick={() => inputRef.current?.click()}
+          title={`Upload ${label}`}
+        >
+          {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+        </Button>
+        <input
+          ref={inputRef}
+          type="file"
+          accept={accept}
+          className="hidden"
+          onChange={handleUpload}
+        />
+      </div>
+      {value && (
+        <div className="mt-2 p-3 border border-border rounded-lg bg-muted/30 flex items-center justify-center">
+          <img
+            src={value}
+            alt={`${label} preview`}
+            className={previewClass || "max-h-16 max-w-full object-contain"}
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 function GeneralSettings({ values, onChange }: SectionProps) {
   const timezones = useMemo(() => {
     try {
@@ -156,24 +242,22 @@ function GeneralSettings({ values, onChange }: SectionProps) {
       <div>
         <h3 className="text-sm font-semibold text-foreground mb-3">Logo & Favicon</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Logo URL</Label>
-            <Input value={values.logoUrl || ""} onChange={(e) => onChange("logoUrl", e.target.value)} placeholder="https://example.com/logo.png" />
-            {values.logoUrl && (
-              <div className="mt-2 p-3 border border-border rounded-lg bg-muted/30 flex items-center justify-center">
-                <img src={values.logoUrl} alt="Logo preview" className="max-h-16 max-w-full object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-              </div>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label>Favicon URL</Label>
-            <Input value={values.faviconUrl || ""} onChange={(e) => onChange("faviconUrl", e.target.value)} placeholder="https://example.com/favicon.ico" />
-            {values.faviconUrl && (
-              <div className="mt-2 p-3 border border-border rounded-lg bg-muted/30 flex items-center justify-center">
-                <img src={values.faviconUrl} alt="Favicon preview" className="w-8 h-8 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-              </div>
-            )}
-          </div>
+          <FileUploadField
+            label="Logo"
+            value={values.logoUrl || ""}
+            onChange={onChange}
+            fieldKey="logoUrl"
+            accept="image/png,image/jpeg,image/svg+xml,image/webp"
+            previewClass="max-h-16 max-w-full object-contain"
+          />
+          <FileUploadField
+            label="Favicon"
+            value={values.faviconUrl || ""}
+            onChange={onChange}
+            fieldKey="faviconUrl"
+            accept="image/png,image/x-icon,image/svg+xml,image/ico"
+            previewClass="w-8 h-8 object-contain"
+          />
         </div>
       </div>
 
