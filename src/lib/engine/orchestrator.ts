@@ -318,6 +318,7 @@ export class AIPipelineOrchestrator {
           // Build AppConfig from multi-agent output
           const appConfig: AppConfig = {
             project_type: c.project_type,
+            build_target: c.build_target || "application",
             title: c.title,
             description: c.description,
             modules: c.modules || [],

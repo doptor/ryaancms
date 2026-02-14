@@ -56,7 +56,7 @@ import { ProjectBranchingPanel } from "@/components/ai-builder/ProjectBranchingP
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getThemePreset } from "@/lib/engine/theme-generator";
-import { analyzePrompt, ProjectPhase } from "@/lib/engine/prompt-analyzer";
+import { analyzePrompt, ProjectPhase, BuildTarget } from "@/lib/engine/prompt-analyzer";
 
 type Message = { role: "user" | "ai"; content: string };
 
@@ -234,8 +234,19 @@ export default function AIBuilderPage() {
         `**Phase ${p.phase}: ${p.title}**\n  _${p.description}_`
       ).join("\n\n");
 
+      const BUILD_TARGET_LABELS: Record<BuildTarget, string> = {
+        "website": "🌐 Website",
+        "application": "📱 Application",
+        "plugin": "🧩 Plugin",
+        "website+application": "🌐+📱 Website + Application",
+        "application+plugin": "📱+🧩 Application + Plugin",
+        "full": "🌐+📱+🧩 Full Stack (Website + App + Plugin)",
+      };
+
       const conversationalMsg = [
         analysis.appreciation || "🚀 Great project idea!",
+        "",
+        `**Build Type Detected:** ${BUILD_TARGET_LABELS[analysis.buildTarget]}`,
         "",
         `I can see this is a comprehensive project with a lot of moving parts. To make sure everything is built properly, I'd like to split this into **${analysis.phases.length} phases**:`,
         "",
@@ -370,7 +381,7 @@ export default function AIBuilderPage() {
         // Build summary
         const summary = [
           `## ✅ ${config.title}`,
-          `**${config.project_type}** · ${config.modules.join(", ")}`,
+          `**${config.project_type}** · **${config.build_target}** · ${config.modules.join(", ")}`,
           "",
           `📄 **${config.pages.length}** pages · 🗄 **${config.collections.length}** collections · 👥 **${config.roles?.length || 0}** roles`,
           "",
@@ -585,7 +596,7 @@ export default function AIBuilderPage() {
     };
     if (memory.modules || memory.page_layouts || memory.db_schema) {
       restored.config = {
-        project_type: "saas", title: "Restored Project", description: "Loaded from project memory",
+        project_type: "saas", build_target: "application", title: "Restored Project", description: "Loaded from project memory",
         modules: memory.modules || [], roles: [], features: [],
         pages: memory.page_layouts || [], collections: memory.db_schema || [],
         style: {}, multi_tenant: false,

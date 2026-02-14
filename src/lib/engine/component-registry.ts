@@ -112,8 +112,17 @@ export interface StyleConfig {
 
 // === Full App Configuration ===
 
+export type BuildTarget = 
+  | "website" 
+  | "application" 
+  | "plugin" 
+  | "website+application" 
+  | "application+plugin" 
+  | "full";
+
 export interface AppConfig {
   project_type: ProjectType;
+  build_target: BuildTarget;
   title: string;
   description: string;
   modules: string[];
