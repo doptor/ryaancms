@@ -12,10 +12,11 @@ import type { PipelineState } from "@/lib/engine";
 interface AutoFixLoopPanelProps {
   pipelineState: PipelineState | null;
   onRetryBuild?: () => void;
+  onApplyFixes?: () => void;
   isBuilding?: boolean;
 }
 
-export function AutoFixLoopPanel({ pipelineState, onRetryBuild, isBuilding }: AutoFixLoopPanelProps) {
+export function AutoFixLoopPanel({ pipelineState, onRetryBuild, onApplyFixes, isBuilding }: AutoFixLoopPanelProps) {
   if (!pipelineState?.config) {
     return (
       <div className="h-full flex items-center justify-center p-6">
@@ -86,15 +87,28 @@ export function AutoFixLoopPanel({ pipelineState, onRetryBuild, isBuilding }: Au
           </p>
         </div>
 
-        {/* Retry Button */}
-        {loopStatus !== "success" && onRetryBuild && (
-          <Button onClick={onRetryBuild} disabled={isBuilding} className="w-full gap-2">
-            {isBuilding ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> Rebuilding...</>
-            ) : (
-              <><RotateCcw className="w-4 h-4" /> Retry Build with Fixes</>
+        {/* Action Buttons */}
+        {loopStatus !== "success" && (
+          <div className="flex gap-2">
+            {onApplyFixes && (fixes.length > 0 || errorMemory.length > 0) && (
+              <Button onClick={onApplyFixes} disabled={isBuilding} className="flex-1 gap-2" variant="default">
+                {isBuilding ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Applying...</>
+                ) : (
+                  <><Sparkles className="w-4 h-4" /> Apply All Fixes</>
+                )}
+              </Button>
             )}
-          </Button>
+            {onRetryBuild && (
+              <Button onClick={onRetryBuild} disabled={isBuilding} className="flex-1 gap-2" variant="outline">
+                {isBuilding ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Rebuilding...</>
+                ) : (
+                  <><RotateCcw className="w-4 h-4" /> Retry Build</>
+                )}
+              </Button>
+            )}
+          </div>
         )}
 
         {/* Errors Found */}

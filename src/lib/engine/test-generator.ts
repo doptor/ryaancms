@@ -60,6 +60,11 @@ export function generateTestSuite(config: AppConfig): TestSuite {
   // Security tests
   scenarios.push(...generateSecurityTests(config));
 
+  // Multi-tenant isolation tests
+  if (config.multi_tenant) {
+    scenarios.push(...generateMultiTenantTests(config));
+  }
+
   // Page render tests
   scenarios.push(...generatePageTests(config));
 
@@ -308,6 +313,73 @@ function generateSecurityTests(config: AppConfig): TestScenario[] {
         { action: "User with 'admin' role accesses admin endpoint", expected: "200 OK" },
       ],
       expected_result: "RBAC enforcement works",
+    });
+  }
+
+  return tests;
+}
+
+function generateMultiTenantTests(config: AppConfig): TestScenario[] {
+  const tenantCollections = config.collections.filter(c => c.tenant_isolated);
+  const tests: TestScenario[] = [
+    {
+      id: "mt_tenant_isolation",
+      name: "Tenant Data Isolation",
+      category: "security",
+      resource: "multi-tenant",
+      description: "Users from tenant A cannot see or modify tenant B's data",
+      priority: "critical",
+      steps: [
+        { action: "Create record in Tenant A", expected: "Record created with tenant_id = A" },
+        { action: "Switch to Tenant B context", expected: "Auth token reflects Tenant B" },
+        { action: "List records as Tenant B", expected: "Tenant A's records not visible" },
+        { action: "Try to update Tenant A's record as Tenant B", expected: "403 or no effect" },
+        { action: "Try to delete Tenant A's record as Tenant B", expected: "403 or no effect" },
+      ],
+      expected_result: "Complete data isolation between tenants",
+    },
+    {
+      id: "mt_tenant_id_auto",
+      name: "Auto tenant_id Assignment",
+      category: "integration",
+      resource: "multi-tenant",
+      description: "tenant_id is automatically assigned on record creation",
+      priority: "critical",
+      steps: [
+        { action: "POST record without tenant_id", expected: "tenant_id auto-filled from auth context" },
+        { action: "POST record with wrong tenant_id", expected: "Rejected or overridden to correct tenant" },
+      ],
+      expected_result: "tenant_id always matches authenticated user's tenant",
+    },
+    {
+      id: "mt_cross_tenant_query",
+      name: "Cross-Tenant Query Prevention",
+      category: "security",
+      resource: "multi-tenant",
+      description: "RLS policies prevent cross-tenant data access at DB level",
+      priority: "critical",
+      steps: [
+        { action: "Direct SQL query with wrong tenant_id", expected: "No rows returned (RLS enforced)" },
+        { action: "API request with manipulated tenant_id header", expected: "403 or tenant_id from JWT used" },
+      ],
+      expected_result: "Database-level tenant isolation via RLS",
+    },
+  ];
+
+  for (const col of tenantCollections.slice(0, 5)) {
+    tests.push({
+      id: `mt_${col.name}_isolation`,
+      name: `${col.name} Tenant Isolation`,
+      category: "integration",
+      resource: "multi-tenant",
+      description: `${col.name} records are isolated per tenant`,
+      priority: "high",
+      steps: [
+        { action: `Create ${col.name} as Tenant A`, expected: "Created with tenant_id = A" },
+        { action: `Read ${col.name} as Tenant B`, expected: "Empty result" },
+        { action: `Update ${col.name} as Tenant B`, expected: "No effect" },
+      ],
+      expected_result: `${col.name} fully isolated by tenant`,
     });
   }
 

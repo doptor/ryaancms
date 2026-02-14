@@ -1980,6 +1980,7 @@ export default function AIBuilderPage() {
                       <AutoFixLoopPanel
                         pipelineState={pipelineState}
                         onRetryBuild={() => pipelineState?.config && sendMessage(`Fix all issues and rebuild "${pipelineState.config.title}"`)}
+                        onApplyFixes={handleApplyAutoFixes}
                         isBuilding={isBuilding}
                       />
                     )}
@@ -2139,6 +2140,7 @@ export default function AIBuilderPage() {
                 <AutoFixLoopPanel
                   pipelineState={pipelineState}
                   onRetryBuild={() => pipelineState?.config && sendMessage(`Fix all issues and rebuild "${pipelineState.config.title}"`)}
+                  onApplyFixes={handleApplyAutoFixes}
                   isBuilding={isBuilding}
                 />
               )}
