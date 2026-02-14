@@ -195,6 +195,12 @@ export default function AIBuilderPage() {
   const currentProjectRef = useRef(currentProject);
   useEffect(() => { currentProjectRef.current = currentProject; }, [currentProject]);
   useEffect(() => { try { localStorage.setItem("ai-builder-active-tab", activeTab); } catch {} }, [activeTab]);
+  // Persist current project ID so refresh restores the same project
+  useEffect(() => {
+    if (currentProject?.id) {
+      try { localStorage.setItem("ai-builder-active-project-id", currentProject.id); } catch {}
+    }
+  }, [currentProject?.id]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -223,14 +229,31 @@ export default function AIBuilderPage() {
     if (currentProject || incomingProjectId || hasProcessedIncoming.current) { setIsRestoring(false); return; }
     const restoreLastProject = async () => {
       try {
-        const { data: projects } = await supabase
-          .from("projects")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("updated_at", { ascending: false })
-          .limit(1);
-        if (!projects || projects.length === 0) { setIsRestoring(false); return; }
-        const project = projects[0];
+        // Try to restore the exact project the user was viewing
+        let savedProjectId: string | null = null;
+        try { savedProjectId = localStorage.getItem("ai-builder-active-project-id"); } catch {}
+
+        let project: any = null;
+        if (savedProjectId) {
+          const { data } = await supabase
+            .from("projects")
+            .select("*")
+            .eq("id", savedProjectId)
+            .eq("user_id", user.id)
+            .single();
+          if (data) project = data;
+        }
+        // Fallback: most recently updated project
+        if (!project) {
+          const { data: projects } = await supabase
+            .from("projects")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("updated_at", { ascending: false })
+            .limit(1);
+          if (!projects || projects.length === 0) { setIsRestoring(false); return; }
+          project = projects[0];
+        }
         setCurrentProject(project);
         currentProjectRef.current = project;
         const { data: memory } = await supabase
