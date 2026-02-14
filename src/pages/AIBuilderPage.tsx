@@ -1057,6 +1057,23 @@ export default function AIBuilderPage() {
     }
   };
 
+  const handleDeleteProject = async (projectId: string) => {
+    if (!user) return;
+    try {
+      await supabase.from("project_memory").delete().eq("project_id", projectId);
+      await supabase.from("projects").delete().eq("id", projectId).eq("user_id", user.id);
+      if (currentProject?.id === projectId) {
+        setCurrentProject(null);
+        setPipelineState(null);
+        setMessages([]);
+        try { localStorage.removeItem("ai-builder-active-project-id"); } catch {}
+      }
+      toast({ title: "Project deleted" });
+    } catch {
+      toast({ title: "Failed to delete project", variant: "destructive" });
+    }
+  };
+
   const handleUrlReplicate = () => {
     if (!screenshotUrl.trim()) return;
     const prompt = `Replicate the UI layout from this website: ${screenshotUrl}. Analyze the page structure and create a similar design with matching layout, navigation, hero section, content sections, and footer. Use modern React components with Tailwind CSS.`;
@@ -1569,6 +1586,48 @@ export default function AIBuilderPage() {
                   selectedComponent={selectedComponent}
                   onSelectComponent={(pi, ci) => setSelectedComponent({ pageIndex: pi, componentIndex: ci })}
                   onReorderComponents={handleReorderComponents}
+                  onDeleteComponent={(pi, ci) => {
+                    if (!pipelineState?.config) return;
+                    const updated = { ...pipelineState };
+                    const cfg = { ...updated.config! };
+                    const pages = [...cfg.pages];
+                    const page = { ...pages[pi] };
+                    page.components = page.components.filter((_, idx) => idx !== ci);
+                    pages[pi] = page;
+                    cfg.pages = pages;
+                    updated.config = cfg;
+                    setPipelineState(updated);
+                    setSelectedComponent(null);
+                  }}
+                  onAddComponent={(pi, type) => {
+                    if (!pipelineState?.config) return;
+                    const updated = { ...pipelineState };
+                    const cfg = { ...updated.config! };
+                    const pages = [...cfg.pages];
+                    const page = { ...pages[pi] };
+                    page.components = [...page.components, { type, props: {} }];
+                    pages[pi] = page;
+                    cfg.pages = pages;
+                    updated.config = cfg;
+                    setPipelineState(updated);
+                  }}
+                  onAddPage={(name, route, layout) => {
+                    if (!pipelineState?.config) return;
+                    const updated = { ...pipelineState };
+                    const cfg = { ...updated.config! };
+                    cfg.pages = [...cfg.pages, { name, route, layout: layout as any, components: [] }];
+                    updated.config = cfg;
+                    setPipelineState(updated);
+                  }}
+                  onDeletePage={(pi) => {
+                    if (!pipelineState?.config || pipelineState.config.pages.length <= 1) return;
+                    const updated = { ...pipelineState };
+                    const cfg = { ...updated.config! };
+                    cfg.pages = cfg.pages.filter((_, idx) => idx !== pi);
+                    updated.config = cfg;
+                    setPipelineState(updated);
+                    setSelectedComponent(null);
+                  }}
                 />
               </div>
               {selectedComponent && selectedComp && (
@@ -1754,6 +1813,7 @@ export default function AIBuilderPage() {
                 selectedProject={currentProject}
                 onSelectProject={handleSelectProject}
                 onCreateProject={handleCreateProject}
+                onDeleteProject={handleDeleteProject}
               />
             </div>
             {isBuilding && (
@@ -1813,78 +1873,93 @@ export default function AIBuilderPage() {
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={62} minSize={35}>
                 <div className="flex flex-col h-full">
-                  <div className="border-b border-border bg-card px-4">
+                  <div className="border-b border-border bg-card overflow-hidden">
                     <Tabs value={desktopRightTab} onValueChange={setActiveTab}>
-                      <TabsList className="bg-transparent h-11 p-0 gap-0">
-                        <TabsTrigger value="preview" className={tabTriggerClass}>
-                          <Eye className="w-3.5 h-3.5" /> Preview
-                        </TabsTrigger>
-                        <TabsTrigger value="config" className={tabTriggerClass}>
-                          <Code className="w-3.5 h-3.5" /> Config
-                        </TabsTrigger>
-                        <TabsTrigger value="sql" className={tabTriggerClass}>
-                          <Database className="w-3.5 h-3.5" /> SQL
-                        </TabsTrigger>
-                        <TabsTrigger value="security" className={tabTriggerClass}>
-                          <Shield className="w-3.5 h-3.5" /> Security
-                        </TabsTrigger>
-                        <TabsTrigger value="quality" className={tabTriggerClass}>
-                          <TrendingUp className="w-3.5 h-3.5" /> Quality
-                        </TabsTrigger>
-                        <TabsTrigger value="deploy" className={tabTriggerClass}>
-                          <Rocket className="w-3.5 h-3.5" /> Deploy
-                        </TabsTrigger>
-                        <TabsTrigger value="summary" className={tabTriggerClass}>
-                          <Layers className="w-3.5 h-3.5" /> Summary
-                        </TabsTrigger>
-                        <TabsTrigger value="code" className={tabTriggerClass}>
-                          <FileCode2 className="w-3.5 h-3.5" /> Code
-                          {generatedFiles.length > 0 && <Badge variant="secondary" className="text-[10px] h-4 ml-1">{generatedFiles.length}</Badge>}
-                        </TabsTrigger>
-                        <TabsTrigger value="live" className={tabTriggerClass}>
-                          <Eye className="w-3.5 h-3.5" /> Live
-                          {generatedFiles.length > 0 && <Badge variant="secondary" className="text-[10px] h-4 ml-1">⚡</Badge>}
-                        </TabsTrigger>
-                        <TabsTrigger value="autofix" className={tabTriggerClass}>
-                          <RefreshCw className="w-3.5 h-3.5" /> Auto-Fix
-                        </TabsTrigger>
-                        <TabsTrigger value="plugin" className={tabTriggerClass}>
-                          <Package className="w-3.5 h-3.5" /> Plugin
-                        </TabsTrigger>
-                        <TabsTrigger value="workflow" className={tabTriggerClass}>
-                          <GitBranch className="w-3.5 h-3.5" /> Workflow
-                        </TabsTrigger>
-                        <TabsTrigger value="installer" className={tabTriggerClass}>
-                          <Settings className="w-3.5 h-3.5" /> Installer
-                        </TabsTrigger>
-                        <TabsTrigger value="history" className={tabTriggerClass}>
-                          <History className="w-3.5 h-3.5" /> History
-                        </TabsTrigger>
-                        <TabsTrigger value="timemachine" className={tabTriggerClass}>
-                          <Clock className="w-3.5 h-3.5" /> Versions
-                        </TabsTrigger>
-                        <TabsTrigger value="docs" className={tabTriggerClass}>
-                          <Book className="w-3.5 h-3.5" /> Docs
-                        </TabsTrigger>
-                        <TabsTrigger value="cicd" className={tabTriggerClass}>
-                          <Container className="w-3.5 h-3.5" /> CI/CD
-                        </TabsTrigger>
-                        <TabsTrigger value="collab" className={tabTriggerClass}>
-                          <Users className="w-3.5 h-3.5" /> Team
-                        </TabsTrigger>
-                        <TabsTrigger value="monitor" className={tabTriggerClass}>
-                          <Activity className="w-3.5 h-3.5" /> Monitor
-                        </TabsTrigger>
-                        <TabsTrigger value="envs" className={tabTriggerClass}>
-                          <Server className="w-3.5 h-3.5" /> Envs
-                        </TabsTrigger>
-                        <TabsTrigger value="webhooks" className={tabTriggerClass}>
-                          <Webhook className="w-3.5 h-3.5" /> Hooks
-                        </TabsTrigger>
-                        <TabsTrigger value="branches" className={tabTriggerClass}>
-                          <GitFork className="w-3.5 h-3.5" /> Branch
-                        </TabsTrigger>
-                      </TabsList>
+                      <div className="overflow-x-auto scrollbar-hide">
+                        <TabsList className="bg-transparent h-11 p-0 gap-0 w-max min-w-full px-4">
+                          {/* Core */}
+                          <TabsTrigger value="preview" className={tabTriggerClass}>
+                            <Eye className="w-3.5 h-3.5" /> Preview
+                          </TabsTrigger>
+                          <TabsTrigger value="code" className={tabTriggerClass}>
+                            <FileCode2 className="w-3.5 h-3.5" /> Code
+                            {generatedFiles.length > 0 && <Badge variant="secondary" className="text-[10px] h-4 ml-1">{generatedFiles.length}</Badge>}
+                          </TabsTrigger>
+                          <TabsTrigger value="live" className={tabTriggerClass}>
+                            <Eye className="w-3.5 h-3.5" /> Live
+                            {generatedFiles.length > 0 && <Badge variant="secondary" className="text-[10px] h-4 ml-1">⚡</Badge>}
+                          </TabsTrigger>
+                          <TabsTrigger value="deploy" className={tabTriggerClass}>
+                            <Rocket className="w-3.5 h-3.5" /> Deploy
+                          </TabsTrigger>
+
+                          <div className="w-px h-5 bg-border mx-1 self-center shrink-0" />
+
+                          {/* Data & Security */}
+                          <TabsTrigger value="config" className={tabTriggerClass}>
+                            <Code className="w-3.5 h-3.5" /> Config
+                          </TabsTrigger>
+                          <TabsTrigger value="sql" className={tabTriggerClass}>
+                            <Database className="w-3.5 h-3.5" /> SQL
+                          </TabsTrigger>
+                          <TabsTrigger value="security" className={tabTriggerClass}>
+                            <Shield className="w-3.5 h-3.5" /> Security
+                          </TabsTrigger>
+                          <TabsTrigger value="quality" className={tabTriggerClass}>
+                            <TrendingUp className="w-3.5 h-3.5" /> Quality
+                          </TabsTrigger>
+                          <TabsTrigger value="summary" className={tabTriggerClass}>
+                            <Layers className="w-3.5 h-3.5" /> Summary
+                          </TabsTrigger>
+
+                          <div className="w-px h-5 bg-border mx-1 self-center shrink-0" />
+
+                          {/* Tools */}
+                          <TabsTrigger value="autofix" className={tabTriggerClass}>
+                            <RefreshCw className="w-3.5 h-3.5" /> Auto-Fix
+                          </TabsTrigger>
+                          <TabsTrigger value="plugin" className={tabTriggerClass}>
+                            <Package className="w-3.5 h-3.5" /> Plugin
+                          </TabsTrigger>
+                          <TabsTrigger value="workflow" className={tabTriggerClass}>
+                            <GitBranch className="w-3.5 h-3.5" /> Workflow
+                          </TabsTrigger>
+                          <TabsTrigger value="installer" className={tabTriggerClass}>
+                            <Settings className="w-3.5 h-3.5" /> Installer
+                          </TabsTrigger>
+                          <TabsTrigger value="docs" className={tabTriggerClass}>
+                            <Book className="w-3.5 h-3.5" /> Docs
+                          </TabsTrigger>
+                          <TabsTrigger value="cicd" className={tabTriggerClass}>
+                            <Container className="w-3.5 h-3.5" /> CI/CD
+                          </TabsTrigger>
+
+                          <div className="w-px h-5 bg-border mx-1 self-center shrink-0" />
+
+                          {/* History & Team */}
+                          <TabsTrigger value="history" className={tabTriggerClass}>
+                            <History className="w-3.5 h-3.5" /> History
+                          </TabsTrigger>
+                          <TabsTrigger value="timemachine" className={tabTriggerClass}>
+                            <Clock className="w-3.5 h-3.5" /> Versions
+                          </TabsTrigger>
+                          <TabsTrigger value="branches" className={tabTriggerClass}>
+                            <GitFork className="w-3.5 h-3.5" /> Branch
+                          </TabsTrigger>
+                          <TabsTrigger value="collab" className={tabTriggerClass}>
+                            <Users className="w-3.5 h-3.5" /> Team
+                          </TabsTrigger>
+                          <TabsTrigger value="monitor" className={tabTriggerClass}>
+                            <Activity className="w-3.5 h-3.5" /> Monitor
+                          </TabsTrigger>
+                          <TabsTrigger value="envs" className={tabTriggerClass}>
+                            <Server className="w-3.5 h-3.5" /> Envs
+                          </TabsTrigger>
+                          <TabsTrigger value="webhooks" className={tabTriggerClass}>
+                            <Webhook className="w-3.5 h-3.5" /> Hooks
+                          </TabsTrigger>
+                        </TabsList>
+                      </div>
                     </Tabs>
                   </div>
                   <div className="flex-1 min-h-0 overflow-hidden">

@@ -408,6 +408,382 @@ const lmsTemplate: StarterTemplate = {
   },
 };
 
+const restaurantTemplate: StarterTemplate = {
+  id: "restaurant",
+  name: "Restaurant & Food",
+  description: "Restaurant website with menu, reservations, reviews & online ordering",
+  icon: "UtensilsCrossed",
+  category: "business",
+  tags: ["restaurant", "food", "menu", "reservations", "ordering"],
+  config: {
+    project_type: "custom" as ProjectType,
+    build_target: "website+application",
+    title: "Restaurant",
+    description: "A modern restaurant website with digital menu, table reservations, and online ordering",
+    modules: ["auth", "menu", "reservations", "orders", "reviews", "gallery"],
+    roles: [
+      { name: "admin", permissions: ["*"] },
+      { name: "staff", permissions: ["orders.*", "reservations.*", "menu.read"] },
+      { name: "customer", permissions: ["menu.read", "orders.read", "orders.write", "reservations.read", "reservations.write"] },
+    ],
+    features: ["auth", "search", "notifications", "responsive"],
+    pages: [
+      { name: "Home", route: "/", layout: L.mkt, components: [
+        { type: "navbar", props: { logo_text: "RestaurantName" } },
+        { type: "hero", props: { headline: "Taste the Extraordinary", subtitle: "Fine dining redefined with locally sourced ingredients", cta_text: "Reserve a Table" } },
+        { type: "features_grid", props: { title: "Our Specialties" } },
+        { type: "testimonials", props: {} },
+        { type: "contact_form", props: {} },
+        { type: "footer", props: {} },
+      ]},
+      { name: "Menu", route: "/menu", layout: L.pub, components: [
+        { type: "navbar", props: {} },
+        { type: "search_bar", props: { placeholder: "Search dishes..." } },
+        { type: "card_grid", props: { columns: 3 } },
+      ]},
+      { name: "Reservations", route: "/reservations", layout: L.pub, components: [
+        { type: "navbar", props: {} },
+        { type: "form", props: { title: "Book a Table" } },
+      ]},
+      { name: "Admin", route: "/admin", layout: L.dash, components: [
+        { type: "dashboard_layout", props: {} },
+        { type: "stats_row", props: {} },
+        { type: "crud_table", props: { collection: "reservations" } },
+      ]},
+      { name: "Login", route: "/login", layout: L.auth, components: [{ type: "auth_form", props: { mode: "both" } }] },
+    ],
+    collections: [
+      col("menu_items", [
+        { name: "name", type: "text", required: true },
+        { name: "description", type: "text" },
+        { name: "price", type: "number", required: true },
+        { name: "category", type: "text" },
+        { name: "image_url", type: "media" },
+        { name: "is_available", type: "boolean", default: "true" },
+        { name: "is_featured", type: "boolean", default: "false" },
+      ]),
+      col("reservations", [
+        { name: "guest_name", type: "text", required: true },
+        { name: "email", type: "email", required: true },
+        { name: "phone", type: "text" },
+        { name: "date", type: "date", required: true },
+        { name: "time", type: "text", required: true },
+        { name: "guests", type: "number", required: true },
+        { name: "status", type: "enum", default: "pending" },
+        { name: "notes", type: "text" },
+      ]),
+      col("reviews", [
+        { name: "rating", type: "number", required: true },
+        { name: "comment", type: "text" },
+        { name: "reviewer_name", type: "text" },
+      ]),
+    ],
+    style: { primary_color: "#dc2626", font: "Inter", border_radius: "lg", theme: "light" },
+    multi_tenant: false,
+  },
+};
+
+const realEstateTemplate: StarterTemplate = {
+  id: "real-estate",
+  name: "Real Estate",
+  description: "Property listing platform with search, filters, agents & inquiries",
+  icon: "Home",
+  category: "business",
+  tags: ["real estate", "property", "listings", "agents", "housing"],
+  config: {
+    project_type: "custom" as ProjectType,
+    build_target: "website+application",
+    title: "Real Estate Platform",
+    description: "A comprehensive real estate platform with property listings, agent profiles, and inquiry management",
+    modules: ["auth", "listings", "agents", "inquiries", "favorites", "analytics"],
+    roles: [
+      { name: "admin", permissions: ["*"] },
+      { name: "agent", permissions: ["listings.*", "inquiries.read", "inquiries.write"] },
+      { name: "buyer", permissions: ["listings.read", "inquiries.read", "inquiries.write", "favorites.*"] },
+    ],
+    features: ["auth", "search", "map", "notifications"],
+    pages: [
+      { name: "Home", route: "/", layout: L.mkt, components: [
+        { type: "navbar", props: { logo_text: "HomeFinder" } },
+        { type: "hero", props: { headline: "Find Your Dream Home", subtitle: "Browse thousands of properties in your area", cta_text: "Search Properties" } },
+        { type: "search_bar", props: { placeholder: "Search by location, price, type..." } },
+        { type: "card_grid", props: { columns: 3 } },
+        { type: "features_grid", props: { title: "Why Choose Us" } },
+        { type: "testimonials", props: {} },
+        { type: "footer", props: {} },
+      ]},
+      { name: "Listings", route: "/listings", layout: L.pub, components: [
+        { type: "navbar", props: {} },
+        { type: "search_bar", props: {} },
+        { type: "card_grid", props: { columns: 3 } },
+      ]},
+      { name: "Dashboard", route: "/dashboard", layout: L.dash, components: [
+        { type: "dashboard_layout", props: {} },
+        { type: "stats_row", props: {} },
+        { type: "crud_table", props: { collection: "properties" } },
+      ]},
+      { name: "Login", route: "/login", layout: L.auth, components: [{ type: "auth_form", props: { mode: "both" } }] },
+    ],
+    collections: [
+      col("properties", [
+        { name: "title", type: "text", required: true },
+        { name: "description", type: "text" },
+        { name: "price", type: "number", required: true },
+        { name: "property_type", type: "enum", default: "house" },
+        { name: "bedrooms", type: "number" },
+        { name: "bathrooms", type: "number" },
+        { name: "area_sqft", type: "number" },
+        { name: "address", type: "text", required: true },
+        { name: "city", type: "text" },
+        { name: "image_url", type: "media" },
+        { name: "status", type: "enum", default: "active" },
+        { name: "agent_id", type: "relation", relation_to: "agents" },
+      ]),
+      col("agents", [
+        { name: "name", type: "text", required: true },
+        { name: "email", type: "email", required: true },
+        { name: "phone", type: "text" },
+        { name: "photo_url", type: "media" },
+        { name: "bio", type: "text" },
+        { name: "listings_count", type: "number", default: "0" },
+      ]),
+      col("inquiries", [
+        { name: "property_id", type: "relation", relation_to: "properties", required: true },
+        { name: "name", type: "text", required: true },
+        { name: "email", type: "email", required: true },
+        { name: "message", type: "text", required: true },
+        { name: "status", type: "enum", default: "new" },
+      ]),
+    ],
+    style: { primary_color: "#0ea5e9", font: "Inter", border_radius: "lg", theme: "light" },
+    multi_tenant: false,
+  },
+};
+
+const jobBoardTemplate: StarterTemplate = {
+  id: "job-board",
+  name: "Job Board",
+  description: "Job listing platform with applications, company profiles & filters",
+  icon: "Briefcase",
+  category: "business",
+  tags: ["jobs", "hiring", "recruitment", "career", "applications"],
+  config: {
+    project_type: "custom" as ProjectType,
+    build_target: "website+application",
+    title: "Job Board",
+    description: "A modern job board platform for posting and applying to jobs",
+    modules: ["auth", "jobs", "applications", "companies", "profiles", "search"],
+    roles: [
+      { name: "admin", permissions: ["*"] },
+      { name: "employer", permissions: ["jobs.*", "applications.read", "companies.*"] },
+      { name: "candidate", permissions: ["jobs.read", "applications.read", "applications.write", "profiles.*"] },
+    ],
+    features: ["auth", "search", "notifications", "filters"],
+    pages: [
+      { name: "Home", route: "/", layout: L.mkt, components: [
+        { type: "navbar", props: { logo_text: "JobHub" } },
+        { type: "hero", props: { headline: "Find Your Next Career Move", subtitle: "Thousands of jobs from top companies", cta_text: "Browse Jobs" } },
+        { type: "search_bar", props: { placeholder: "Search jobs by title, skill, or company..." } },
+        { type: "card_grid", props: { columns: 2 } },
+        { type: "trusted_by", props: {} },
+        { type: "footer", props: {} },
+      ]},
+      { name: "Jobs", route: "/jobs", layout: L.pub, components: [
+        { type: "navbar", props: {} },
+        { type: "search_bar", props: {} },
+        { type: "card_grid", props: { columns: 2 } },
+      ]},
+      { name: "Employer Dashboard", route: "/employer", layout: L.dash, components: [
+        { type: "dashboard_layout", props: {} },
+        { type: "stats_row", props: {} },
+        { type: "crud_table", props: { collection: "jobs" } },
+      ]},
+      { name: "Login", route: "/login", layout: L.auth, components: [{ type: "auth_form", props: { mode: "both" } }] },
+    ],
+    collections: [
+      col("jobs", [
+        { name: "title", type: "text", required: true },
+        { name: "description", type: "text", required: true },
+        { name: "company_id", type: "relation", relation_to: "companies" },
+        { name: "location", type: "text" },
+        { name: "salary_min", type: "number" },
+        { name: "salary_max", type: "number" },
+        { name: "job_type", type: "enum", default: "full-time" },
+        { name: "experience_level", type: "enum", default: "mid" },
+        { name: "is_remote", type: "boolean", default: "false" },
+        { name: "status", type: "enum", default: "active" },
+      ]),
+      col("companies", [
+        { name: "name", type: "text", required: true },
+        { name: "logo_url", type: "media" },
+        { name: "website", type: "url" },
+        { name: "industry", type: "text" },
+        { name: "size", type: "text" },
+        { name: "description", type: "text" },
+      ]),
+      col("applications", [
+        { name: "job_id", type: "relation", relation_to: "jobs", required: true },
+        { name: "resume_url", type: "media" },
+        { name: "cover_letter", type: "text" },
+        { name: "status", type: "enum", default: "submitted" },
+      ]),
+    ],
+    style: { primary_color: "#6366f1", font: "Inter", border_radius: "lg", theme: "light" },
+    multi_tenant: false,
+  },
+};
+
+const socialNetworkTemplate: StarterTemplate = {
+  id: "social-network",
+  name: "Social Network",
+  description: "Social platform with posts, profiles, followers & messaging",
+  icon: "Users",
+  category: "content",
+  tags: ["social", "network", "posts", "profiles", "messaging", "community"],
+  config: {
+    project_type: "custom" as ProjectType,
+    build_target: "application",
+    title: "Social Network",
+    description: "A social networking platform with user profiles, posts, and interactions",
+    modules: ["auth", "profiles", "posts", "comments", "likes", "follows", "messaging", "notifications"],
+    roles: [
+      { name: "admin", permissions: ["*"] },
+      { name: "moderator", permissions: ["posts.*", "comments.*", "reports.read"] },
+      { name: "user", permissions: ["posts.read", "posts.write", "comments.read", "comments.write", "profiles.read", "messaging.*"] },
+    ],
+    features: ["auth", "search", "notifications", "realtime", "media-upload"],
+    pages: [
+      { name: "Feed", route: "/", layout: L.dash, components: [
+        { type: "dashboard_layout", props: {} },
+        { type: "form", props: { title: "What's on your mind?" } },
+        { type: "card_grid", props: { columns: 1 } },
+      ]},
+      { name: "Explore", route: "/explore", layout: L.dash, components: [
+        { type: "search_bar", props: { placeholder: "Search people and posts..." } },
+        { type: "card_grid", props: { columns: 3 } },
+      ]},
+      { name: "Messages", route: "/messages", layout: L.dash, components: [
+        { type: "crud_table", props: { collection: "messages" } },
+      ]},
+      { name: "Admin", route: "/admin", layout: L.dash, components: [
+        { type: "stats_row", props: {} },
+        { type: "crud_table", props: { collection: "reports" } },
+      ]},
+      { name: "Login", route: "/login", layout: L.auth, components: [{ type: "auth_form", props: { mode: "both" } }] },
+    ],
+    collections: [
+      col("posts", [
+        { name: "content", type: "text", required: true },
+        { name: "media_url", type: "media" },
+        { name: "likes_count", type: "number", default: "0" },
+        { name: "comments_count", type: "number", default: "0" },
+        { name: "is_public", type: "boolean", default: "true" },
+      ]),
+      col("comments", [
+        { name: "post_id", type: "relation", relation_to: "posts", required: true },
+        { name: "content", type: "text", required: true },
+      ]),
+      col("follows", [
+        { name: "following_id", type: "text", required: true },
+      ]),
+      col("messages", [
+        { name: "receiver_id", type: "text", required: true },
+        { name: "content", type: "text", required: true },
+        { name: "is_read", type: "boolean", default: "false" },
+      ]),
+      col("reports", [
+        { name: "target_type", type: "text", required: true },
+        { name: "target_id", type: "text", required: true },
+        { name: "reason", type: "text", required: true },
+        { name: "status", type: "enum", default: "pending" },
+      ]),
+    ],
+    style: { primary_color: "#3b82f6", font: "Inter", border_radius: "full", theme: "light" },
+    multi_tenant: false,
+  },
+};
+
+const inventoryTemplate: StarterTemplate = {
+  id: "inventory",
+  name: "Inventory Management",
+  description: "Stock tracking with warehouses, suppliers, purchase orders & alerts",
+  icon: "Package",
+  category: "productivity",
+  tags: ["inventory", "stock", "warehouse", "supply chain", "tracking"],
+  config: {
+    project_type: "custom" as ProjectType,
+    build_target: "application",
+    title: "Inventory Manager",
+    description: "A comprehensive inventory management system for tracking stock, suppliers, and orders",
+    modules: ["auth", "products", "warehouses", "suppliers", "purchase_orders", "stock_movements", "reports"],
+    roles: [
+      { name: "admin", permissions: ["*"] },
+      { name: "manager", permissions: ["products.*", "warehouses.*", "suppliers.*", "purchase_orders.*", "reports.read"] },
+      { name: "warehouse_staff", permissions: ["products.read", "stock_movements.*", "warehouses.read"] },
+    ],
+    features: ["auth", "search", "analytics", "notifications", "barcode"],
+    pages: [
+      { name: "Dashboard", route: "/dashboard", layout: L.dash, components: [
+        { type: "dashboard_layout", props: {} },
+        { type: "stats_row", props: {} },
+        { type: "chart", props: { type: "bar" } },
+      ]},
+      { name: "Products", route: "/products", layout: L.dash, components: [
+        { type: "crud_table", props: { collection: "products" } },
+      ]},
+      { name: "Warehouses", route: "/warehouses", layout: L.dash, components: [
+        { type: "crud_table", props: { collection: "warehouses" } },
+      ]},
+      { name: "Purchase Orders", route: "/orders", layout: L.dash, components: [
+        { type: "crud_table", props: { collection: "purchase_orders" } },
+      ]},
+      { name: "Login", route: "/login", layout: L.auth, components: [{ type: "auth_form", props: { mode: "both" } }] },
+    ],
+    collections: [
+      col("products", [
+        { name: "name", type: "text", required: true },
+        { name: "sku", type: "text", required: true, unique: true },
+        { name: "description", type: "text" },
+        { name: "category", type: "text" },
+        { name: "unit_price", type: "number", required: true },
+        { name: "quantity", type: "number", default: "0" },
+        { name: "min_stock", type: "number", default: "10" },
+        { name: "image_url", type: "media" },
+        { name: "warehouse_id", type: "relation", relation_to: "warehouses" },
+      ]),
+      col("warehouses", [
+        { name: "name", type: "text", required: true },
+        { name: "address", type: "text" },
+        { name: "capacity", type: "number" },
+        { name: "is_active", type: "boolean", default: "true" },
+      ]),
+      col("suppliers", [
+        { name: "name", type: "text", required: true },
+        { name: "email", type: "email" },
+        { name: "phone", type: "text" },
+        { name: "address", type: "text" },
+        { name: "rating", type: "number" },
+      ]),
+      col("purchase_orders", [
+        { name: "supplier_id", type: "relation", relation_to: "suppliers", required: true },
+        { name: "total", type: "number", required: true },
+        { name: "status", type: "enum", default: "draft" },
+        { name: "expected_date", type: "date" },
+        { name: "items", type: "json" },
+      ]),
+      col("stock_movements", [
+        { name: "product_id", type: "relation", relation_to: "products", required: true },
+        { name: "warehouse_id", type: "relation", relation_to: "warehouses" },
+        { name: "type", type: "enum", default: "in" },
+        { name: "quantity", type: "number", required: true },
+        { name: "notes", type: "text" },
+      ]),
+    ],
+    style: { primary_color: "#059669", font: "Inter", border_radius: "md", theme: "light" },
+    multi_tenant: false,
+  },
+};
+
 // ============================================================
 // Registry
 // ============================================================
@@ -419,6 +795,11 @@ export const STARTER_TEMPLATES: StarterTemplate[] = [
   portfolioTemplate,
   crmTemplate,
   lmsTemplate,
+  restaurantTemplate,
+  realEstateTemplate,
+  jobBoardTemplate,
+  socialNetworkTemplate,
+  inventoryTemplate,
 ];
 
 export function getStarterTemplateById(id: string): StarterTemplate | undefined {
