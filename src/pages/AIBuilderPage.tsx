@@ -189,6 +189,8 @@ export default function AIBuilderPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const orchestrator = useMemo(() => new AIPipelineOrchestrator(), []);
+  const currentProjectRef = useRef(currentProject);
+  useEffect(() => { currentProjectRef.current = currentProject; }, [currentProject]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -441,13 +443,14 @@ export default function AIBuilderPage() {
               duration_ms: duration,
             });
 
-            let projectId = currentProject?.id;
-            if (currentProject) {
+            const activeProject = currentProjectRef.current;
+            let projectId = activeProject?.id;
+            if (activeProject) {
               await supabase.from("projects").update({
                 prompt: originalPrompt || buildPrompt,
-                title: config.title || currentProject.title || "Untitled",
+                title: config.title || activeProject.title || "Untitled",
                 status: "generated",
-              }).eq("id", currentProject.id);
+              }).eq("id", activeProject.id);
             } else {
               const { data: project } = await supabase.from("projects").insert({
                 user_id: currentUser.id,
