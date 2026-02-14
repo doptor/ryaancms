@@ -85,6 +85,19 @@ export default function DashboardOverview() {
           formData.append("audio", audioBlob, "recording.webm");
           const { data, error } = await supabase.functions.invoke("speech-to-text", { body: formData });
           if (error) throw error;
+          if (data?.error === "no_credits") {
+            toast({
+              title: "AI credits exhausted",
+              description: "Setup your own AI API key from the AI Integration settings page.",
+              variant: "destructive",
+              action: (
+                <Button variant="outline" size="sm" className="shrink-0" onClick={() => navigate("/dashboard/settings", { state: { section: "ai-integrations" } })}>
+                  Setup API
+                </Button>
+              ),
+            });
+            return;
+          }
           const transcript = data?.transcript?.trim();
           if (transcript) {
             setPrompt((prev) => (prev ? prev + " " + transcript : transcript));
