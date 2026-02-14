@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Zap, LogOut, Menu, X, CircleDot, icons, User, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useBranding } from "@/contexts/BrandingContext";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -36,6 +37,8 @@ interface DynamicMenuGroup {
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { branding } = useBranding();
+  const siteName = branding.siteName;
   const { signOut, user } = useAuth();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -122,7 +125,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="w-7 h-7 rounded-lg bg-gradient-primary flex items-center justify-center">
             <Zap className="w-3.5 h-3.5 text-primary-foreground" />
           </div>
-          <span className="font-bold text-foreground">RyaanCMS</span>
+          <span className="font-bold text-foreground">{siteName}</span>
         </Link>
         <button onClick={() => setMobileOpen(!mobileOpen)} className="text-foreground p-1">
           {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -184,7 +187,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="w-7 h-7 rounded-lg bg-gradient-primary flex items-center justify-center shrink-0">
                 <Zap className="w-3.5 h-3.5 text-primary-foreground" />
               </div>
-              <span className="font-bold text-foreground whitespace-nowrap">RyaanCMS</span>
+              <span className="font-bold text-foreground whitespace-nowrap">{siteName}</span>
             </Link>
 
             {/* Top zone - header menu items */}

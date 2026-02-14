@@ -381,7 +381,7 @@ export default function SettingsPage() {
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="mb-5 sm:mb-6">
           <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-1">Settings</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground">Configure your RyaanCMS instance.</p>
+          <p className="text-xs sm:text-sm text-muted-foreground">Configure your site instance.</p>
         </div>
 
         {/* Colorful tab bar - scrollable on mobile, wrapping on desktop */}

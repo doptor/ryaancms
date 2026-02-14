@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import MirrorDemo from "@/components/landing/MirrorDemo";
 import PulseDemo from "@/components/landing/PulseDemo";
 import VaultDemo from "@/components/landing/VaultDemo";
+import { useBranding } from "@/contexts/BrandingContext";
 
 const navLinks = [
   { label: "Features", href: "#features" },
@@ -86,6 +87,9 @@ const highlights = [
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const { branding } = useBranding();
+  const siteName = branding.siteName;
+
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Navbar */}
@@ -95,7 +99,7 @@ export default function LandingPage() {
             <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
               <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary-foreground" />
             </div>
-            <span className="text-base sm:text-lg font-bold text-foreground">RyaanCMS</span>
+            <span className="text-base sm:text-lg font-bold text-foreground">{siteName}</span>
           </Link>
 
           <div className="hidden md:flex items-center gap-6 lg:gap-8">
@@ -158,7 +162,7 @@ export default function LandingPage() {
           <div className="max-w-3xl mx-auto text-center animate-slide-up">
             <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-xs sm:text-sm font-medium mb-4 sm:mb-6">
               <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              RyaanCMS Free & Opensource
+              {siteName} Free & Opensource
             </div>
             <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight mb-4 sm:mb-6">
               The CMS Where
@@ -297,7 +301,7 @@ export default function LandingPage() {
       <section className="py-12 sm:py-20 bg-gradient-surface">
         <div className="container px-4 sm:px-6">
           <div className="text-center mb-8 sm:mb-14">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 text-foreground">Why RyaanCMS is Different</h2>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 text-foreground">Why {siteName} is Different</h2>
             <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">
               Not just another website builder — an autonomous engineering platform.
             </p>
@@ -398,7 +402,7 @@ export default function LandingPage() {
               Free. Open Source. <span className="text-gradient">Forever.</span>
             </h2>
             <p className="text-sm sm:text-base text-muted-foreground mb-6 sm:mb-8 max-w-lg mx-auto">
-              RyaanCMS is built by the community, for the community. Fork it, extend it, make it yours.
+              {siteName} is built by the community, for the community. Fork it, extend it, make it yours.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
               <Link to="/dashboard" className="w-full sm:w-auto">
@@ -419,9 +423,9 @@ export default function LandingPage() {
             <div className="w-6 h-6 rounded-md bg-gradient-primary flex items-center justify-center">
               <Zap className="w-3 h-3 text-primary-foreground" />
             </div>
-            <span className="text-sm font-semibold text-foreground">RyaanCMS</span>
+            <span className="text-sm font-semibold text-foreground">{siteName}</span>
           </div>
-          <p className="text-xs text-muted-foreground text-center">© 2026 RyaanCMS. Free & Open Source. MIT License.</p>
+          <p className="text-xs text-muted-foreground text-center">© {new Date().getFullYear()} {siteName}. Free & Open Source. MIT License.</p>
         </div>
       </footer>
     </div>
