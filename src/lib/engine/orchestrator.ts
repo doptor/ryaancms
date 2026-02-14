@@ -235,8 +235,10 @@ export class AIPipelineOrchestrator {
       "Database Agent": "architecting",
       "Backend Agent": "generating",
       "UI/UX Designer": "designing",
+      "Copywriter Agent": "designing",
       "Testing Agent": "generating",
       "Debugger Agent": "reviewing",
+      "UI Reviewer Agent": "reviewing",
       "Quality Reviewer": "reviewing",
     };
 
