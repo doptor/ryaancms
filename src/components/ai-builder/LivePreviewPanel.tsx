@@ -370,7 +370,7 @@ export function LivePreviewPanel({ files, hasConfig, isGenerating, onGenerate }:
       </div>
 
       {/* Preview area */}
-      <div className="flex-1 min-h-0 bg-muted/30 flex items-start justify-center overflow-auto p-4 relative">
+      <div className="flex-1 min-h-0 bg-muted/30 flex items-start justify-center overflow-hidden p-4 relative">
         <div
           className="bg-background rounded-lg border border-border shadow-lg overflow-hidden transition-all duration-300 flex flex-col"
           style={{
@@ -389,9 +389,9 @@ export function LivePreviewPanel({ files, hasConfig, isGenerating, onGenerate }:
             key={previewKey}
             ref={iframeRef}
             srcDoc={previewHtml}
-            sandbox="allow-scripts"
-            className="w-full border-0 flex-1"
-            style={{ minHeight: 0, height: "100%" }}
+            sandbox="allow-scripts allow-same-origin"
+            className="w-full border-0 flex-1 min-h-0"
+            style={{ height: "100%" }}
             title="Live Preview"
             onLoad={handleIframeLoad}
           />
