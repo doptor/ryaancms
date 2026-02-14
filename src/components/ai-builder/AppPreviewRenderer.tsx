@@ -495,7 +495,7 @@ function StatsRowPreview({ props, config }: { props: Record<string, any>; config
     ];
     return (
       <div className="px-6 py-10">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {skills.map((m) => (
             <div key={m.label} className="rounded-2xl border border-border bg-card p-5 text-center space-y-2 hover:shadow-md hover:border-primary/20 transition-all">
               <div className="w-12 h-12 mx-auto rounded-xl bg-primary/10 flex items-center justify-center">
@@ -518,7 +518,7 @@ function StatsRowPreview({ props, config }: { props: Record<string, any>; config
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {defaultMetrics.map((m) => (
         <div key={m.label} className="rounded-xl border border-border bg-card p-4 space-y-3 hover:shadow-sm transition-shadow">
           <div className="flex items-center justify-between">
@@ -1010,7 +1010,7 @@ function KanbanPreview({ props }: { props: Record<string, any> }) {
         <h3 className="text-sm font-bold text-foreground">Project Board</h3>
         <Button size="sm" className="h-7 text-xs gap-1"><Plus className="w-3 h-3" /> Add Task</Button>
       </div>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {columns.map((col) => (
           <div key={col.name} className="space-y-2.5">
             <div className="flex items-center justify-between">
