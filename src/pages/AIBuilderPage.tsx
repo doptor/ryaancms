@@ -199,6 +199,8 @@ export default function AIBuilderPage() {
   useEffect(() => {
     if (incomingPrompt && !hasProcessedIncoming.current) {
       hasProcessedIncoming.current = true;
+      // Clear location state to prevent re-triggering on refresh
+      window.history.replaceState({}, document.title);
       setTimeout(() => sendMessage(incomingPrompt), 300);
     }
   }, [incomingPrompt]);
