@@ -62,6 +62,7 @@ import { WebhookNotificationPanel } from "@/components/ai-builder/WebhookNotific
 import { ProjectBranchingPanel } from "@/components/ai-builder/ProjectBranchingPanel";
 import { DragDropBuilderPanel } from "@/components/ai-builder/DragDropBuilderPanel";
 import { AIChatAssistantPanel } from "@/components/ai-builder/AIChatAssistantPanel";
+import { BuildActivitySidebar, ActivityDetailView, type BuildActivity, type QueuedPrompt } from "@/components/ai-builder/BuildActivitySidebar";
 import { DatabaseDesignerPanel } from "@/components/ai-builder/DatabaseDesignerPanel";
 import { I18nGeneratorPanel } from "@/components/ai-builder/I18nGeneratorPanel";
 import { SEOOptimizerPanel } from "@/components/ai-builder/SEOOptimizerPanel";
@@ -216,6 +217,10 @@ export default function AIBuilderPage() {
   const [selectedContentType, setSelectedContentType] = useState<string>("website");
   const [showColorPresets, setShowColorPresets] = useState(false);
   const [buildElapsed, setBuildElapsed] = useState(0);
+  const [promptQueue, setPromptQueue] = useState<QueuedPrompt[]>([]);
+  const [buildActivities, setBuildActivities] = useState<BuildActivity[]>([]);
+  const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
+  const isProcessingQueue = useRef(false);
   const buildTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const buildStartTimeRef = useRef<number>(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -425,8 +430,47 @@ export default function AIBuilderPage() {
     } catch {}
   }, [currentProject?.id, user, pipelineState?.stage]);
 
+  // Queue processor
+  const processQueue = useCallback(async () => {
+    if (isProcessingQueue.current) return;
+    isProcessingQueue.current = true;
+
+    while (true) {
+      const next = promptQueue.find(q => q.status === "queued");
+      if (!next) break;
+
+      setPromptQueue(prev => prev.map(q => q.id === next.id ? { ...q, status: "building" } : q));
+      setMessages(prev => [...prev, { role: "user", content: next.text }]);
+      await executeBuild(next.text);
+      setPromptQueue(prev => prev.map(q => q.id === next.id ? { ...q, status: "done" } : q));
+    }
+
+    isProcessingQueue.current = false;
+  }, [promptQueue]);
+
+  // Auto-process queue when building finishes
+  useEffect(() => {
+    if (!isBuilding && promptQueue.some(q => q.status === "queued")) {
+      processQueue();
+    }
+  }, [isBuilding, promptQueue]);
+
   const sendMessage = async (text: string) => {
-    if (!text.trim() || isBuilding) return;
+    if (!text.trim()) return;
+
+    // If already building, add to queue
+    if (isBuilding) {
+      const queueItem: QueuedPrompt = {
+        id: crypto.randomUUID(),
+        text: text.trim(),
+        status: "queued",
+        addedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      };
+      setPromptQueue(prev => [...prev, queueItem]);
+      setInput("");
+      toast({ title: "📋 Added to queue", description: `"${text.slice(0, 50)}..." will run after current build.` });
+      return;
+    }
 
     setInput("");
     const newMessages: Message[] = [...messages, { role: "user", content: text }];
@@ -505,15 +549,50 @@ export default function AIBuilderPage() {
     setIsBuilding(true);
     setPipelineState(null);
     setBuildElapsed(0);
+    setSelectedActivityId(null);
     buildStartTimeRef.current = Date.now();
     buildTimerRef.current = setInterval(() => {
       setBuildElapsed(Math.round((Date.now() - buildStartTimeRef.current) / 1000));
     }, 1000);
 
-
     const analysis = analyzePrompt(buildPrompt);
     const relevantSteps = analysis.stepsNeeded;
-    // Only show relevant steps — don't expose all 17 to users
+
+    // === Build Activities: Understanding phase ===
+    const understandingActivity: BuildActivity = {
+      id: crypto.randomUUID(),
+      title: "Understanding your request",
+      description: analysis.reason,
+      status: "done",
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      details: { type: "understanding", data: { scope: analysis.scope, buildTarget: analysis.buildTarget, reason: analysis.reason, stepsNeeded: analysis.stepsNeeded } },
+    };
+    const planActivity: BuildActivity = {
+      id: crypto.randomUUID(),
+      title: "Creating execution plan",
+      description: `${relevantSteps.length} pipeline steps planned`,
+      status: "done",
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      details: { type: "plan", data: { tasks: relevantSteps.map(i => ENGINE_LABELS[i] || `Step ${i}`) } },
+    };
+    const buildingActivity: BuildActivity = {
+      id: crypto.randomUUID(),
+      title: "Building application",
+      description: "Executing pipeline...",
+      status: "in_progress",
+    };
+    setBuildActivities([understandingActivity, planActivity, buildingActivity]);
+
+    // Show understanding summary in chat
+    const BUILD_SCOPE_LABELS: Record<string, string> = {
+      micro: "⚡ Quick Edit", light: "🔧 Light Update", moderate: "🏗 Standard Build", full: "🚀 Full Build",
+    };
+    setMessages(prev => [...prev, {
+      role: "ai",
+      content: `${BUILD_SCOPE_LABELS[analysis.scope] || "🏗 Build"} — **${analysis.buildTarget}**\n\n📋 **What I understood:**\n_${analysis.reason}_\n\n⚙️ Running **${relevantSteps.length} pipeline steps**...`,
+    }]);
+
+    // Only show relevant steps
     const steps: ProgressStep[] = ENGINE_LABELS
       .map((label, i) => ({ label, index: i, status: relevantSteps.includes(i) ? "pending" as const : "done" as const }))
       .filter(s => relevantSteps.includes(s.index))
@@ -588,9 +667,35 @@ export default function AIBuilderPage() {
       const duration = Date.now() - startTime;
       setPipelineState(result);
 
+      // Update build activities with completion details
       if (result.stage === "complete" && result.config) {
         const config = result.config;
         const v = result.validation;
+        const thinkDuration = Math.round(duration / 1000);
+        const buildComps = config.pages.flatMap((p) => p.components.map((c) => c.type));
+
+        setBuildActivities(prev => {
+          const completed = prev.map(a => a.status === "in_progress" ? { ...a, status: "done" as const } : a);
+          return [
+            ...completed,
+            {
+              id: crypto.randomUUID(), title: `Created ${config.pages.length} pages`, description: `${buildComps.length} components total`,
+              status: "done" as const, details: { type: "pages" as const, data: { pages: config.pages } },
+            },
+            ...(config.collections.length > 0 ? [{
+              id: crypto.randomUUID(), title: `Designed ${config.collections.length} collections`, description: "Database schema generated",
+              status: "done" as const, details: { type: "database" as const, data: { collections: config.collections } },
+            }] : []),
+            ...(v ? [{
+              id: crypto.randomUUID(), title: `Security: ${v.score}/100`, description: v.errors.length ? `${v.errors.length} issues found` : "All clear",
+              status: "done" as const, details: { type: "security" as const, data: v },
+            }] : []),
+            {
+              id: crypto.randomUUID(), title: "Build complete!", description: `Built in ${thinkDuration}s`,
+              status: "done" as const, details: { type: "summary" as const, data: { pages: config.pages.length, collections: config.collections.length, components: buildComps.length, duration: thinkDuration } },
+            },
+          ];
+        });
 
         if (result.suggestions?.length) setAiSuggestions(result.suggestions);
 
@@ -669,10 +774,10 @@ export default function AIBuilderPage() {
 
         // Build summary
         const thinkingTime = Math.round(duration / 1000);
-        const allComponents = config.pages.flatMap((p) => p.components.map((c) => c.type));
+        const allComps = config.pages.flatMap((p) => p.components.map((c) => c.type));
         const buildTasks: BuildTask[] = [
           { label: `Analyzed requirements & planned architecture`, status: "done" },
-          ...(config.pages.length > 0 ? [{ label: `Created ${config.pages.length} pages with ${allComponents.length} components`, status: "done" as const }] : []),
+          ...(config.pages.length > 0 ? [{ label: `Created ${config.pages.length} pages with ${allComps.length} components`, status: "done" as const }] : []),
           ...(config.collections.length > 0 ? [{ label: `Designed ${config.collections.length} database collections`, status: "done" as const }] : []),
           ...(config.roles && config.roles.length > 0 ? [{ label: `Set up ${config.roles.length} user roles with RBAC`, status: "done" as const }] : []),
           ...(v ? [{ label: `Security validation: ${v.score}/100`, status: "done" as const }] : []),
@@ -1616,10 +1721,9 @@ export default function AIBuilderPage() {
                 sendMessage(input);
               }
             }}
-            placeholder={isBuilding ? "Building your app..." : `Describe your ${selectedContentType}...`}
+            placeholder={isBuilding ? "Queue another prompt..." : `Describe your ${selectedContentType}...`}
             rows={1}
-            disabled={isBuilding}
-            className="flex-1 resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none min-h-[36px] max-h-[160px] py-2 disabled:opacity-50"
+            className="flex-1 resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none min-h-[36px] max-h-[160px] py-2"
           />
           <Button
             size="icon"
@@ -1628,9 +1732,9 @@ export default function AIBuilderPage() {
               input.trim() ? "opacity-100" : "opacity-50"
             )}
             onClick={() => sendMessage(input)}
-            disabled={isBuilding || !input.trim()}
+            disabled={!input.trim()}
           >
-            {isBuilding ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUp className="w-4 h-4" />}
+            {isBuilding ? <Plus className="w-4 h-4" /> : <ArrowUp className="w-4 h-4" />}
           </Button>
         </div>
       </div>
@@ -1638,9 +1742,24 @@ export default function AIBuilderPage() {
   );
 
   // === Chat Panel (Lovable-style) ===
+  const selectedActivity = buildActivities.find(a => a.id === selectedActivityId) || null;
+
   const renderChat = () => (
     <div className="flex flex-col h-full bg-background">
       {hasStarted ? renderMessages() : renderWelcome()}
+      {/* Activity sidebar */}
+      <BuildActivitySidebar
+        activities={buildActivities}
+        queue={promptQueue}
+        selectedActivityId={selectedActivityId}
+        onSelectActivity={(id) => {
+          setSelectedActivityId(id);
+          if (id) setActiveTab("activity-detail");
+        }}
+        onRemoveFromQueue={(id) => setPromptQueue(prev => prev.filter(q => q.id !== id))}
+        isBuilding={isBuilding}
+        buildElapsed={buildElapsed}
+      />
       {renderChatInput()}
     </div>
   );
@@ -1899,8 +2018,8 @@ export default function AIBuilderPage() {
   const effectiveTab = isMobile
     ? (activeTab === "preview" && !hasStarted && !isRestoring ? "chat" : activeTab)
     : activeTab;
-  // Desktop right panel: if activeTab is "chat", show "preview" instead (chat is always visible on left)
-  const desktopRightTab = activeTab === "chat" ? "preview" : activeTab;
+  // Desktop right panel: if activeTab is "chat", show "preview"; if "activity-detail", show that
+  const desktopRightTab = activeTab === "chat" ? (selectedActivityId ? "activity-detail" : "preview") : activeTab;
 
   return (
     <DashboardLayout>
@@ -2132,6 +2251,9 @@ export default function AIBuilderPage() {
                     </Tabs>
                   </div>
                   <div className="flex-1 min-h-0 overflow-hidden">
+                    {desktopRightTab === "activity-detail" && selectedActivity ? (
+                      <ActivityDetailView activity={selectedActivity} />
+                    ) : null}
                     {desktopRightTab === "preview" && renderPreview()}
                     {desktopRightTab === "builder" && (
                       <DragDropBuilderPanel
@@ -2579,6 +2701,9 @@ export default function AIBuilderPage() {
               )}
               {effectiveTab === "analytics" && (
                 <AdvancedAnalyticsPanel pipelineState={pipelineState} />
+              )}
+              {effectiveTab === "activity-detail" && selectedActivity && (
+                <ActivityDetailView activity={selectedActivity} />
               )}
             </div>
           </div>
