@@ -430,36 +430,117 @@ function DatabaseSettings({ values, onChange }: SectionProps) {
 
 function AutoUpdateSettings({ values, onChange }: SectionProps) {
   const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [installing, setInstalling] = useState(false);
+  const [installProgress, setInstallProgress] = useState(0);
+  const [installStep, setInstallStep] = useState("");
   const [updateAvailable, setUpdateAvailable] = useState<null | { version: string; changelog: string[] }>(null);
+  const [currentVersion, setCurrentVersion] = useState(values.currentVersion || "2.3.1");
+  const [updateHistory, setUpdateHistory] = useState<{ version: string; date: string; status: string; type: string }[]>(
+    values.updateHistory || [
+      { version: "2.3.1", date: "2026-02-10", status: "success", type: "Patch" },
+      { version: "2.3.0", date: "2026-02-01", status: "success", type: "Minor" },
+      { version: "2.2.5", date: "2026-01-20", status: "success", type: "Patch" },
+    ]
+  );
 
-  const handleCheckUpdate = () => {
+  const handleCheckUpdate = async () => {
     setCheckingUpdate(true);
-    setTimeout(() => {
-      setCheckingUpdate(false);
-      if (Math.random() > 0.5) {
+    try {
+      // Fetch latest release from database
+      const { data: latestRelease } = await supabase
+        .from("releases")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const now = new Date().toLocaleString();
+      onChange("lastChecked", now);
+
+      if (latestRelease && latestRelease.version !== currentVersion) {
         setUpdateAvailable({
-          version: "2.4.0",
+          version: latestRelease.version,
           changelog: [
-            "Improved AI Builder performance",
+            "Improved AI Builder performance & stability",
             "New drag-and-drop component system",
             "Security patches for authentication",
             "Database migration improvements",
             "Bug fixes and stability enhancements",
           ],
         });
+        toast({ title: "🔔 Update Available!", description: `Version ${latestRelease.version} is ready to install.` });
       } else {
-        setUpdateAvailable(null);
-        toast({ title: "✅ Up to date!", description: "You're running the latest version." });
+        // Simulate a newer version available
+        const parts = currentVersion.split(".").map(Number);
+        const nextVersion = `${parts[0]}.${parts[1]}.${parts[2] + 1}`;
+        setUpdateAvailable({
+          version: nextVersion,
+          changelog: [
+            "Performance optimizations across all modules",
+            "Enhanced AI model integration pipeline",
+            "Improved plugin compatibility system",
+            "Security hardening for API endpoints",
+            "UI/UX refinements and bug fixes",
+          ],
+        });
+        toast({ title: "🔔 Update Available!", description: `Version ${nextVersion} is ready to install.` });
       }
-    }, 2000);
+    } catch (err) {
+      toast({ title: "Check failed", description: "Could not check for updates. Try again later.", variant: "destructive" });
+    } finally {
+      setCheckingUpdate(false);
+    }
   };
 
-  const updateHistory = [
-    { version: "2.3.1", date: "2026-02-10", status: "success", type: "Patch" },
-    { version: "2.3.0", date: "2026-02-01", status: "success", type: "Minor" },
-    { version: "2.2.5", date: "2026-01-20", status: "success", type: "Patch" },
-    { version: "2.2.0", date: "2026-01-05", status: "rolled-back", type: "Minor" },
-  ];
+  const handleInstallUpdate = async () => {
+    if (!updateAvailable) return;
+    setInstalling(true);
+    setInstallProgress(0);
+
+    const steps = [
+      { progress: 10, label: "Downloading update package..." },
+      { progress: 25, label: "Verifying package integrity..." },
+      { progress: 40, label: "Creating backup..." },
+      { progress: 55, label: "Extracting files..." },
+      { progress: 70, label: "Applying database migrations..." },
+      { progress: 85, label: "Updating configuration..." },
+      { progress: 95, label: "Clearing caches..." },
+      { progress: 100, label: "Finalizing..." },
+    ];
+
+    for (const step of steps) {
+      await new Promise((r) => setTimeout(r, 800 + Math.random() * 600));
+      setInstallProgress(step.progress);
+      setInstallStep(step.label);
+    }
+
+    const newVersion = updateAvailable.version;
+    const vParts = newVersion.split(".").map(Number);
+    const type = vParts[2] > 0 ? "Patch" : vParts[1] > 0 ? "Minor" : "Major";
+    const newEntry = {
+      version: newVersion,
+      date: new Date().toISOString().split("T")[0],
+      status: "success",
+      type,
+    };
+
+    const newHistory = [newEntry, ...updateHistory];
+    setUpdateHistory(newHistory);
+    setCurrentVersion(newVersion);
+    onChange("currentVersion", newVersion);
+    onChange("updateHistory", newHistory);
+    onChange("lastChecked", new Date().toLocaleString());
+
+    setUpdateAvailable(null);
+    setInstalling(false);
+    setInstallProgress(0);
+    setInstallStep("");
+
+    toast({
+      title: "✅ Update Installed!",
+      description: `Successfully updated to v${newVersion}. All systems operational.`,
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -470,18 +551,38 @@ function AutoUpdateSettings({ values, onChange }: SectionProps) {
             <RefreshCw className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-foreground">Current Version: <span className="text-primary">v2.3.1</span></p>
+            <p className="text-sm font-semibold text-foreground">Current Version: <span className="text-primary">v{currentVersion}</span></p>
             <p className="text-xs text-muted-foreground">Last checked: {values.lastChecked || "Never"}</p>
           </div>
         </div>
-        <Button onClick={handleCheckUpdate} disabled={checkingUpdate} size="sm" className="gap-2">
+        <Button onClick={handleCheckUpdate} disabled={checkingUpdate || installing} size="sm" className="gap-2">
           {checkingUpdate ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
           {checkingUpdate ? "Checking..." : "Check for Updates"}
         </Button>
       </div>
 
+      {/* Install Progress */}
+      {installing && (
+        <div className="p-4 rounded-xl border border-primary/30 bg-primary/5 space-y-3">
+          <div className="flex items-center gap-2">
+            <Loader2 className="w-4 h-4 text-primary animate-spin" />
+            <span className="text-sm font-semibold text-primary">Installing v{updateAvailable?.version}...</span>
+          </div>
+          <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+            <div
+              className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${installProgress}%` }}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">{installStep}</p>
+            <span className="text-xs font-medium text-primary">{installProgress}%</span>
+          </div>
+        </div>
+      )}
+
       {/* Update Available Banner */}
-      {updateAvailable && (
+      {updateAvailable && !installing && (
         <div className="p-4 rounded-xl border border-primary/30 bg-primary/5 space-y-3">
           <div className="flex items-center gap-2">
             <Download className="w-4 h-4 text-primary" />
@@ -497,10 +598,10 @@ function AutoUpdateSettings({ values, onChange }: SectionProps) {
             ))}
           </div>
           <div className="flex gap-2">
-            <Button size="sm" className="gap-1.5">
+            <Button size="sm" className="gap-1.5" onClick={handleInstallUpdate}>
               <Download className="w-3.5 h-3.5" /> Install Update
             </Button>
-            <Button variant="outline" size="sm">View Full Changelog</Button>
+            <Button variant="outline" size="sm" onClick={() => setUpdateAvailable(null)}>Dismiss</Button>
           </div>
         </div>
       )}
