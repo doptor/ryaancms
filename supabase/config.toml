@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.ai-builder-agents]
 verify_jwt = false
+
+[functions.generate-brand]
+verify_jwt = false

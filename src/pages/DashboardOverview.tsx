@@ -211,10 +211,10 @@ export default function DashboardOverview() {
           <div className="absolute top-1/2 left-1/4 w-[250px] h-[250px] rounded-full bg-chart-1/6 blur-[90px]" />
         </div>
 
-        <div className="relative z-10 w-full max-w-5xl mx-auto px-4 py-8 flex flex-col gap-8">
+        <div className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8">
           {/* Greeting + Prompt */}
-          <div className="flex flex-col items-center gap-6 pt-8">
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground text-center">
+          <div className="flex flex-col items-center gap-4 sm:gap-6 pt-4 sm:pt-8">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground text-center">
               Ready to build, {displayName}?
             </h1>
 
@@ -404,12 +404,12 @@ export default function DashboardOverview() {
           {allProjects.length > 0 && (
             <div className="space-y-4">
               {/* Header + Search */}
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
                   <FolderOpen className="w-4 h-4 text-primary" />
                   Projects ({filtered.length})
                 </h2>
-                <div className="relative w-64">
+                <div className="relative w-full sm:w-64">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                   <Input
                     value={searchQuery}
@@ -435,9 +435,13 @@ export default function DashboardOverview() {
                     <CardContent className="p-4 space-y-3">
                       {/* Top row: icon + menu */}
                       <div className="flex items-start justify-between">
-                        <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                          <Sparkles className="w-4 h-4 text-primary" />
-                        </div>
+                        {(p as any).logo_url ? (
+                          <img src={(p as any).logo_url} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0" />
+                        ) : (
+                          <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                            <Sparkles className="w-4 h-4 text-primary" />
+                          </div>
+                        )}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                             <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -471,7 +475,7 @@ export default function DashboardOverview() {
                         />
                       ) : (
                         <h3 className="text-sm font-medium text-foreground truncate">
-                          {p.title || "Untitled"}
+                          {(p as any).brand_name || p.title || "Untitled"}
                         </h3>
                       )}
 

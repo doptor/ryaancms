@@ -73,19 +73,19 @@ export default function PreviewPage() {
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Top toolbar */}
-      <div className="h-12 border-b border-border bg-card flex items-center justify-between px-4 shrink-0">
-        <div className="flex items-center gap-3">
+      <div className="h-12 border-b border-border bg-card flex items-center justify-between px-3 sm:px-4 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate("/dashboard/ai-builder")}
-            className="text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground shrink-0"
           >
-            <ArrowLeft className="w-4 h-4 mr-1" />
-            Builder
+            <ArrowLeft className="w-4 h-4 sm:mr-1" />
+            <span className="hidden sm:inline">Builder</span>
           </Button>
-          <div className="h-5 w-px bg-border" />
-          <span className="text-sm font-medium text-foreground truncate max-w-[200px]">
+          <div className="h-5 w-px bg-border hidden sm:block" />
+          <span className="text-xs sm:text-sm font-medium text-foreground truncate max-w-[120px] sm:max-w-[200px]">
             {config.title || "Untitled Project"}
           </span>
         </div>
@@ -120,7 +120,7 @@ export default function PreviewPage() {
       </div>
 
       {/* Preview area */}
-      <div className="flex-1 overflow-auto flex justify-center bg-muted/50 p-4">
+      <div className="flex-1 overflow-auto flex justify-center bg-muted/50 p-2 sm:p-4">
         <div
           className="bg-background rounded-lg border border-border shadow-sm overflow-auto transition-all duration-300"
           style={{
