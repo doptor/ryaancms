@@ -48,7 +48,7 @@ export default function InstallDialog({ open, onOpenChange, item, onInstallCompl
       const slug = item.name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
       const category = item.type === "Template" ? "template" : item.type === "AI Tool" ? "ai-tool" : "plugin";
 
-      // Find or create the plugin entry
+      // Find existing plugin by slug or name
       let { data: plugin } = await supabase
         .from("plugins")
         .select("id")
@@ -58,21 +58,35 @@ export default function InstallDialog({ open, onOpenChange, item, onInstallCompl
       let pluginId = plugin?.id;
 
       if (!pluginId) {
-        // Plugin doesn't exist — we can't insert into plugins table due to RLS (no INSERT policy)
-        // So we'll use an existing approach: check if there's a matching plugin by name
         const { data: byName } = await supabase
           .from("plugins")
           .select("id")
           .ilike("name", item.name)
           .maybeSingle();
-
         pluginId = byName?.id;
       }
 
+      // If not found, create the plugin entry (for uploaded/imported packages)
       if (!pluginId) {
-        // Still no plugin found — skip DB save but show success
-        toast({ title: `${item.name} installed (local only)`, description: "Plugin not found in registry." });
-        return;
+        const { data: newPlugin, error: insertErr } = await supabase
+          .from("plugins")
+          .insert({
+            name: item.name,
+            slug,
+            category,
+            description: item.desc || "User-uploaded package",
+            version: "1.0.0",
+            is_official: false,
+          })
+          .select("id")
+          .single();
+
+        if (insertErr || !newPlugin) {
+          console.error("Failed to register plugin:", insertErr);
+          toast({ title: `${item.name} installed (local only)`, description: "Could not register in plugin registry." });
+          return;
+        }
+        pluginId = newPlugin.id;
       }
 
       // Check if already installed
