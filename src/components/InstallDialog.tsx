@@ -66,8 +66,9 @@ export default function InstallDialog({ open, onOpenChange, item, onInstallCompl
         pluginId = byName?.id;
       }
 
-      // If not found, create the plugin entry (for uploaded/imported packages)
+      // If not found, create the plugin entry as "pending" for admin approval
       if (!pluginId) {
+        const isUserUpload = item.tag === "Local" || item.tag === "Remote";
         const { data: newPlugin, error: insertErr } = await supabase
           .from("plugins")
           .insert({
@@ -77,16 +78,24 @@ export default function InstallDialog({ open, onOpenChange, item, onInstallCompl
             description: item.desc || "User-uploaded package",
             version: "1.0.0",
             is_official: false,
+            submitted_by: user.id,
+            approval_status: isUserUpload ? "pending" : "approved",
+            demo_url: (item as any).demoUrl || null,
+            download_url: (item as any).downloadUrl || null,
           })
           .select("id")
           .single();
 
         if (insertErr || !newPlugin) {
           console.error("Failed to register plugin:", insertErr);
-          toast({ title: `${item.name} installed (local only)`, description: "Could not register in plugin registry." });
+          toast({ title: `${item.name} submitted failed`, description: "Could not register in plugin registry." });
           return;
         }
         pluginId = newPlugin.id;
+
+        if (isUserUpload) {
+          toast({ title: `${item.name} submitted for review`, description: "An admin will review and approve your submission." });
+        }
       }
 
       // Check if already installed

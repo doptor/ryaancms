@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Puzzle, CheckCircle, AlertCircle, Trash2, Loader2, Power,
-  Sparkles, Layout, ExternalLink,
+  Sparkles, Layout, ExternalLink, Clock,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,6 +23,7 @@ interface InstalledPlugin {
     description: string;
     category: string;
     icon: string | null;
+    approval_status?: string;
   };
 }
 
@@ -41,7 +42,7 @@ export default function MyInstalledTab() {
     setLoading(true);
     const { data } = await supabase
       .from("user_plugins")
-      .select("id, plugin_id, is_active, installed_at, config, plugins(name, slug, version, description, category, icon)")
+      .select("id, plugin_id, is_active, installed_at, config, plugins(name, slug, version, description, category, icon, approval_status)")
       .eq("user_id", user!.id)
       .order("installed_at", { ascending: false });
     if (data) setPlugins(data.map((d: any) => ({ ...d, plugin: d.plugins })));
@@ -115,9 +116,19 @@ export default function MyInstalledTab() {
             className="rounded-xl border border-border bg-card p-5 hover:border-primary/30 hover:shadow-glow transition-all duration-300 flex flex-col"
           >
             <div className="flex items-center justify-between mb-3">
-              <Badge variant={p.is_active ? "default" : "secondary"} className="text-xs">
-                {p.is_active ? "Active" : "Inactive"}
-              </Badge>
+              <div className="flex items-center gap-1.5">
+                {p.plugin.approval_status === "pending" ? (
+                  <Badge className="text-xs bg-chart-5/20 text-chart-5 border-chart-5/30 gap-0.5">
+                    <Clock className="w-2.5 h-2.5" /> Pending Approval
+                  </Badge>
+                ) : p.plugin.approval_status === "rejected" ? (
+                  <Badge className="text-xs bg-destructive/20 text-destructive border-destructive/30">Rejected</Badge>
+                ) : (
+                  <Badge variant={p.is_active ? "default" : "secondary"} className="text-xs">
+                    {p.is_active ? "Active" : "Inactive"}
+                  </Badge>
+                )}
+              </div>
               <span className="text-[10px] text-muted-foreground font-mono">v{p.plugin.version}</span>
             </div>
 
@@ -130,6 +141,35 @@ export default function MyInstalledTab() {
               {p.plugin.description || "No description available."}
             </p>
 
+            {p.plugin.approval_status === "pending" ? (
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="outline" disabled className="gap-1.5 flex-1 opacity-60">
+                  <Clock className="w-3.5 h-3.5" /> Awaiting Approval
+                </Button>
+                <button
+                  onClick={() => uninstall(p)}
+                  disabled={actionId === p.id}
+                  className="p-2 rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive"
+                  title="Remove"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : p.plugin.approval_status === "rejected" ? (
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="outline" disabled className="gap-1.5 flex-1 opacity-60 text-destructive">
+                  Submission Rejected
+                </Button>
+                <button
+                  onClick={() => uninstall(p)}
+                  disabled={actionId === p.id}
+                  className="p-2 rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive"
+                  title="Remove"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
             <div className="flex items-center gap-2">
               <Button
                 size="sm"
@@ -165,6 +205,7 @@ export default function MyInstalledTab() {
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
             </div>
+            )}
           </div>
         ))}
       </div>
