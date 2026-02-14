@@ -1746,7 +1746,14 @@ export default function AIBuilderPage() {
 
   const renderChat = () => (
     <div className="flex flex-col h-full bg-background">
-      {hasStarted ? renderMessages() : renderWelcome()}
+      {isRestoring ? (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="flex items-center gap-2 text-muted-foreground text-sm animate-pulse">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>Loading project...</span>
+          </div>
+        </div>
+      ) : hasStarted ? renderMessages() : renderWelcome()}
       {/* Activity sidebar */}
       <BuildActivitySidebar
         activities={buildActivities}
