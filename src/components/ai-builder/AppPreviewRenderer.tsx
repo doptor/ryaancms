@@ -37,6 +37,12 @@ export function AppPreviewRenderer({ config, selectedComponent, onSelectComponen
   const [activePage, setActivePage] = useState(0);
   const currentPage = config.pages[activePage];
 
+  // Allow child components to navigate between pages
+  const navigateToPage = useCallback((pageRoute: string) => {
+    const idx = config.pages.findIndex(p => p.route === pageRoute || p.name.toLowerCase() === pageRoute.toLowerCase());
+    if (idx >= 0) setActivePage(idx);
+  }, [config.pages]);
+
   return (
     <div className="flex flex-col h-full">
       {config.pages.length > 1 && (
@@ -70,6 +76,7 @@ export function AppPreviewRenderer({ config, selectedComponent, onSelectComponen
               selectedComponent={selectedComponent}
               onSelectComponent={onSelectComponent}
               onReorderComponents={onReorderComponents}
+              onNavigate={navigateToPage}
             />
           )}
         </div>
@@ -87,9 +94,10 @@ interface PageRendererProps {
   selectedComponent?: { pageIndex: number; componentIndex: number } | null;
   onSelectComponent?: (pageIndex: number, componentIndex: number) => void;
   onReorderComponents?: (pageIndex: number, fromIndex: number, toIndex: number) => void;
+  onNavigate?: (pageRoute: string) => void;
 }
 
-function PageRenderer({ page, config, pageIndex, selectedComponent, onSelectComponent, onReorderComponents }: PageRendererProps) {
+function PageRenderer({ page, config, pageIndex, selectedComponent, onSelectComponent, onReorderComponents, onNavigate }: PageRendererProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
   const dragCounter = useRef(0);
@@ -163,7 +171,7 @@ function PageRenderer({ page, config, pageIndex, selectedComponent, onSelectComp
               {comp.type.replace(/_/g, " ")}
             </div>
           )}
-          <ComponentRenderer component={comp} config={config} />
+          <ComponentRenderer component={comp} config={config} onNavigate={onNavigate} />
         </div>
         {isDropTarget && dragIndex !== null && dragIndex < i && (
           <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary rounded-full z-20" />
@@ -185,18 +193,22 @@ function PageRenderer({ page, config, pageIndex, selectedComponent, onSelectComp
           </div>
           <nav className="flex-1 p-3 space-y-0.5">
             {config.pages.filter(p => p.layout === "dashboard").map((p, idx) => (
-              <div key={p.route} className={cn(
-                "flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs transition-all duration-200",
-                p.route === page.route
-                  ? "bg-primary/10 text-primary font-semibold"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-              )}>
+              <button
+                key={p.route}
+                onClick={(e) => { e.stopPropagation(); onNavigate?.(p.route); }}
+                className={cn(
+                  "flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs transition-all duration-200 w-full text-left",
+                  p.route === page.route
+                    ? "bg-primary/10 text-primary font-semibold"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                )}
+              >
                 <LayoutGrid className="w-3.5 h-3.5" />
                 {p.name}
                 {p.route === page.route && (
                   <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />
                 )}
-              </div>
+              </button>
             ))}
           </nav>
           <div className="p-3 border-t border-border">
@@ -253,12 +265,12 @@ function PageRenderer({ page, config, pageIndex, selectedComponent, onSelectComp
 
 // === Component Renderer ===
 
-function ComponentRenderer({ component, config }: { component: ComponentConfig; config: AppConfig }) {
+function ComponentRenderer({ component, config, onNavigate }: { component: ComponentConfig; config: AppConfig; onNavigate?: (pageRoute: string) => void }) {
   const props = component.props || {};
 
   switch (component.type) {
-    case "hero": return <HeroPreview props={props} config={config} />;
-    case "navbar": return <NavbarPreview props={props} config={config} />;
+    case "hero": return <HeroPreview props={props} config={config} onNavigate={onNavigate} />;
+    case "navbar": return <NavbarPreview props={props} config={config} onNavigate={onNavigate} />;
     case "footer": return <FooterPreview props={props} config={config} />;
     case "stats_row": return <StatsRowPreview props={props} config={config} />;
     case "crud_table": return <CrudTablePreview props={props} />;
@@ -318,10 +330,15 @@ function ComponentRenderer({ component, config }: { component: ComponentConfig; 
 
 // === Individual Component Previews ===
 
-function NavbarPreview({ props, config }: { props: Record<string, any>; config: AppConfig }) {
+function NavbarPreview({ props, config, onNavigate }: { props: Record<string, any>; config: AppConfig; onNavigate?: (pageRoute: string) => void }) {
+  // Use config pages for nav links if available, else fallback
+  const navItems = config.pages.length > 1
+    ? config.pages.filter(p => p.layout !== "dashboard").map(p => p.name)
+    : ["Home", "Features", "Pricing", "About"];
+
   return (
-    <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-10">
-      <div className="flex items-center gap-8">
+    <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-10">
+      <div className="flex items-center gap-4 sm:gap-8">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center shadow-sm">
             <Zap className="w-4 h-4 text-primary-foreground" />
@@ -329,11 +346,15 @@ function NavbarPreview({ props, config }: { props: Record<string, any>; config: 
           <span className="font-bold text-sm text-foreground tracking-tight">{props.logo_text || config.title}</span>
         </div>
         <nav className="hidden sm:flex items-center gap-1">
-          {["Home", "Features", "Pricing", "About"].map((item, i) => (
-            <button key={item} className={cn(
-              "px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
-              i === 0 ? "text-foreground bg-accent" : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-            )}>
+          {navItems.map((item, i) => (
+            <button
+              key={item}
+              onClick={(e) => { e.stopPropagation(); onNavigate?.(item); }}
+              className={cn(
+                "px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer",
+                i === 0 ? "text-foreground bg-accent" : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+              )}
+            >
               {item}
             </button>
           ))}
@@ -351,7 +372,7 @@ function NavbarPreview({ props, config }: { props: Record<string, any>; config: 
   );
 }
 
-function HeroPreview({ props, config }: { props: Record<string, any>; config: AppConfig }) {
+function HeroPreview({ props, config, onNavigate }: { props: Record<string, any>; config: AppConfig; onNavigate?: (pageRoute: string) => void }) {
   const alignment = props.alignment || "center";
   const isPortfolio = /portfolio|personal|resume|cv|freelanc/i.test(config.project_type + " " + (config.description || "") + " " + (config.title || ""));
   

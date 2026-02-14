@@ -168,7 +168,7 @@ export default function AIBuilderPage() {
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [showAdvancedPipeline, setShowAdvancedPipeline] = useState(false);
   const [selectedThemeId, setSelectedThemeId] = useState<string | null>(null);
-  const [currentProject, setCurrentProject] = useState<{ id: string; title: string | null; prompt: string; status: string; created_at: string; updated_at: string } | null>(null);
+  const [currentProject, setCurrentProject] = useState<{ id: string; title: string | null; prompt: string; status: string; created_at: string; updated_at: string; logo_url?: string | null; brand_name?: string | null } | null>(null);
   const [phasePlan, setPhasePlan] = useState<ProjectPhase[]>([]);
   const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
   const [awaitingPhaseConfirm, setAwaitingPhaseConfirm] = useState(false);
@@ -387,7 +387,22 @@ export default function AIBuilderPage() {
                 title: config.title || "Untitled",
                 status: "generated",
               }).select("*").single();
-              if (project) { projectId = project.id; setCurrentProject(project); }
+              if (project) {
+                projectId = project.id;
+                setCurrentProject(project);
+                // Generate brand name + logo in background
+                supabase.functions.invoke("generate-brand", {
+                  body: { prompt: originalPrompt || buildPrompt, projectId: project.id },
+                }).then(({ data: brandData }) => {
+                  if (brandData?.success) {
+                    setCurrentProject(prev => prev ? {
+                      ...prev,
+                      brand_name: brandData.brandName,
+                      logo_url: brandData.logoUrl,
+                    } : prev);
+                  }
+                }).catch(() => {});
+              }
             }
 
             if (projectId) {
@@ -845,25 +860,25 @@ export default function AIBuilderPage() {
 
   // === Welcome screen (Lovable-style) ===
   const renderWelcome = () => (
-    <div className="flex-1 flex flex-col items-center justify-center px-6 pb-32">
+    <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 pb-24 sm:pb-32">
       <div className="max-w-2xl w-full text-center space-y-6 animate-fade-in">
         <div className="space-y-2">
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground tracking-tight">
             What do you want to build?
           </h1>
-          <p className="text-base text-muted-foreground">
+          <p className="text-sm sm:text-base text-muted-foreground">
             Describe your app and AI will generate everything — pages, database, auth, and more.
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 mt-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-8">
           {suggestions.map((s) => (
             <button
               key={s.label}
               onClick={() => sendMessage(s.prompt)}
-              className="group flex items-start gap-3 p-4 rounded-xl border border-border bg-card text-left hover:border-primary/40 hover:shadow-sm transition-all"
+              className="group flex items-start gap-3 p-3 sm:p-4 rounded-xl border border-border bg-card text-left hover:border-primary/40 hover:shadow-sm transition-all"
             >
-              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/15 transition-colors">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/15 transition-colors">
                 <s.icon className="w-4 h-4 text-primary" />
               </div>
               <div className="min-w-0">

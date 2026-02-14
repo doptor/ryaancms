@@ -372,8 +372,10 @@ export type Database = {
       }
       projects: {
         Row: {
+          brand_name: string | null
           created_at: string
           id: string
+          logo_url: string | null
           prompt: string
           status: string
           title: string | null
@@ -381,8 +383,10 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          brand_name?: string | null
           created_at?: string
           id?: string
+          logo_url?: string | null
           prompt: string
           status?: string
           title?: string | null
@@ -390,8 +394,10 @@ export type Database = {
           user_id: string
         }
         Update: {
+          brand_name?: string | null
           created_at?: string
           id?: string
+          logo_url?: string | null
           prompt?: string
           status?: string
           title?: string | null
