@@ -1108,8 +1108,8 @@ export default function AIBuilderPage() {
   };
 
   const renderChatInput = () => (
-    <div className="border-t border-border bg-card p-3 shrink-0">
-      <div className="max-w-3xl mx-auto space-y-2">
+    <div className="border-t border-border bg-card p-2 sm:p-3 shrink-0">
+      <div className="max-w-3xl mx-auto space-y-1.5 sm:space-y-2">
         {/* Top toolbar: content type + color presets */}
         <div className="flex items-center gap-2 flex-wrap">
           {/* Content Type Selector */}
@@ -1533,48 +1533,53 @@ export default function AIBuilderPage() {
   // === Tab trigger style helper ===
   const tabTriggerClass = "data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 gap-1.5";
 
+  // Mobile: default to chat tab
+  const effectiveTab = typeof window !== "undefined" && window.innerWidth < 768 && activeTab === "preview" && !hasStarted ? "chat" : activeTab;
+
   return (
     <DashboardLayout>
       <div className="flex flex-col h-[calc(100vh-3.5rem)] md:h-screen">
         {/* Top bar */}
-        <div className="flex items-center justify-between px-4 h-12 border-b border-border bg-card shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between px-2 sm:px-4 h-11 sm:h-12 border-b border-border bg-card shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 shrink-0">
               <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Sparkles className="w-3.5 h-3.5 text-primary" />
               </div>
               <span className="text-sm font-semibold text-foreground hidden sm:inline">AI Builder</span>
             </div>
-            <div className="h-5 w-px bg-border" />
-            <ProjectSelector
-              selectedProject={currentProject}
-              onSelectProject={handleSelectProject}
-              onCreateProject={handleCreateProject}
-            />
+            <div className="h-5 w-px bg-border hidden sm:block" />
+            <div className="min-w-0 flex-1 sm:flex-none">
+              <ProjectSelector
+                selectedProject={currentProject}
+                onSelectProject={handleSelectProject}
+                onCreateProject={handleCreateProject}
+              />
+            </div>
             {isBuilding && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10">
+              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 shrink-0">
                 <Loader2 className="w-3 h-3 text-primary animate-spin" />
-                <span className="text-xs font-medium text-primary">Building...</span>
+                <span className="text-[10px] sm:text-xs font-medium text-primary">Building...</span>
               </div>
             )}
             {buildComplete && !isBuilding && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10">
+              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 shrink-0">
                 <CheckCircle2 className="w-3 h-3 text-primary" />
-                <span className="text-xs font-medium text-primary">Ready</span>
+                <span className="text-[10px] sm:text-xs font-medium text-primary hidden sm:inline">Ready</span>
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <ThemeSelector selectedTheme={selectedThemeId} onSelect={setSelectedThemeId} />
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            <div className="hidden sm:block">
+              <ThemeSelector selectedTheme={selectedThemeId} onSelect={setSelectedThemeId} />
+            </div>
             {buildComplete && (
-              <>
-                <Button variant="ghost" size="sm" onClick={handleExportJSON} className="gap-1.5 text-xs text-muted-foreground hidden sm:flex">
-                  <Download className="w-3.5 h-3.5" /> Export
-                </Button>
-              </>
+              <Button variant="ghost" size="sm" onClick={handleExportJSON} className="gap-1.5 text-xs text-muted-foreground hidden lg:flex">
+                <Download className="w-3.5 h-3.5" /> Export
+              </Button>
             )}
-            <Button size="sm" onClick={handlePublish} disabled={!buildComplete} className="gap-1.5">
-              <Rocket className="w-3.5 h-3.5" /> Publish
+            <Button size="sm" onClick={handlePublish} disabled={!buildComplete} className="gap-1 text-xs sm:text-sm h-7 sm:h-8 px-2 sm:px-3">
+              <Rocket className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">Publish</span>
             </Button>
           </div>
         </div>
@@ -1813,101 +1818,95 @@ export default function AIBuilderPage() {
 
           {/* Mobile */}
           <div className="md:hidden flex flex-col h-full overflow-hidden">
-            <div className="border-b border-border bg-card px-2 shrink-0">
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <div className="border-b border-border bg-card px-1 shrink-0">
+              <Tabs value={effectiveTab} onValueChange={setActiveTab}>
                 <TabsList className="bg-transparent h-10 p-0 gap-0 w-full justify-start overflow-x-auto scrollbar-none">
-                  <TabsTrigger value="chat" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
-                    <Sparkles className="w-3.5 h-3.5" /> Chat
+                  <TabsTrigger value="chat" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2.5 gap-1 text-[11px] shrink-0">
+                    <Sparkles className="w-3 h-3" /> Chat
                   </TabsTrigger>
-                  <TabsTrigger value="preview" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
-                    <Eye className="w-3.5 h-3.5" /> Preview
+                  <TabsTrigger value="preview" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2.5 gap-1 text-[11px] shrink-0">
+                    <Eye className="w-3 h-3" /> Preview
                   </TabsTrigger>
-                  <TabsTrigger value="config" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
-                    <Code className="w-3.5 h-3.5" /> Config
+                  <TabsTrigger value="code" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2.5 gap-1 text-[11px] shrink-0">
+                    <FileCode2 className="w-3 h-3" /> Code
                   </TabsTrigger>
-                  <TabsTrigger value="sql" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
-                    <Database className="w-3.5 h-3.5" /> SQL
+                  <TabsTrigger value="deploy" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2.5 gap-1 text-[11px] shrink-0">
+                    <Rocket className="w-3 h-3" /> Deploy
                   </TabsTrigger>
-                  <TabsTrigger value="quality" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
-                    <TrendingUp className="w-3.5 h-3.5" /> Quality
-                  </TabsTrigger>
-                  <TabsTrigger value="deploy" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
-                    <Rocket className="w-3.5 h-3.5" /> Deploy
-                  </TabsTrigger>
-                  <TabsTrigger value="summary" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
-                    <Layers className="w-3.5 h-3.5" /> Summary
-                  </TabsTrigger>
-                  <TabsTrigger value="code" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
-                    <FileCode2 className="w-3.5 h-3.5" /> Code
-                  </TabsTrigger>
-                  <TabsTrigger value="live" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
-                    <Eye className="w-3.5 h-3.5" /> Live
-                  </TabsTrigger>
-                  <TabsTrigger value="autofix" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
-                    <RefreshCw className="w-3.5 h-3.5" /> Fix
-                  </TabsTrigger>
-                  <TabsTrigger value="plugin" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
-                    <Package className="w-3.5 h-3.5" /> Plugin
-                  </TabsTrigger>
-                  <TabsTrigger value="workflow" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
-                    <GitBranch className="w-3.5 h-3.5" /> API
-                  </TabsTrigger>
-                  <TabsTrigger value="installer" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
-                    <Settings className="w-3.5 h-3.5" /> Arch
-                  </TabsTrigger>
-                  <TabsTrigger value="history" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
-                    <History className="w-3.5 h-3.5" /> History
-                  </TabsTrigger>
-                  <TabsTrigger value="timemachine" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
-                    <Clock className="w-3.5 h-3.5" /> Time
-                  </TabsTrigger>
-                  <TabsTrigger value="docs" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
-                    <Book className="w-3.5 h-3.5" /> Docs
-                  </TabsTrigger>
-                  <TabsTrigger value="cicd" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
-                    <Container className="w-3.5 h-3.5" /> CI/CD
-                  </TabsTrigger>
-                  <TabsTrigger value="collab" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
-                    <Users className="w-3.5 h-3.5" /> Team
-                  </TabsTrigger>
-                  <TabsTrigger value="monitor" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
-                    <Activity className="w-3.5 h-3.5" /> Monitor
-                  </TabsTrigger>
-                  <TabsTrigger value="envs" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
-                    <Server className="w-3.5 h-3.5" /> Envs
-                  </TabsTrigger>
-                  <TabsTrigger value="webhooks" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
-                    <Webhook className="w-3.5 h-3.5" /> Hooks
-                  </TabsTrigger>
-                  <TabsTrigger value="branches" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-3 gap-1 text-xs shrink-0">
-                    <GitFork className="w-3.5 h-3.5" /> Branch
+                  <TabsTrigger value="quality" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-2.5 gap-1 text-[11px] shrink-0">
+                    <TrendingUp className="w-3 h-3" /> Quality
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
+              {/* More tabs via dropdown */}
+              <div className="flex items-center gap-1 px-1 pb-1.5 overflow-x-auto scrollbar-none">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-1 px-2 py-1 rounded-md border border-border text-[10px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors shrink-0">
+                      <Layers className="w-3 h-3" /> More
+                      <ChevronDown className="w-2.5 h-2.5" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="min-w-[160px] max-h-[300px] overflow-y-auto">
+                    {[
+                      { value: "config", icon: Code, label: "Config" },
+                      { value: "sql", icon: Database, label: "SQL" },
+                      { value: "security", icon: Shield, label: "Security" },
+                      { value: "summary", icon: Layers, label: "Summary" },
+                      { value: "live", icon: Eye, label: "Live" },
+                      { value: "autofix", icon: RefreshCw, label: "Auto-Fix" },
+                      { value: "plugin", icon: Package, label: "Plugin" },
+                      { value: "workflow", icon: GitBranch, label: "Workflow" },
+                      { value: "installer", icon: Settings, label: "Installer" },
+                      { value: "history", icon: History, label: "History" },
+                      { value: "timemachine", icon: Clock, label: "Versions" },
+                      { value: "docs", icon: Book, label: "Docs" },
+                      { value: "cicd", icon: Container, label: "CI/CD" },
+                      { value: "collab", icon: Users, label: "Team" },
+                      { value: "monitor", icon: Activity, label: "Monitor" },
+                      { value: "envs", icon: Server, label: "Envs" },
+                      { value: "webhooks", icon: Webhook, label: "Hooks" },
+                      { value: "branches", icon: GitFork, label: "Branch" },
+                    ].map((tab) => (
+                      <DropdownMenuItem
+                        key={tab.value}
+                        onClick={() => setActiveTab(tab.value)}
+                        className={cn("gap-2 text-xs", effectiveTab === tab.value && "bg-primary/10 text-primary")}
+                      >
+                        <tab.icon className="w-3.5 h-3.5" /> {tab.label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                {/* Show theme selector on mobile via small button */}
+                <div className="sm:hidden shrink-0">
+                  <ThemeSelector selectedTheme={selectedThemeId} onSelect={setSelectedThemeId} />
+                </div>
+              </div>
             </div>
             <div className="flex-1 min-h-0 overflow-hidden">
-              {activeTab === "chat" && renderChat()}
-              {activeTab === "preview" && renderPreview()}
-              {activeTab === "config" && renderConfig()}
-              {activeTab === "sql" && renderSQL()}
-              {activeTab === "quality" && (
+              {effectiveTab === "chat" && renderChat()}
+              {effectiveTab === "preview" && renderPreview()}
+              {effectiveTab === "config" && renderConfig()}
+              {effectiveTab === "sql" && renderSQL()}
+              {effectiveTab === "quality" && (
                 <QualityScorePanel
                   pipelineState={pipelineState}
                   onAutoImprove={handleAutoImprove}
                   isImproving={isAutoImproving}
                 />
               )}
-              {activeTab === "deploy" && (
+              {effectiveTab === "deploy" && (
                 <DeployPanel
                   config={pipelineState?.config || null}
                   onExportJSON={handleExportJSON}
                   onExportSQL={handleExportSQL}
                 />
               )}
-              {activeTab === "summary" && (
+              {effectiveTab === "summary" && (
                 <BuildSummaryPanel pipelineState={pipelineState} />
               )}
-              {activeTab === "code" && (
+              {effectiveTab === "code" && (
                 <CodePanel
                   files={generatedFiles}
                   isGenerating={isGeneratingCode}
@@ -1915,7 +1914,7 @@ export default function AIBuilderPage() {
                   hasConfig={!!pipelineState?.config}
                 />
               )}
-              {activeTab === "live" && (
+              {effectiveTab === "live" && (
                 <LivePreviewPanel
                   files={generatedFiles}
                   isGenerating={isGeneratingCode}
@@ -1923,14 +1922,14 @@ export default function AIBuilderPage() {
                   hasConfig={!!pipelineState?.config}
                 />
               )}
-              {activeTab === "autofix" && (
+              {effectiveTab === "autofix" && (
                 <AutoFixLoopPanel
                   pipelineState={pipelineState}
                   onRetryBuild={() => pipelineState?.config && sendMessage(`Fix all issues and rebuild "${pipelineState.config.title}"`)}
                   isBuilding={isBuilding}
                 />
               )}
-              {activeTab === "plugin" && (
+              {effectiveTab === "plugin" && (
                 <PluginGeneratorWizard
                   onGenerate={(plugin) => {
                     const prompt = `Generate a "${plugin.name}" plugin with entities: ${plugin.entities.map(e => e.name).join(", ")}. Include full CRUD, dashboard pages, permissions: ${plugin.permissions.join(", ")}. Slug: ${plugin.slug}`;
@@ -1939,37 +1938,37 @@ export default function AIBuilderPage() {
                   }}
                 />
               )}
-              {activeTab === "workflow" && (
+              {effectiveTab === "workflow" && (
                 <WorkflowApiPanel pipelineState={pipelineState} />
               )}
-              {activeTab === "installer" && (
+              {effectiveTab === "installer" && (
                 <InstallerArchitecturePanel pipelineState={pipelineState} />
               )}
-              {activeTab === "history" && (
+              {effectiveTab === "history" && (
                 <ProjectHistoryPanel onLoadProject={handleLoadProjectMemory} />
               )}
-              {activeTab === "timemachine" && (
+              {effectiveTab === "timemachine" && (
                 <TimeMachinePanel onRestoreSnapshot={handleRestoreSnapshot} />
               )}
-              {activeTab === "docs" && (
+              {effectiveTab === "docs" && (
                 <DocsGeneratorPanel pipelineState={pipelineState} />
               )}
-              {activeTab === "cicd" && (
+              {effectiveTab === "cicd" && (
                 <CICDExportPanel pipelineState={pipelineState} />
               )}
-              {activeTab === "collab" && (
+              {effectiveTab === "collab" && (
                 <CollaborationPanel pipelineState={pipelineState} isBuilding={isBuilding} projectId={currentProject?.id || null} />
               )}
-              {activeTab === "monitor" && (
+              {effectiveTab === "monitor" && (
                 <MonitoringPanel pipelineState={pipelineState} isBuilding={isBuilding} />
               )}
-              {activeTab === "envs" && (
+              {effectiveTab === "envs" && (
                 <EnvironmentManagerPanel pipelineState={pipelineState} />
               )}
-              {activeTab === "webhooks" && (
+              {effectiveTab === "webhooks" && (
                 <WebhookNotificationPanel pipelineState={pipelineState} isBuilding={isBuilding} projectId={currentProject?.id || null} />
               )}
-              {activeTab === "branches" && (
+              {effectiveTab === "branches" && (
                 <ProjectBranchingPanel
                   pipelineState={pipelineState}
                   currentProject={currentProject}
