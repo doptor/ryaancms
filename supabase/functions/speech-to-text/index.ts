@@ -64,6 +64,12 @@ serve(async (req) => {
     if (!response.ok) {
       const errText = await response.text();
       console.error("Transcription failed:", response.status, errText);
+      if (response.status === 402) {
+        return new Response(JSON.stringify({ success: false, error: "no_credits", transcript: "" }), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       throw new Error("Transcription failed");
     }
 
