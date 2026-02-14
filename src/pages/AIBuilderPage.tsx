@@ -227,6 +227,7 @@ export default function AIBuilderPage() {
         if (!projects || projects.length === 0) return;
         const project = projects[0];
         setCurrentProject(project);
+        currentProjectRef.current = project;
         const { data: memory } = await supabase
           .from("project_memory")
           .select("*")
@@ -235,7 +236,31 @@ export default function AIBuilderPage() {
           .limit(1)
           .single();
         if (memory) {
-          handleLoadProjectMemory(memory);
+          // Pass project directly since state may not be updated yet
+          const restored: PipelineState = {
+            stage: "complete", config: null, validation: null, schema: null, rbac: null,
+            testSuite: null, docs: null, theme: null, error: null,
+            requirements: (memory.requirements as any) || [], taskPlan: (memory.task_plan as any) || [],
+            suggestions: (memory.suggestions as any) || [], apiEndpoints: (memory.api_list as any) || [],
+            qualityScore: (memory.quality_score as any) || {}, qualityIssues: [], qualityImprovements: [],
+            qualityVerdict: "", agentLog: (memory.agent_log as any) || [],
+            workflows: memory.workflow ? [memory.workflow as any] : [], businessRules: [], permissionMatrix: [],
+            folderStructure: (memory.folder_structure as any) || {}, testScenarios: [], seedData: [],
+            bugs: [], autoFixes: [], riskScore: 0, webhooks: [], edgeFunctions: [],
+            errorFixMemory: [], documentationPlan: [], documentationChecklist: {},
+            securityChecklist: {}, defaultAdminCredentials: { email: "admin@admin.com", password: "admin123" },
+            installerSteps: [], pluginHooks: [], middlewareStack: [], reusableComponents: [], prismaSchemaHint: "",
+          };
+          if (memory.modules || memory.page_layouts || memory.db_schema) {
+            restored.config = {
+              project_type: "saas", build_target: "application", title: project.title || "Restored Project", description: project.prompt || "Loaded from project memory",
+              modules: (memory.modules as any) || [], roles: [], features: [],
+              pages: (memory.page_layouts as any) || [], collections: (memory.db_schema as any) || [],
+              style: {}, multi_tenant: false,
+            };
+          }
+          setPipelineState(restored);
+          setActiveTab("preview");
           const agentLog = memory.agent_log as any[] || [];
           const convEntry = agentLog.find((e: any) => e?.type === "conversation");
           if (convEntry?.messages?.length) {
