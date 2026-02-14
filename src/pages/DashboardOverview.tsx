@@ -209,7 +209,7 @@ export default function DashboardOverview() {
 
         <div className="relative z-10 w-full px-4 sm:px-6 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8">
           {/* Greeting + Prompt */}
-          <div className="flex flex-col items-center gap-4 sm:gap-6 pt-4 sm:pt-8">
+          <div className="flex flex-col items-center gap-4 sm:gap-6 pt-[20vh] sm:pt-[25vh]">
             <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground text-center">
               Ready to build, {displayName}?
             </h1>
