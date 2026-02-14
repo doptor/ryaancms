@@ -23,7 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const PROJECTS_PER_PAGE = 20;
+// No pagination limit — show all projects
 
 const preDesignTemplates = [
   { label: "Portfolio Website", icon: Layout, prompt: "Create a modern portfolio website with hero section, about me, projects gallery, skills section, and contact form." },
@@ -122,14 +122,9 @@ export default function DashboardOverview() {
     enabled: !!user,
   });
 
-  // Filter + paginate
+  // Filter projects (no pagination — show all)
   const filtered = allProjects.filter((p) =>
     (p.title || p.prompt).toLowerCase().includes(searchQuery.toLowerCase())
-  );
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PROJECTS_PER_PAGE));
-  const paginated = filtered.slice(
-    (currentPage - 1) * PROJECTS_PER_PAGE,
-    currentPage * PROJECTS_PER_PAGE
   );
 
   const createProject = useMutation({
@@ -212,7 +207,7 @@ export default function DashboardOverview() {
           <div className="absolute top-0 right-1/3 w-[250px] h-[250px] rounded-full bg-[hsl(45,90%,55%)]/15 blur-[80px]" />
         </div>
 
-        <div className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8">
+        <div className="relative z-10 w-full px-4 sm:px-6 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8">
           {/* Greeting + Prompt */}
           <div className="flex flex-col items-center gap-4 sm:gap-6 pt-4 sm:pt-8">
             <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground text-center">
@@ -426,8 +421,8 @@ export default function DashboardOverview() {
               </div>
 
               {/* Card Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                {paginated.map((p) => (
+              <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
+                {filtered.map((p) => (
                   <Card
                     key={p.id}
                     className="group cursor-pointer hover:border-primary/30 hover:shadow-md transition-all"
@@ -503,33 +498,6 @@ export default function DashboardOverview() {
                   </Card>
                 ))}
               </div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 pt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 text-xs"
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage((p) => p - 1)}
-                  >
-                    <ChevronLeft className="w-3.5 h-3.5 mr-1" /> Previous
-                  </Button>
-                  <span className="text-xs text-muted-foreground px-3">
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 text-xs"
-                    disabled={currentPage === totalPages}
-                    onClick={() => setCurrentPage((p) => p + 1)}
-                  >
-                    Next <ChevronRight className="w-3.5 h-3.5 ml-1" />
-                  </Button>
-                </div>
-              )}
             </div>
           )}
         </div>
