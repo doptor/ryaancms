@@ -64,6 +64,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getThemePreset } from "@/lib/engine/theme-generator";
 import { analyzePrompt, ProjectPhase, BuildTarget } from "@/lib/engine/prompt-analyzer";
+import { generateProjectCode } from "@/lib/engine/code-generator";
+import { STARTER_TEMPLATES, type StarterTemplate } from "@/lib/engine/template-library";
+import JSZip from "jszip";
 
 type Message = { role: "user" | "ai"; content: string };
 
@@ -810,19 +813,100 @@ export default function AIBuilderPage() {
     setIsGeneratingCode(true);
     setGeneratedFiles([]);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-code", {
-        body: { config: pipelineState.config },
-      });
-      if (error) throw new Error(error.message);
-      if (!data?.success) throw new Error(data?.error || "Code generation failed");
-      setGeneratedFiles(data.files || []);
+      // Generate real code files locally using the code generator engine
+      const sql = pipelineState.schema?.sql || "";
+      const project = generateProjectCode(pipelineState.config, sql);
+      // Map engine GeneratedFile to CodePanel GeneratedFile format
+      const mappedFiles: GeneratedFile[] = project.files.map(f => ({
+        filename: f.path,
+        pageName: f.path.split("/").pop()?.replace(/\.\w+$/, "") || f.path,
+        route: f.path,
+        code: f.content,
+        isTemplate: false,
+      }));
+      setGeneratedFiles(mappedFiles);
       setActiveTab("code");
-      toast({ title: "Code generated!", description: `${data.files?.length || 0} files created.` });
+      toast({
+        title: "Code generated!",
+        description: `${project.summary.total_files} files: ${project.summary.frontend_files} frontend, ${project.summary.backend_files} backend, ${project.summary.config_files} config`,
+      });
     } catch (err: any) {
-      toast({ title: "Code generation failed", description: err.message, variant: "destructive" });
+      // Fallback to edge function
+      try {
+        const { data, error } = await supabase.functions.invoke("generate-code", {
+          body: { config: pipelineState.config },
+        });
+        if (error) throw new Error(error.message);
+        if (!data?.success) throw new Error(data?.error || "Code generation failed");
+        setGeneratedFiles(data.files || []);
+        setActiveTab("code");
+        toast({ title: "Code generated!", description: `${data.files?.length || 0} files created.` });
+      } catch (fallbackErr: any) {
+        toast({ title: "Code generation failed", description: fallbackErr.message, variant: "destructive" });
+      }
     } finally {
       setIsGeneratingCode(false);
     }
+  };
+
+  const handleDownloadZip = async () => {
+    if (!pipelineState?.config) return;
+    try {
+      const sql = pipelineState.schema?.sql || "";
+      const project = generateProjectCode(pipelineState.config, sql);
+      const zip = new JSZip();
+      for (const file of project.files) {
+        zip.file(file.path, file.content);
+      }
+      const blob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${pipelineState.config.title.toLowerCase().replace(/\s+/g, "-")}-project.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: "📦 ZIP downloaded!", description: `${project.summary.total_files} files exported.` });
+    } catch (err: any) {
+      toast({ title: "ZIP export failed", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleApplyAutoFixes = async () => {
+    if (!pipelineState?.config) return;
+    const fixes = pipelineState.autoFixes || [];
+    const errorMemory = pipelineState.errorFixMemory || [];
+    const allFixes = [...fixes, ...errorMemory];
+    if (allFixes.length === 0) {
+      toast({ title: "No fixes to apply", description: "No error patterns found in memory." });
+      return;
+    }
+    const fixPrompt = `Apply these auto-fixes to "${pipelineState.config.title}":\n${allFixes.map((f: any, i: number) => `${i + 1}. ${f.fix_applied || f.fix || f.description || "Fix error"}`).join("\n")}\n\nRebuild with all fixes applied.`;
+    await sendMessage(fixPrompt);
+  };
+
+  const handleUseTemplate = (template: StarterTemplate) => {
+    const config = template.config;
+    // Build a synthetic pipeline state from the template
+    const templateState: PipelineState = {
+      stage: "complete", config, validation: null, schema: null, rbac: null,
+      testSuite: null, docs: null, theme: null, error: null,
+      requirements: [config.description], taskPlan: [], suggestions: [],
+      apiEndpoints: [], qualityScore: { overall_score: 85 }, qualityIssues: [],
+      qualityImprovements: [], qualityVerdict: "Template-based build", agentLog: [],
+      workflows: [], businessRules: [], permissionMatrix: [],
+      folderStructure: {}, testScenarios: [], seedData: [],
+      bugs: [], autoFixes: [], riskScore: 0, webhooks: [], edgeFunctions: [],
+      errorFixMemory: [], documentationPlan: ["README.md", "INSTALL.md", "API.md", "DB_SCHEMA.md"],
+      documentationChecklist: {}, securityChecklist: {},
+      defaultAdminCredentials: { email: "admin@admin.com", password: "admin123" },
+      installerSteps: [], pluginHooks: [], middlewareStack: [], reusableComponents: [], prismaSchemaHint: "",
+    };
+    setPipelineState(templateState);
+    setMessages([
+      { role: "ai", content: `🎯 **${template.name}** template loaded!\n\n${template.description}\n\n📄 ${config.pages.length} pages · 🗄 ${config.collections.length} collections · 👥 ${config.roles?.length || 0} roles\n\nYou can now:\n- **Preview** the app in the Preview tab\n- **Generate Code** to get the full source files\n- **Customize** by telling me what to change\n\n_Try: "Add a wishlist page" or "Change the color to blue"_` },
+    ]);
+    setActiveTab("preview");
+    toast({ title: `${template.name} loaded!`, description: "Template ready — customize or generate code." });
   };
 
   const handleAutoImprove = async () => {
@@ -1093,6 +1177,30 @@ export default function AIBuilderPage() {
               </div>
             </button>
           ))}
+        </div>
+
+        {/* Template Library */}
+        <div className="mt-8 space-y-3">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            Or start from a template
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {STARTER_TEMPLATES.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => handleUseTemplate(t)}
+                className="group flex flex-col items-center gap-2 p-3 rounded-xl border border-border bg-card text-center hover:border-primary/40 hover:shadow-sm transition-all"
+              >
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
+                  <Package className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <div className="text-xs font-medium text-foreground">{t.name}</div>
+                  <div className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">{t.description}</div>
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -1666,8 +1774,13 @@ export default function AIBuilderPage() {
               <ThemeSelector selectedTheme={selectedThemeId} onSelect={setSelectedThemeId} />
             </div>
             {buildComplete && (
+              <Button variant="ghost" size="sm" onClick={handleDownloadZip} className="gap-1.5 text-xs text-muted-foreground hidden lg:flex">
+                <Download className="w-3.5 h-3.5" /> ZIP
+              </Button>
+            )}
+            {buildComplete && (
               <Button variant="ghost" size="sm" onClick={handleExportJSON} className="gap-1.5 text-xs text-muted-foreground hidden lg:flex">
-                <Download className="w-3.5 h-3.5" /> Export
+                <Download className="w-3.5 h-3.5" /> JSON
               </Button>
             )}
             <Button
