@@ -1663,7 +1663,7 @@ export default function AIBuilderPage() {
                       </TabsList>
                     </Tabs>
                   </div>
-                  <div className="flex-1 min-h-0">
+                  <div className="flex-1 min-h-0 overflow-hidden">
                     {activeTab === "preview" && renderPreview()}
                     {activeTab === "config" && renderConfig()}
                     {activeTab === "sql" && renderSQL()}
