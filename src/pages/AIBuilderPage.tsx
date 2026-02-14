@@ -56,7 +56,7 @@ import { ProjectBranchingPanel } from "@/components/ai-builder/ProjectBranchingP
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getThemePreset } from "@/lib/engine/theme-generator";
-import { analyzePrompt } from "@/lib/engine/prompt-analyzer";
+import { analyzePrompt, ProjectPhase } from "@/lib/engine/prompt-analyzer";
 
 type Message = { role: "user" | "ai"; content: string };
 
@@ -168,6 +168,10 @@ export default function AIBuilderPage() {
   const [showAdvancedPipeline, setShowAdvancedPipeline] = useState(false);
   const [selectedThemeId, setSelectedThemeId] = useState<string | null>(null);
   const [currentProject, setCurrentProject] = useState<{ id: string; title: string | null; prompt: string; status: string; created_at: string; updated_at: string } | null>(null);
+  const [phasePlan, setPhasePlan] = useState<ProjectPhase[]>([]);
+  const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
+  const [awaitingPhaseConfirm, setAwaitingPhaseConfirm] = useState(false);
+  const [originalPrompt, setOriginalPrompt] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
   const hasProcessedIncoming = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -199,11 +203,64 @@ export default function AIBuilderPage() {
     setInput("");
     const newMessages: Message[] = [...messages, { role: "user", content: text }];
     setMessages(newMessages);
-    setIsBuilding(true);
-    setPipelineState(null);
+
+    // Check if user is confirming next phase
+    const isPhaseConfirm = awaitingPhaseConfirm && /^(yes|sure|go|ok|okay|continue|next|proceed|start|let'?s?\s*(go|do|start|build)|build|phase)/i.test(text.trim());
+
+    if (isPhaseConfirm && phasePlan.length > 0 && currentPhaseIndex < phasePlan.length) {
+      setAwaitingPhaseConfirm(false);
+      const phase = phasePlan[currentPhaseIndex];
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", content: `⚡ Great! Starting **Phase ${phase.phase}: ${phase.title}**...\n\n_${phase.description}_` },
+      ]);
+      // Small delay for UX
+      await new Promise(r => setTimeout(r, 500));
+      await executeBuild(phase.prompt);
+      return;
+    }
 
     // Smart step detection
     const analysis = analyzePrompt(text);
+
+    // For full-scope projects with phases — go conversational
+    if (analysis.scope === "full" && analysis.phases && analysis.phases.length > 1) {
+      setOriginalPrompt(text);
+      setPhasePlan(analysis.phases);
+      setCurrentPhaseIndex(0);
+      setAwaitingPhaseConfirm(true);
+
+      const phaseList = analysis.phases.map((p) =>
+        `**Phase ${p.phase}: ${p.title}**\n  _${p.description}_`
+      ).join("\n\n");
+
+      const conversationalMsg = [
+        analysis.appreciation || "🚀 Great project idea!",
+        "",
+        `I can see this is a comprehensive project with a lot of moving parts. To make sure everything is built properly, I'd like to split this into **${analysis.phases.length} phases**:`,
+        "",
+        phaseList,
+        "",
+        "---",
+        "",
+        `🎯 **Ready to start Phase 1: ${analysis.phases[0].title}?**`,
+        "",
+        '_Type "yes" or "go" to begin, or tell me if you\'d like to adjust the plan!_',
+      ].join("\n");
+
+      setMessages((prev) => [...prev, { role: "ai", content: conversationalMsg }]);
+      return;
+    }
+
+    // For non-full scope — build directly
+    await executeBuild(text);
+  };
+
+  const executeBuild = async (buildPrompt: string) => {
+    setIsBuilding(true);
+    setPipelineState(null);
+
+    const analysis = analyzePrompt(buildPrompt);
     const relevantSteps = analysis.stepsNeeded;
     const steps: ProgressStep[] = ENGINE_LABELS
       .map((label, i) => ({
@@ -239,26 +296,19 @@ export default function AIBuilderPage() {
 
     try {
       const startTime = Date.now();
-      // Apply selected theme preset to orchestrator
       if (selectedThemeId) {
         const preset = getThemePreset(selectedThemeId);
-        if (preset) {
-          orchestrator.setThemePreset(preset);
-        }
+        if (preset) orchestrator.setThemePreset(preset);
       }
-      const result = await orchestrator.execute(text);
+      const result = await orchestrator.execute(buildPrompt);
       const duration = Date.now() - startTime;
       setPipelineState(result);
 
       if (result.stage === "complete" && result.config) {
         const config = result.config;
         const v = result.validation;
-        const schema = result.schema;
 
-        // Set AI suggestions
-        if (result.suggestions?.length) {
-          setAiSuggestions(result.suggestions);
-        }
+        if (result.suggestions?.length) setAiSuggestions(result.suggestions);
 
         // Track build analytics + save project memory
         try {
@@ -267,7 +317,7 @@ export default function AIBuilderPage() {
             const allComponents = config.pages.flatMap((p) => p.components.map((c) => c.type));
             await supabase.from("build_analytics").insert({
               user_id: currentUser.id,
-              prompt: text,
+              prompt: buildPrompt,
               project_title: config.title || "Untitled",
               components_used: allComponents,
               component_count: allComponents.length,
@@ -279,27 +329,20 @@ export default function AIBuilderPage() {
             });
 
             let projectId = currentProject?.id;
-
             if (currentProject) {
-              // Update existing project
               await supabase.from("projects").update({
-                prompt: text,
+                prompt: originalPrompt || buildPrompt,
                 title: config.title || currentProject.title || "Untitled",
                 status: "generated",
               }).eq("id", currentProject.id);
             } else {
-              // Create new project
               const { data: project } = await supabase.from("projects").insert({
                 user_id: currentUser.id,
-                prompt: text,
+                prompt: originalPrompt || buildPrompt,
                 title: config.title || "Untitled",
                 status: "generated",
               }).select("*").single();
-
-              if (project) {
-                projectId = project.id;
-                setCurrentProject(project);
-              }
+              if (project) { projectId = project.id; setCurrentProject(project); }
             }
 
             if (projectId) {
@@ -324,6 +367,7 @@ export default function AIBuilderPage() {
           }
         } catch {}
 
+        // Build summary
         const summary = [
           `## ✅ ${config.title}`,
           `**${config.project_type}** · ${config.modules.join(", ")}`,
@@ -342,57 +386,83 @@ export default function AIBuilderPage() {
             `🔐 **Security: ${v.score}/100** ${v.errors.length ? `· ${v.errors.length} issues` : "· All clear"}`,
             "",
           ] : []),
-          "Your app is ready! Check the **Preview** tab to see it.",
         ].filter(Boolean).join("\n");
 
-        setMessages((prev) => {
-          const updated = [...prev, { role: "ai" as const, content: summary }];
-          // Save conversation to project memory
-          if (currentProject?.id && user) {
-            supabase.from("project_memory").upsert({
-              user_id: user.id,
-              project_id: currentProject.id,
-              requirements: result.requirements || [],
-              modules: config.modules || [],
-              db_schema: config.collections || [],
-              api_list: result.apiEndpoints || [],
-              ui_components: config.pages.flatMap((p) => p.components.map((c) => c.type)) || [],
-              page_layouts: config.pages || [],
-              task_plan: result.taskPlan || [],
-              total_steps: result.taskPlan?.length || 0,
-              current_step: result.taskPlan?.length || 0,
-              quality_score: result.qualityScore || {},
-              suggestions: result.suggestions || [],
-              agent_log: [...(result.agentLog || []), { type: "conversation", messages: updated }],
-              status: "complete",
-            } as any, { onConflict: "project_id" }).then(() => {});
+        // Check if there are more phases
+        const nextPhaseIndex = currentPhaseIndex + 1;
+        const hasMorePhases = phasePlan.length > 0 && nextPhaseIndex < phasePlan.length;
+
+        if (hasMorePhases) {
+          const nextPhase = phasePlan[nextPhaseIndex];
+          const phaseMsg = [
+            summary,
+            "",
+            `---`,
+            "",
+            `✅ **Phase ${phasePlan[currentPhaseIndex]?.phase || currentPhaseIndex + 1} complete!** Check the **Preview** tab to see the progress.`,
+            "",
+            `🎯 **Next up — Phase ${nextPhase.phase}: ${nextPhase.title}**`,
+            `_${nextPhase.description}_`,
+            "",
+            `Ready to continue? Type **"go"** or **"next"** to start Phase ${nextPhase.phase}, or tell me what you'd like to change first!`,
+          ].join("\n");
+
+          setCurrentPhaseIndex(nextPhaseIndex);
+          setAwaitingPhaseConfirm(true);
+
+          setMessages((prev) => {
+            const updated = [...prev, { role: "ai" as const, content: phaseMsg }];
+            if (currentProject?.id && user) {
+              supabase.from("project_memory").upsert({
+                user_id: user.id,
+                project_id: currentProject.id,
+                agent_log: [{ type: "conversation", messages: updated }, { type: "phases", phasePlan, currentPhaseIndex: nextPhaseIndex }],
+                status: "in_progress",
+              } as any, { onConflict: "project_id" }).then(() => {});
+            }
+            return updated;
+          });
+        } else {
+          // All phases complete or no phases
+          const isLastPhase = phasePlan.length > 0 && nextPhaseIndex >= phasePlan.length;
+          const completionMsg = isLastPhase
+            ? `${summary}\n\n---\n\n🎉 **All ${phasePlan.length} phases are complete!** Your full application is ready.\n\nCheck the **Preview** tab to see everything, or tell me if you'd like any adjustments!`
+            : `${summary}\n\nYour app is ready! Check the **Preview** tab to see it.`;
+
+          // Reset phase state
+          if (isLastPhase) {
+            setPhasePlan([]);
+            setCurrentPhaseIndex(0);
+            setOriginalPrompt("");
           }
-          return updated;
-        });
+
+          setMessages((prev) => {
+            const updated = [...prev, { role: "ai" as const, content: completionMsg }];
+            if (currentProject?.id && user) {
+              supabase.from("project_memory").upsert({
+                user_id: user.id,
+                project_id: currentProject.id,
+                agent_log: [{ type: "conversation", messages: updated }],
+                status: "complete",
+              } as any, { onConflict: "project_id" }).then(() => {});
+            }
+            return updated;
+          });
+        }
       } else if (result.error) {
         try {
           const { data: { user: currentUser } } = await supabase.auth.getUser();
           if (currentUser) {
             await supabase.from("build_analytics").insert({
-              user_id: currentUser.id,
-              prompt: text,
-              status: "error",
-              duration_ms: Date.now() - startTime,
+              user_id: currentUser.id, prompt: buildPrompt, status: "error", duration_ms: Date.now() - startTime,
             });
           }
         } catch {}
-
-        setMessages((prev) => [
-          ...prev,
-          { role: "ai", content: `Something went wrong: ${result.error}\n\nTry describing your app differently.` },
-        ]);
+        setMessages((prev) => [...prev, { role: "ai", content: `Something went wrong: ${result.error}\n\nTry describing your app differently.` }]);
         toast({ title: "Build failed", description: result.error, variant: "destructive" });
       }
     } catch (err: any) {
-      setMessages((prev) => [
-        ...prev,
-        { role: "ai", content: `Something went wrong: ${err.message}` },
-      ]);
+      setMessages((prev) => [...prev, { role: "ai", content: `Something went wrong: ${err.message}` }]);
     } finally {
       unsub();
       setIsBuilding(false);
@@ -811,6 +881,35 @@ export default function AIBuilderPage() {
                   </button>
                 ))}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Phase action buttons */}
+        {awaitingPhaseConfirm && !isBuilding && phasePlan.length > 0 && currentPhaseIndex < phasePlan.length && (
+          <div className="flex gap-3 animate-fade-in">
+            <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+              <Rocket className="w-3.5 h-3.5 text-primary" />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => sendMessage("Let's go!")}
+                className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-all flex items-center gap-1.5"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                Start Phase {phasePlan[currentPhaseIndex].phase}
+              </button>
+              <button
+                onClick={() => {
+                  setAwaitingPhaseConfirm(false);
+                  setPhasePlan([]);
+                  setCurrentPhaseIndex(0);
+                  setMessages((prev) => [...prev, { role: "ai", content: "No problem! Feel free to tell me what you'd like to do instead, or describe your project differently." }]);
+                }}
+                className="px-4 py-2 rounded-xl border border-border bg-card text-xs text-foreground hover:bg-accent transition-all"
+              >
+                Skip phases, build all at once
+              </button>
             </div>
           </div>
         )}
