@@ -289,7 +289,7 @@ const seedData: AIIntegration[] = [
   { id: "agent-10", name: "Agent 10 — Quality Reviewer", provider: "openai", model: "gpt-5-mini", apiEndpoint: "https://api.openai.com/v1", apiKey: "", status: "inactive", usageCount: 0, lastUsed: "-", createdAt: "2026-02-15", useFor: ["general"] },
 ];
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 10;
 
 const statusConfig: Record<AIStatus, { label: string; icon: React.ElementType; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   active: { label: "Active", icon: CheckCircle2, variant: "default" },
