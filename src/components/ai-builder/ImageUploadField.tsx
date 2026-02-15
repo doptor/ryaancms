@@ -26,8 +26,11 @@ export function ImageUploadField({ value, onChange, placeholder = "Image URL or 
     if (!file.type.startsWith("image/")) return;
     setUploading(true);
     try {
+      // Get current user ID — RLS policy requires folder name = auth.uid()
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
       const ext = file.name.split(".").pop() || "png";
-      const fileName = `builder/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
       const { data, error } = await supabase.storage
         .from("site-assets")
         .upload(fileName, file, { cacheControl: "3600", upsert: false });
