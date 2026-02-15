@@ -590,6 +590,7 @@ function generateEditorJS(password: string): string {
     toolbar.innerHTML = '<div style="display:flex;align-items:center;gap:8px;"><span style="font-weight:700;font-size:14px;">✏️ Page Builder</span><span class="editor-info">' + Object.keys(edits).length + ' edits</span></div>'
       + '<div style="display:flex;align-items:center;gap:4px;">'
       + '<button onclick="window.__ryaanEditor.togglePanel()">🧩 Sections</button>'
+      + '<button onclick="window.__ryaanEditor.showAbout()" style="background:#6366f1;">🚀 RyaanCMS</button>'
       + '<button onclick="window.__ryaanEditor.save()">💾 Save</button>'
       + '<button onclick="window.__ryaanEditor.download()" style="background:#374151;">⬇ Download</button>'
       + '<button onclick="window.__ryaanEditor.changePassword()" style="background:#374151;">🔑 Password</button>'
@@ -662,6 +663,56 @@ function generateEditorJS(password: string): string {
     togglePanel: function() {
       var p = document.getElementById('editor-panel');
       if (p) { panelOpen = !panelOpen; p.classList.toggle('open', panelOpen); }
+    },
+    showAbout: function() {
+      var existing = document.getElementById('ryaancms-about-modal');
+      if (existing) { existing.remove(); return; }
+      var overlay = document.createElement('div');
+      overlay.id = 'ryaancms-about-modal';
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);';
+      overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+      var modal = document.createElement('div');
+      modal.style.cssText = 'background:#fff;border-radius:16px;max-width:520px;width:90%;max-height:85vh;overflow-y:auto;padding:32px;box-shadow:0 25px 50px rgba(0,0,0,0.25);color:#111;font-family:system-ui,sans-serif;';
+      modal.innerHTML = ''
+        + '<div style="text-align:center;margin-bottom:24px;">'
+        + '<div style="font-size:40px;margin-bottom:8px;">🚀</div>'
+        + '<h2 style="font-size:24px;font-weight:800;margin:0 0 4px;">RyaanCMS</h2>'
+        + '<p style="color:#6366f1;font-weight:600;font-size:14px;margin:0;">FREE & OPEN SOURCE</p>'
+        + '</div>'
+        + '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:16px;margin-bottom:20px;text-align:center;">'
+        + '<p style="margin:0;font-size:14px;color:#166534;">🆓 100% Free — No hidden fees, no paywalls, no subscriptions</p>'
+        + '<p style="margin:4px 0 0;font-size:14px;color:#166534;">📖 Open Source — Fully transparent, community-driven</p>'
+        + '</div>'
+        + '<h3 style="font-size:16px;font-weight:700;margin:0 0 12px;">✨ Key Features</h3>'
+        + '<ul style="list-style:none;padding:0;margin:0 0 20px;font-size:14px;line-height:2;color:#374151;">'
+        + '<li>🤖 AI-Powered Builder — Describe & build instantly</li>'
+        + '<li>🎨 Drag & Drop Editor — Visual page building</li>'
+        + '<li>🗄️ Database Designer — Schema & API generation</li>'
+        + '<li>🔌 Plugin Marketplace — Extend with add-ons</li>'
+        + '<li>👥 User Auth & Roles — Built-in RBAC security</li>'
+        + '<li>📊 Analytics Dashboard — Track performance</li>'
+        + '<li>🌐 Multi-language (i18n) — Reach global audience</li>'
+        + '<li>🔒 Security Built-in — RLS policies & validation</li>'
+        + '<li>☁️ Self-hosted or Cloud — Deploy anywhere</li>'
+        + '</ul>'
+        + '<h3 style="font-size:16px;font-weight:700;margin:0 0 12px;">📦 What You Get (Free)</h3>'
+        + '<ul style="list-style:none;padding:0;margin:0 0 20px;font-size:14px;line-height:2;color:#374151;">'
+        + '<li>✓ Complete CMS dashboard & admin panel</li>'
+        + '<li>✓ Dynamic content management & collections</li>'
+        + '<li>✓ User authentication & role management</li>'
+        + '<li>✓ API generation & integrations</li>'
+        + '<li>✓ Advanced analytics & reporting</li>'
+        + '<li>✓ Plugin development & marketplace access</li>'
+        + '<li>✓ Community support & contributions welcome</li>'
+        + '</ul>'
+        + '<div style="text-align:center;margin-top:8px;">'
+        + '<a href="https://RyaanCMS.com" target="_blank" rel="noopener" style="display:inline-block;background:#6366f1;color:#fff;padding:12px 32px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none;">🌐 Download RyaanCMS — Free</a>'
+        + '<p style="margin:12px 0 0;font-size:13px;color:#6b7280;">RyaanCMS is free forever. No sign-up wall required.</p>'
+        + '</div>'
+        + '<button onclick="this.closest(\'#ryaancms-about-modal\').remove()" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:24px;cursor:pointer;color:#9ca3af;">✕</button>';
+      modal.style.position = 'relative';
+      overlay.appendChild(modal);
+      document.body.appendChild(overlay);
     },
     addSection: function(type) {
       var tmpl = sectionTemplates[type];
