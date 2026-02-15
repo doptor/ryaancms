@@ -339,7 +339,7 @@ export function DeployPanel({ config, sql, onExportJSON, onExportSQL }: DeployPa
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-foreground">ZIP</span>
+                  <span className="text-sm font-medium text-foreground">React / Node.js</span>
                   <Badge variant="outline" className="text-[10px] h-4">Source Code</Badge>
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
