@@ -90,7 +90,7 @@ export default function PreviewPage() {
             </p>
           </div>
           <Button
-            onClick={() => navigate("/dashboard/ai-builder")}
+            onClick={() => navigate("/dashboard/ai")}
             className="bg-gradient-primary text-primary-foreground px-6"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -108,7 +108,7 @@ export default function PreviewPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate("/dashboard/ai-builder")}
+            onClick={() => navigate("/dashboard/ai")}
             className="text-muted-foreground hover:text-foreground shrink-0"
           >
             <ArrowLeft className="w-4 h-4 sm:mr-1" />
