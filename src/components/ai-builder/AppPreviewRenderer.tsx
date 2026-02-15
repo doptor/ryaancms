@@ -266,7 +266,17 @@ function PageRenderer({ page, config, pageIndex, selectedComponent, onSelectComp
                   )}
                 </div>
               )}
-              <ComponentRenderer component={comp} config={config} onNavigate={onNavigate} onUpdateProp={onUpdateComponentProp ? (key, val) => onUpdateComponentProp(pageIndex, i, key, val) : undefined} />
+              <div
+                style={{
+                  background:
+                    comp.props?._bg_mode === "solid" ? comp.props?._bg_color :
+                    comp.props?._bg_mode === "gradient" ? comp.props?._bg_gradient :
+                    comp.props?._bg_mode === "custom" ? comp.props?._bg_custom :
+                    undefined,
+                }}
+              >
+                <ComponentRenderer component={comp} config={config} onNavigate={onNavigate} onUpdateProp={onUpdateComponentProp ? (key, val) => onUpdateComponentProp(pageIndex, i, key, val) : undefined} />
+              </div>
             </div>
             {isDropTarget && dragIndex !== null && dragIndex < i && (
               <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary rounded-full z-20" />
