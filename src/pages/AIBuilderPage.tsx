@@ -331,6 +331,29 @@ export default function AIBuilderPage() {
                 style: {}, multi_tenant: false,
               };
             }
+            // Try to load richer config from published_previews (has prop customizations like backgrounds, content blocks)
+            try {
+              const { data: preview } = await supabase.from("published_previews").select("config").eq("user_id", user.id).order("updated_at", { ascending: false }).limit(1).maybeSingle();
+              if (preview?.config && (preview.config as any).pages?.length > 0) {
+                const previewConfig = preview.config as any;
+                // Use published config if it matches the same project (by title or has more data)
+                if (restored.config && previewConfig.title === restored.config.title) {
+                  restored.config = previewConfig;
+                } else if (!restored.config) {
+                  restored.config = previewConfig;
+                }
+              }
+            } catch {}
+            // Also check localStorage for most recent edits
+            try {
+              const stored = localStorage.getItem("ai-builder-preview-config");
+              if (stored) {
+                const localConfig = JSON.parse(stored);
+                if (localConfig?.pages?.length > 0 && restored.config && localConfig.title === restored.config.title) {
+                  restored.config = localConfig;
+                }
+              }
+            } catch {}
             setPipelineState(restored);
             const agentLog = memory.agent_log as any[] || [];
             const convEntry = agentLog.find((e: any) => e?.type === "conversation");
@@ -404,14 +427,36 @@ export default function AIBuilderPage() {
             securityChecklist: {}, defaultAdminCredentials: { email: "admin@admin.com", password: "admin123" },
             installerSteps: [], pluginHooks: [], middlewareStack: [], reusableComponents: [], prismaSchemaHint: "",
           };
-          if (memory.modules || memory.page_layouts || memory.db_schema) {
-            restored.config = {
-              project_type: "saas", build_target: "application", title: project.title || "Restored Project", description: project.prompt || "Loaded from project memory",
-              modules: (memory.modules as any) || [], roles: [], features: [],
-              pages: (memory.page_layouts as any) || [], collections: (memory.db_schema as any) || [],
-              style: {}, multi_tenant: false,
-            };
-          }
+           if (memory.modules || memory.page_layouts || memory.db_schema) {
+              restored.config = {
+                project_type: "saas", build_target: "application", title: project.title || "Restored Project", description: project.prompt || "Loaded from project memory",
+                modules: (memory.modules as any) || [], roles: [], features: [],
+                pages: (memory.page_layouts as any) || [], collections: (memory.db_schema as any) || [],
+                style: {}, multi_tenant: false,
+              };
+            }
+            // Try to load richer config from published_previews (has prop customizations like backgrounds, content blocks)
+            try {
+              const { data: preview } = await supabase.from("published_previews").select("config").eq("user_id", user.id).order("updated_at", { ascending: false }).limit(1).maybeSingle();
+              if (preview?.config && (preview.config as any).pages?.length > 0) {
+                const previewConfig = preview.config as any;
+                if (restored.config && previewConfig.title === restored.config.title) {
+                  restored.config = previewConfig;
+                } else if (!restored.config) {
+                  restored.config = previewConfig;
+                }
+              }
+            } catch {}
+            // Also check localStorage for most recent edits
+            try {
+              const stored = localStorage.getItem("ai-builder-preview-config");
+              if (stored) {
+                const localConfig = JSON.parse(stored);
+                if (localConfig?.pages?.length > 0 && restored.config && localConfig.title === restored.config.title) {
+                  restored.config = localConfig;
+                }
+              }
+            } catch {}
           setPipelineState(restored);
           // Don't override activeTab — let localStorage persistence handle it
           const agentLog = memory.agent_log as any[] || [];
@@ -1331,6 +1376,16 @@ export default function AIBuilderPage() {
         style: {}, multi_tenant: false,
       };
     }
+    // Prefer published_previews config if it has prop customizations
+    try {
+      const stored = localStorage.getItem("ai-builder-preview-config");
+      if (stored) {
+        const localConfig = JSON.parse(stored);
+        if (localConfig?.pages?.length > 0 && restored.config && localConfig.title === restored.config.title) {
+          restored.config = localConfig;
+        }
+      }
+    } catch {}
     setPipelineState(restored);
     setActiveTab("preview");
   };
