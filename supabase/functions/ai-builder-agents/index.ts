@@ -796,14 +796,131 @@ interface UserApiConfig {
   model: string;
 }
 
+// Map pipeline agent keys to their agent_N useFor tag
+const AGENT_KEY_TO_NUM: Record<string, number> = {
+  requirements: 1, product_manager: 2, planner: 3, architect: 4,
+  database: 5, backend: 6, uiux: 7, copywriter: 8,
+  testing: 8, debugger: 9, ui_reviewer: 9, reviewer: 10,
+};
+
+function pickApiConfig(agentKey: string, allConfigs: UserApiConfig[]): UserApiConfig | null {
+  if (allConfigs.length === 0) return null;
+  const agentNum = AGENT_KEY_TO_NUM[agentKey];
+  // 1. Try exact agent match (agent_N)
+  const byAgent = allConfigs.find((c: any) => c._useFor?.includes(`agent_${agentNum}`));
+  if (byAgent) return byAgent;
+  // 2. Try app_builder task match
+  const byTask = allConfigs.find((c: any) => c._useFor?.includes("app_builder"));
+  if (byTask) return byTask;
+  // 3. Try general
+  const general = allConfigs.find((c: any) => c._useFor?.includes("general"));
+  if (general) return general;
+  // 4. Fallback to first active
+  return allConfigs[0];
+}
+
+async function callGemini(apiKey: string, model: string, systemPrompt: string, userPrompt: string, tool: any): Promise<Response> {
+  // Gemini uses its own REST API format
+  const geminiModel = model.startsWith("gemini-") ? model : "gemini-2.5-flash";
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`;
+  
+  const body = {
+    systemInstruction: { parts: [{ text: systemPrompt }] },
+    contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+    tools: [{
+      functionDeclarations: [{
+        name: tool.name,
+        description: tool.description,
+        parameters: tool.parameters,
+      }],
+    }],
+    toolConfig: { functionCallingConfig: { mode: "ANY", allowedFunctionNames: [tool.name] } },
+  };
+
+  return fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+function parseGeminiResponse(data: any): { toolName: string; args: any } | null {
+  const parts = data?.candidates?.[0]?.content?.parts;
+  if (!parts) return null;
+  const fnCall = parts.find((p: any) => p.functionCall);
+  if (!fnCall) return null;
+  return { toolName: fnCall.functionCall.name, args: fnCall.functionCall.args };
+}
+
+async function callAnthropic(apiKey: string, model: string, systemPrompt: string, userPrompt: string, tool: any): Promise<Response> {
+  const url = "https://api.anthropic.com/v1/messages";
+  const body = {
+    model: model || "claude-sonnet-4-20250514",
+    max_tokens: 8192,
+    system: systemPrompt,
+    messages: [{ role: "user", content: userPrompt }],
+    tools: [{
+      name: tool.name,
+      description: tool.description,
+      input_schema: tool.parameters,
+    }],
+    tool_choice: { type: "tool", name: tool.name },
+  };
+
+  return fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify(body),
+  });
+}
+
+function parseAnthropicResponse(data: any): { toolName: string; args: any } | null {
+  const toolBlock = data?.content?.find((b: any) => b.type === "tool_use");
+  if (!toolBlock) return null;
+  return { toolName: toolBlock.name, args: toolBlock.input };
+}
+
+async function callOpenAI(endpoint: string, apiKey: string, model: string, systemPrompt: string, userPrompt: string, tool: any): Promise<Response> {
+  const url = endpoint.endsWith("/chat/completions") ? endpoint : `${endpoint}/chat/completions`;
+  const body = {
+    model: model || "gpt-5",
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ],
+    tools: [{ type: "function", function: { name: tool.name, description: tool.description, parameters: tool.parameters } }],
+    tool_choice: { type: "function", function: { name: tool.name } },
+  };
+
+  return fetch(url, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+function parseOpenAIResponse(data: any): { toolName: string; args: any } | null {
+  const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+  if (!toolCall) return null;
+  return { toolName: toolCall.function.name, args: JSON.parse(toolCall.function.arguments) };
+}
+
 async function runAgent(
   agentName: AgentName,
   userPrompt: string,
   context: Record<string, unknown>,
-  apiKey: string,
-  userApiConfig?: UserApiConfig | null
+  allConfigs: UserApiConfig[]
 ): Promise<{ success: boolean; data?: unknown; error?: string; agentName: string }> {
   const agent = AGENT_CONFIGS[agentName];
+  const config = pickApiConfig(agentName, allConfigs);
+
+  if (!config) {
+    return { success: false, error: "No API key configured for this agent. Please add your API key in Settings → AI Integrations.", agentName: agent.name };
+  }
 
   const contextEntries = Object.entries(context);
   let contextStr = "";
@@ -816,57 +933,49 @@ async function runAgent(
     ? `User Request: "${userPrompt}"\n\n--- Previous Agent Outputs ---\n${contextStr}`
     : `User Request: "${userPrompt}"`;
 
-  const requestBody = JSON.stringify({
-    model: "google/gemini-2.5-flash",
-    messages: [
-      { role: "system", content: agent.system },
-      { role: "user", content: fullPrompt },
-    ],
-    tools: [{ type: "function", function: { name: agent.tool.name, description: agent.tool.description, parameters: agent.tool.parameters } }],
-    tool_choice: { type: "function", function: { name: agent.tool.name } },
-  });
-
-  // Helper to call an AI endpoint
-  async function callAI(url: string, key: string, body: string) {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body,
-    });
-    return response;
-  }
-
   try {
-    if (!userApiConfig) {
-      return { success: false, error: "No API key configured. Please add your own API key in Settings → AI Integrations.", agentName: agent.name };
+    console.log(`Agent ${agent.name}: using ${config.provider}/${config.model}`);
+    
+    let response: Response;
+    let parsed: { toolName: string; args: any } | null = null;
+
+    if (config.provider === "gemini") {
+      response = await callGemini(config.apiKey, config.model, agent.system, fullPrompt, agent.tool);
+      if (!response.ok) {
+        const errText = await response.text().catch(() => "");
+        console.error(`Agent ${agent.name} (Gemini) failed: HTTP ${response.status} — ${errText}`);
+        if (response.status === 429) return { success: false, error: "Rate limit exceeded. Please try again shortly.", agentName: agent.name };
+        return { success: false, error: `Agent ${agent.name} failed: HTTP ${response.status}`, agentName: agent.name };
+      }
+      const data = await response.json();
+      parsed = parseGeminiResponse(data);
+    } else if (config.provider === "anthropic") {
+      response = await callAnthropic(config.apiKey, config.model, agent.system, fullPrompt, agent.tool);
+      if (!response.ok) {
+        const errText = await response.text().catch(() => "");
+        console.error(`Agent ${agent.name} (Anthropic) failed: HTTP ${response.status} — ${errText}`);
+        if (response.status === 429) return { success: false, error: "Rate limit exceeded. Please try again shortly.", agentName: agent.name };
+        return { success: false, error: `Agent ${agent.name} failed: HTTP ${response.status}`, agentName: agent.name };
+      }
+      const data = await response.json();
+      parsed = parseAnthropicResponse(data);
+    } else {
+      // OpenAI or OpenAI-compatible
+      response = await callOpenAI(config.endpoint, config.apiKey, config.model, agent.system, fullPrompt, agent.tool);
+      if (!response.ok) {
+        const errText = await response.text().catch(() => "");
+        console.error(`Agent ${agent.name} (OpenAI) failed: HTTP ${response.status} — ${errText}`);
+        if (response.status === 429) return { success: false, error: "Rate limit exceeded. Please try again shortly.", agentName: agent.name };
+        if (response.status === 402) return { success: false, error: "AI credits exhausted.", agentName: agent.name };
+        return { success: false, error: `Agent ${agent.name} failed: HTTP ${response.status}`, agentName: agent.name };
+      }
+      const data = await response.json();
+      parsed = parseOpenAIResponse(data);
     }
 
-    console.log(`Using user's ${userApiConfig.provider} API key for agent: ${agent.name}`);
-    const userBody = JSON.stringify({
-      ...JSON.parse(requestBody),
-      model: userApiConfig.model || "gpt-5",
-    });
-    const response = await callAI(
-      userApiConfig.endpoint.endsWith("/chat/completions")
-        ? userApiConfig.endpoint
-        : `${userApiConfig.endpoint}/chat/completions`,
-      userApiConfig.apiKey,
-      userBody
-    );
+    if (!parsed) return { success: false, error: `Agent ${agent.name} did not return structured output`, agentName: agent.name };
 
-    if (!response.ok) {
-      if (response.status === 429) return { success: false, error: "Rate limit exceeded. Please try again shortly.", agentName: agent.name };
-      if (response.status === 402) return { success: false, error: "AI credits exhausted. Please add your own API key in Settings → AI Integrations.", agentName: agent.name };
-      const errText = await response.text().catch(() => "");
-      console.error(`Agent ${agent.name} failed: HTTP ${response.status} — ${errText}`);
-      return { success: false, error: `Agent ${agent.name} failed: HTTP ${response.status}`, agentName: agent.name };
-    }
-
-    const data = await response.json();
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall) return { success: false, error: `Agent ${agent.name} did not return structured output`, agentName: agent.name };
-
-    return { success: true, data: JSON.parse(toolCall.function.arguments), agentName: agent.name };
+    return { success: true, data: parsed.args, agentName: agent.name };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "Unknown error", agentName: agent.name };
   }
@@ -901,10 +1010,8 @@ serve(async (req) => {
       });
     }
 
-    // Lovable AI Gateway removed — only user's own API keys are used
-
-    // Fetch user's own API keys from site_settings for fallback (task: app_builder)
-    let userApiConfig: UserApiConfig | null = null;
+    // Fetch ALL user API keys from site_settings for per-agent routing
+    let allApiConfigs: (UserApiConfig & { _useFor: string[] })[] = [];
     try {
       const authHeader = req.headers.get("authorization");
       if (authHeader) {
@@ -917,17 +1024,18 @@ serve(async (req) => {
         if (settingsRes.ok) {
           const rows = await settingsRes.json();
           const items = rows?.[0]?.value?.items?.filter((i: any) => i.status === "active" && i.apiKey?.length > 5) || [];
-          const byTask = items.find((i: any) => i.useFor?.includes("app_builder"));
-          const general = items.find((i: any) => i.useFor?.includes("general"));
-          const pick = byTask || general || items[0];
-          if (pick) {
-            userApiConfig = { provider: pick.provider, endpoint: pick.apiEndpoint, apiKey: pick.apiKey, model: pick.model };
-            console.log(`User API fallback available: ${pick.provider}/${pick.model} (task: app_builder)`);
-          }
+          allApiConfigs = items.map((i: any) => ({
+            provider: i.provider,
+            endpoint: i.apiEndpoint,
+            apiKey: i.apiKey,
+            model: i.model,
+            _useFor: i.useFor || [],
+          }));
+          console.log(`Loaded ${allApiConfigs.length} API configs for per-agent routing`);
         }
       }
     } catch (e) {
-      console.log("Could not fetch user API config (non-fatal):", e);
+      console.log("Could not fetch user API configs (non-fatal):", e);
     }
 
     const encoder = new TextEncoder();
@@ -963,7 +1071,7 @@ serve(async (req) => {
 
           send("agent_start", { agent: agent.name, step, total: totalAgents });
 
-          const result = await runAgent(key, prompt, context, "", userApiConfig);
+          const result = await runAgent(key, prompt, context, allApiConfigs as any);
           agentLog.push({ agent: key, ...result });
 
           if (!result.success) {
