@@ -641,8 +641,9 @@ export default function AIBuilderPage() {
       return;
     }
 
-    // Smart step detection
-    const analysis = analyzePrompt(text);
+    // Smart step detection — pass hasExistingProject so analyzer knows this is an update
+    const hasExistingProject = !!currentProjectRef.current || !!pipelineState?.config;
+    const analysis = analyzePrompt(text, hasExistingProject);
 
     // For full-scope projects with phases — go conversational
     if (analysis.scope === "full" && analysis.phases && analysis.phases.length > 1) {
@@ -704,7 +705,8 @@ export default function AIBuilderPage() {
       setBuildElapsed(Math.round((Date.now() - buildStartTimeRef.current) / 1000));
     }, 1000);
 
-    const analysis = analyzePrompt(buildPrompt);
+    const hasExistingProject = !!currentProjectRef.current || !!previousConfig;
+    const analysis = analyzePrompt(buildPrompt, hasExistingProject);
     const relevantSteps = analysis.stepsNeeded;
 
     // === Build Activities: Understanding phase ===
@@ -811,8 +813,8 @@ export default function AIBuilderPage() {
         const preset = getThemePreset(selectedThemeId);
         if (preset) orchestrator.setThemePreset(preset);
       }
-      // Pass scope and stepsNeeded to orchestrator
-      const result = await orchestrator.execute(buildPrompt, analysis.scope, analysis.stepsNeeded);
+      // Pass scope, stepsNeeded, and existing config to orchestrator
+      const result = await orchestrator.execute(buildPrompt, analysis.scope, analysis.stepsNeeded, previousConfig);
       const duration = Date.now() - startTime;
       setPipelineState(result);
 
