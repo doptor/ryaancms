@@ -1157,6 +1157,22 @@ export default function AIBuilderPage() {
     config.pages = pages;
     updated.config = config;
     setPipelineState(updated);
+    // Auto-persist to localStorage immediately
+    try { localStorage.setItem("ai-builder-preview-config", JSON.stringify(config)); } catch {}
+    // Debounced persist to database
+    if (user) {
+      clearTimeout((window as any).__propUpdateTimer);
+      (window as any).__propUpdateTimer = setTimeout(async () => {
+        try {
+          const { data: existing } = await supabase.from("published_previews").select("id").eq("user_id", user.id).maybeSingle();
+          if (existing) {
+            await supabase.from("published_previews").update({ config: config as any, updated_at: new Date().toISOString() }).eq("id", existing.id);
+          } else {
+            await supabase.from("published_previews").insert({ user_id: user.id, config: config as any, project_title: config.title || "Untitled" });
+          }
+        } catch {}
+      }, 2000);
+    }
   };
 
   const handleReorderComponents = (pageIndex: number, fromIndex: number, toIndex: number) => {
