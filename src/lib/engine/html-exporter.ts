@@ -251,6 +251,7 @@ body.editor-unlocked [data-section]:hover .drag-handle { display: block; }
 
 function generateEditorJS(password: string): string {
   return `// RyaanCMS Full Page Builder — password-protected
+try {
 (function() {
   'use strict';
   var STORAGE_KEY = 'ryaancms_edits';
@@ -942,6 +943,23 @@ function generateEditorJS(password: string): string {
     if (isUnlocked) initEditor();
   });
 })();
+} catch(editorErr) {
+  console.error('RyaanCMS Editor failed to load:', editorErr);
+}
+
+// Standalone keyboard shortcut — works even if editor IIFE fails
+document.addEventListener('keydown', function(ev) {
+  if (ev.ctrlKey && ev.shiftKey && (ev.key === 'E' || ev.key === 'e' || ev.keyCode === 69)) {
+    ev.preventDefault();
+    if (window.__ryaanEditor && typeof window.__ryaanEditor.unlock === 'function') {
+      if (sessionStorage.getItem('ryaancms_editor_unlocked') !== 'true') {
+        window.__ryaanEditor.unlock();
+      }
+    } else {
+      alert('Editor failed to load. Please check the browser console (F12) for errors.');
+    }
+  }
+});
 `;
 }
 
@@ -1281,7 +1299,7 @@ function generatePageHTML(page: PageConfig, config: AppConfig, imageMap: Map<str
 </head>
 <body>
 ${components}
-<script>${editorJS}<\/script>
+<script>${editorJS.replace(/<\/script/gi, '<\\/script')}<\/script>
 </body>
 </html>`;
 }
@@ -1514,7 +1532,7 @@ export async function exportToHTML(config: AppConfig, onProgress?: (msg: string)
 </head>
 <body class="bg-background text-foreground min-h-screen" style="font-family: ${font};">
 ${finalHTML}
-<script>${generateEditorJS(password)}<\/script>
+<script>${generateEditorJS(password).replace(/<\/script/gi, '<\\/script')}<\/script>
 </body>
 </html>`;
 
