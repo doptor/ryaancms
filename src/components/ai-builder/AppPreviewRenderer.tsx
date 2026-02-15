@@ -268,6 +268,7 @@ function PageRenderer({ page, config, pageIndex, selectedComponent, onSelectComp
                 </div>
               )}
               <div
+                data-component-type={comp.type}
                 className={cn(comp.props?._bg_mode === "image" && "relative overflow-hidden")}
                 style={{
                   background:
@@ -517,9 +518,30 @@ function ComponentRenderer({ component, config, onNavigate, onUpdateProp }: { co
 
 function NavbarPreview({ props, config, onNavigate, onUpdateProp }: { props: Record<string, any>; config: AppConfig; onNavigate?: (pageRoute: string) => void; onUpdateProp?: PropUpdater }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const navItems = config.pages.length > 1
-    ? config.pages.filter(p => p.layout !== "dashboard").map(p => p.name)
-    : ["Home", "Features", "Pricing", "About"];
+
+  // Custom nav items take priority over auto-generated page links
+  const customItems = (props._nav_items as { label: string; link_type: string; target: string; open_new_tab?: boolean }[]) || [];
+  const hasCustomItems = customItems.length > 0;
+
+  const autoItems = config.pages.length > 1
+    ? config.pages.filter(p => p.layout !== "dashboard").map(p => ({ label: p.name, link_type: "page" as const, target: p.route }))
+    : [{ label: "Home", link_type: "page" as const, target: "/" }, { label: "Features", link_type: "page" as const, target: "#features" }, { label: "Pricing", link_type: "page" as const, target: "#pricing" }, { label: "About", link_type: "page" as const, target: "#about" }];
+
+  const navItems = hasCustomItems ? customItems : autoItems;
+
+  const handleNavClick = (item: typeof navItems[0], e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (item.link_type === "external" && item.target) {
+      window.open(item.target, item.open_new_tab !== false ? "_blank" : "_self");
+    } else if (item.link_type === "section" && item.target) {
+      // Scroll to section - the target is like #hero, #features_grid etc
+      const sectionId = item.target.replace(/^#/, "");
+      const el = document.querySelector(`[data-component-type="${sectionId}"]`);
+      el?.scrollIntoView({ behavior: "smooth" });
+    } else {
+      onNavigate?.(item.label);
+    }
+  };
 
   return (
     <div className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-10">
@@ -538,14 +560,15 @@ function NavbarPreview({ props, config, onNavigate, onUpdateProp }: { props: Rec
           <nav className="hidden sm:flex items-center gap-1">
             {navItems.map((item, i) => (
               <button
-                key={item}
-                onClick={(e) => { e.stopPropagation(); onNavigate?.(item); }}
+                key={item.label + i}
+                onClick={(e) => handleNavClick(item, e)}
                 className={cn(
-                  "px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer",
+                  "px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer inline-flex items-center gap-1",
                   i === 0 ? "text-foreground bg-accent" : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                 )}
               >
-                {item}
+                {item.label}
+                {item.link_type === "external" && <ExternalLink className="w-2.5 h-2.5" />}
               </button>
             ))}
           </nav>
@@ -571,11 +594,12 @@ function NavbarPreview({ props, config, onNavigate, onUpdateProp }: { props: Rec
         <div className="sm:hidden border-t border-border px-4 py-3 space-y-1 bg-card">
           {navItems.map((item, i) => (
             <button
-              key={item}
-              onClick={(e) => { e.stopPropagation(); onNavigate?.(item); setMobileOpen(false); }}
+              key={item.label + i}
+              onClick={(e) => { handleNavClick(item, e); setMobileOpen(false); }}
               className="block w-full text-left px-3 py-2 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
             >
-              {item}
+              {item.label}
+              {item.link_type === "external" && <ExternalLink className="w-2.5 h-2.5 inline ml-1" />}
             </button>
           ))}
           {props.show_auth_buttons !== false && (
