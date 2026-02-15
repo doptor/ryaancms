@@ -283,69 +283,89 @@ export function DeployPanel({ config, sql, onExportJSON, onExportSQL }: DeployPa
         {selectedMethod === "download" && (
           <div className="space-y-3">
             <h4 className="text-sm font-medium text-foreground flex items-center gap-2">
-              <FolderDown className="w-4 h-4" /> Download Project Files
+              <FolderDown className="w-4 h-4" /> Download Project
             </h4>
-            <div className="space-y-2">
-              <Button variant="outline" onClick={onExportJSON} className="w-full justify-start gap-2 h-9 text-xs">
-                <Download className="w-3.5 h-3.5" />
-                <span className="flex-1 text-left">config.json</span>
-                <Badge variant="secondary" className="text-[10px]">App Config</Badge>
-              </Button>
-              <Button variant="outline" onClick={onExportSQL} className="w-full justify-start gap-2 h-9 text-xs">
-                <Download className="w-3.5 h-3.5" />
-                <span className="flex-1 text-left">schema.sql</span>
-                <Badge variant="secondary" className="text-[10px]">Database</Badge>
-              </Button>
-              <Separator />
-              <Button onClick={handleDownloadZip} className="w-full gap-2" size="sm">
-                <FolderDown className="w-3.5 h-3.5" /> Download Full Source Code (ZIP)
-              </Button>
-              <Separator />
-              <div className="rounded-lg border border-border p-3 space-y-2 bg-muted/30">
-                <div className="flex items-center gap-2">
-                  <Globe className="w-4 h-4 text-primary" />
-                  <div>
-                    <p className="text-xs font-medium text-foreground">Static HTML Export</p>
-                    <p className="text-[10px] text-muted-foreground">HTML pages + images + inline editor. Upload to any server.</p>
-                  </div>
-                </div>
-                {htmlExportProgress && (
-                  <p className="text-[10px] text-primary">{htmlExportProgress}</p>
-                )}
-              </div>
-              <Button
-                onClick={async () => {
-                  if (!config) return;
-                  setIsExportingHTML(true);
+            <p className="text-xs text-muted-foreground">Choose a format to download your project.</p>
+
+            {/* HTML */}
+            <button
+              onClick={async () => {
+                if (!config) return;
+                setIsExportingHTML(true);
+                setHtmlExportProgress("");
+                try {
+                  const result = await exportToHTML(config, setHtmlExportProgress);
+                  const url = URL.createObjectURL(result.blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = result.filename;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                  toast({
+                    title: "🌐 HTML Downloaded!",
+                    description: `${result.pageCount} page(s), ${result.imageCount} image(s) with inline editor.`,
+                  });
+                } catch (err: any) {
+                  toast({ title: "Export failed", description: err.message, variant: "destructive" });
+                } finally {
+                  setIsExportingHTML(false);
                   setHtmlExportProgress("");
-                  try {
-                    const result = await exportToHTML(config, setHtmlExportProgress);
-                    const url = URL.createObjectURL(result.blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = result.filename;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                    toast({
-                      title: "🌐 HTML Export Downloaded!",
-                      description: `${result.pageCount} page(s), ${result.imageCount} image(s) bundled with inline editor.`,
-                    });
-                  } catch (err: any) {
-                    toast({ title: "Export failed", description: err.message, variant: "destructive" });
-                  } finally {
-                    setIsExportingHTML(false);
-                    setHtmlExportProgress("");
-                  }
-                }}
-                disabled={isExportingHTML}
-                variant="outline"
-                className="w-full gap-2"
-                size="sm"
-              >
-                {isExportingHTML ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Globe className="w-3.5 h-3.5" />}
-                {isExportingHTML ? "Exporting..." : "Download as HTML (with Editor)"}
-              </Button>
-            </div>
+                }
+              }}
+              disabled={isExportingHTML}
+              className="flex items-start gap-3 w-full p-3 rounded-xl border border-border bg-card hover:border-primary/30 text-left transition-all"
+            >
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                {isExportingHTML ? <Loader2 className="w-4 h-4 text-primary animate-spin" /> : <Globe className="w-4 h-4 text-primary" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-foreground">HTML</span>
+                  <Badge variant="secondary" className="text-[10px] h-4">+ Editor</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {isExportingHTML && htmlExportProgress ? htmlExportProgress : "Static HTML pages with images & live inline editor. Upload to any server."}
+                </p>
+              </div>
+            </button>
+
+            {/* ZIP (Source Code) */}
+            <button
+              onClick={handleDownloadZip}
+              className="flex items-start gap-3 w-full p-3 rounded-xl border border-border bg-card hover:border-primary/30 text-left transition-all"
+            >
+              <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                <FolderDown className="w-4 h-4 text-muted-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-foreground">ZIP</span>
+                  <Badge variant="outline" className="text-[10px] h-4">Source Code</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Full React + Node.js project with API, database schema, tests & Docker config.
+                </p>
+              </div>
+            </button>
+
+            {/* JSON */}
+            <button
+              onClick={onExportJSON}
+              className="flex items-start gap-3 w-full p-3 rounded-xl border border-border bg-card hover:border-primary/30 text-left transition-all"
+            >
+              <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                <Download className="w-4 h-4 text-muted-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-foreground">JSON</span>
+                  <Badge variant="outline" className="text-[10px] h-4">Config</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Raw app configuration file. Import into RyaanCMS or use with the CLI.
+                </p>
+              </div>
+            </button>
           </div>
         )}
 
