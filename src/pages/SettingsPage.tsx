@@ -975,8 +975,11 @@ export default function SettingsPage() {
           })}
         </div>
 
-        {/* AI Integrations - always mounted, hidden when not active */}
-        <div className={activeSection === "ai-integrations" ? "" : "hidden"}>
+        {/* AI Integrations - always mounted, collapsed when not active to preserve dialog state */}
+        <div
+          className={activeSection === "ai-integrations" ? "" : "overflow-hidden h-0 opacity-0 pointer-events-none"}
+          aria-hidden={activeSection !== "ai-integrations"}
+        >
           <AIIntegrationSettings />
         </div>
 
