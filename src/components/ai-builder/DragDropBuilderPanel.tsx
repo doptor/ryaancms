@@ -1,19 +1,30 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Sparkles, Search, LayoutGrid, FileText, BarChart3, Table,
   Lock, CreditCard, Image, Calendar, Columns, Clock, MapPin,
   Shield, Upload, Bell, GripVertical, Plus, X, Eye, Trash2,
   ChevronRight, Star, Zap, Send, Heart, Users, Globe,
   Package, Play, Hash, Filter, Layers, Monitor, Smartphone, Tablet,
+  Undo2, Redo2, ZoomIn, ZoomOut, Maximize2, Copy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AppConfig, ComponentConfig } from "@/lib/engine";
 import { AppPreviewRenderer } from "./AppPreviewRenderer";
 import { PropEditorSidebar } from "./PropEditorSidebar";
+import { LayerPanel } from "./LayerPanel";
+import { PageManagerPanel } from "./PageManagerPanel";
+import { useUndoRedo } from "@/hooks/useUndoRedo";
 
 interface DragDropBuilderPanelProps {
   config: AppConfig | null;
@@ -25,6 +36,7 @@ interface DragDropBuilderPanelProps {
 }
 
 type ViewportSize = "desktop" | "tablet" | "mobile";
+type LeftPanel = "components" | "layers" | "pages";
 
 const COMPONENT_CATEGORIES = [
   {
@@ -103,6 +115,8 @@ const VIEWPORTS: Record<ViewportSize, { width: string; icon: any; label: string 
   mobile: { width: "375px", icon: Smartphone, label: "Mobile" },
 };
 
+const ZOOM_LEVELS = [50, 75, 100, 125, 150];
+
 export function DragDropBuilderPanel({
   config,
   onConfigUpdate,
@@ -115,9 +129,59 @@ export function DragDropBuilderPanel({
   const [expandedCategory, setExpandedCategory] = useState<string | null>("Layout");
   const [draggedType, setDraggedType] = useState<string | null>(null);
   const [dropTargetPage, setDropTargetPage] = useState<number | null>(null);
+  const [dropInsertIndex, setDropInsertIndex] = useState<number | null>(null);
   const [activePage, setActivePage] = useState(0);
   const [viewport, setViewport] = useState<ViewportSize>("desktop");
+  const [leftPanel, setLeftPanel] = useState<LeftPanel>("components");
+  const [zoom, setZoom] = useState(100);
   const canvasRef = useRef<HTMLDivElement>(null);
+
+  // Undo/redo
+  const undoRedo = useUndoRedo<AppConfig>(config);
+
+  // Sync external config into undo system
+  useEffect(() => {
+    if (config && JSON.stringify(config) !== JSON.stringify(undoRedo.state)) {
+      undoRedo.set(config);
+    }
+  }, [config]);
+
+  // When undo/redo state changes, propagate up
+  useEffect(() => {
+    if (undoRedo.state && JSON.stringify(undoRedo.state) !== JSON.stringify(config)) {
+      onConfigUpdate(undoRedo.state);
+    }
+  }, [undoRedo.state]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const isMeta = e.metaKey || e.ctrlKey;
+      if (isMeta && e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        undoRedo.undo();
+      }
+      if (isMeta && (e.key === "y" || (e.key === "z" && e.shiftKey))) {
+        e.preventDefault();
+        undoRedo.redo();
+      }
+      if (e.key === "Delete" || e.key === "Backspace") {
+        if (selectedComponent && document.activeElement === document.body) {
+          e.preventDefault();
+          handleDeleteComponent(selectedComponent.pageIndex, selectedComponent.componentIndex);
+        }
+      }
+      if (isMeta && e.key === "d" && selectedComponent) {
+        e.preventDefault();
+        handleDuplicateComponent(selectedComponent.pageIndex, selectedComponent.componentIndex);
+      }
+      if (e.key === "Escape") {
+        onClearSelection();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [selectedComponent, undoRedo]);
 
   if (!config) {
     return (
@@ -160,6 +224,7 @@ export function DragDropBuilderPanel({
   const handlePaletteDragEnd = () => {
     setDraggedType(null);
     setDropTargetPage(null);
+    setDropInsertIndex(null);
   };
 
   // Drop on canvas
@@ -168,11 +233,27 @@ export function DragDropBuilderPanel({
       e.preventDefault();
       e.dataTransfer.dropEffect = "copy";
       setDropTargetPage(activePage);
+
+      // Calculate insert index based on mouse position
+      if (canvasRef.current && currentPage) {
+        const componentElements = canvasRef.current.querySelectorAll("[data-component-index]");
+        let insertIdx = currentPage.components.length;
+        componentElements.forEach((el) => {
+          const rect = el.getBoundingClientRect();
+          const midY = rect.top + rect.height / 2;
+          if (e.clientY < midY) {
+            const idx = parseInt(el.getAttribute("data-component-index") || "0", 10);
+            if (idx < insertIdx) insertIdx = idx;
+          }
+        });
+        setDropInsertIndex(insertIdx);
+      }
     }
   };
 
   const handleCanvasDragLeave = () => {
     setDropTargetPage(null);
+    setDropInsertIndex(null);
   };
 
   const handleCanvasDrop = (e: React.DragEvent) => {
@@ -182,13 +263,17 @@ export function DragDropBuilderPanel({
       const updated = { ...config };
       const pages = [...updated.pages];
       const page = { ...pages[activePage] };
-      page.components = [...page.components, { type: componentType, props: {} }];
+      const comps = [...page.components];
+      const insertAt = dropInsertIndex ?? comps.length;
+      comps.splice(insertAt, 0, { type: componentType, props: {} });
+      page.components = comps;
       pages[activePage] = page;
       updated.pages = pages;
       onConfigUpdate(updated);
     }
     setDraggedType(null);
     setDropTargetPage(null);
+    setDropInsertIndex(null);
   };
 
   const handleReorderComponents = (pageIndex: number, fromIndex: number, toIndex: number) => {
@@ -215,6 +300,22 @@ export function DragDropBuilderPanel({
     onClearSelection();
   };
 
+  const handleDuplicateComponent = (pageIndex: number, componentIndex: number) => {
+    const updated = { ...config };
+    const pages = [...updated.pages];
+    const page = { ...pages[pageIndex] };
+    const comp = page.components[componentIndex];
+    const clone = JSON.parse(JSON.stringify(comp));
+    page.components = [
+      ...page.components.slice(0, componentIndex + 1),
+      clone,
+      ...page.components.slice(componentIndex + 1),
+    ];
+    pages[pageIndex] = page;
+    updated.pages = pages;
+    onConfigUpdate(updated);
+  };
+
   const handleAddPage = (name: string, route: string, layout: string) => {
     const updated = { ...config };
     updated.pages = [...updated.pages, { name, route, layout: layout as any, components: [] }];
@@ -230,168 +331,285 @@ export function DragDropBuilderPanel({
     onClearSelection();
   };
 
+  const handleRenamePage = (pageIndex: number, name: string, route: string) => {
+    const updated = { ...config };
+    const pages = [...updated.pages];
+    pages[pageIndex] = { ...pages[pageIndex], name, route };
+    updated.pages = pages;
+    onConfigUpdate(updated);
+  };
+
+  const zoomIn = () => setZoom((z) => Math.min(150, z + 25));
+  const zoomOut = () => setZoom((z) => Math.max(50, z - 25));
+  const resetZoom = () => setZoom(100);
+
   return (
-    <div className="flex h-full overflow-hidden">
-      {/* === Left: Component Palette === */}
-      <div className="w-56 border-r border-border bg-card flex flex-col shrink-0">
-        <div className="px-3 py-2 border-b border-border">
-          <div className="flex items-center gap-2 mb-2">
-            <Package className="w-3.5 h-3.5 text-primary" />
-            <span className="text-xs font-semibold text-foreground">Components</span>
+    <TooltipProvider delayDuration={300}>
+      <div className="flex h-full overflow-hidden">
+        {/* === Left Panel === */}
+        <div className="w-56 border-r border-border bg-card flex flex-col shrink-0">
+          {/* Panel switcher */}
+          <div className="px-2 py-1.5 border-b border-border">
+            <Tabs value={leftPanel} onValueChange={(v) => setLeftPanel(v as LeftPanel)}>
+              <TabsList className="h-7 w-full grid grid-cols-3">
+                <TabsTrigger value="components" className="text-[10px] h-5 px-1">
+                  <Package className="w-3 h-3 mr-0.5" /> Parts
+                </TabsTrigger>
+                <TabsTrigger value="layers" className="text-[10px] h-5 px-1">
+                  <Layers className="w-3 h-3 mr-0.5" /> Layers
+                </TabsTrigger>
+                <TabsTrigger value="pages" className="text-[10px] h-5 px-1">
+                  <Globe className="w-3 h-3 mr-0.5" /> Pages
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
-          <div className="relative">
-            <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search..."
-              value={paletteSearch}
-              onChange={(e) => setPaletteSearch(e.target.value)}
-              className="h-7 pl-7 text-xs bg-muted/50 border-0"
-            />
-          </div>
-        </div>
 
-        <ScrollArea className="flex-1">
-          <div className="p-2 space-y-1">
-            {filteredCategories.map((category) => (
-              <div key={category.name}>
-                <button
-                  onClick={() => setExpandedCategory(expandedCategory === category.name ? null : category.name)}
-                  className="flex items-center gap-2 w-full px-2 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <category.icon className="w-3 h-3" />
-                  {category.name}
-                  <ChevronRight className={cn("w-3 h-3 ml-auto transition-transform", expandedCategory === category.name && "rotate-90")} />
-                </button>
-
-                {expandedCategory === category.name && (
-                  <div className="space-y-0.5 ml-1 mb-2">
-                    {category.items.map((item) => (
-                      <div
-                        key={item.type}
-                        draggable
-                        onDragStart={(e) => handlePaletteDragStart(e, item.type)}
-                        onDragEnd={handlePaletteDragEnd}
-                        className={cn(
-                          "flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-grab active:cursor-grabbing text-xs transition-all",
-                          "border border-transparent hover:border-border hover:bg-accent/50",
-                          draggedType === item.type && "opacity-50 border-primary/40 bg-primary/5"
-                        )}
-                      >
-                        <div className="w-6 h-6 rounded bg-muted flex items-center justify-center shrink-0">
-                          <item.icon className="w-3 h-3 text-muted-foreground" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-foreground truncate">{item.label}</p>
-                          <p className="text-[10px] text-muted-foreground truncate">{item.description}</p>
-                        </div>
-                        <GripVertical className="w-3 h-3 text-muted-foreground/50 shrink-0" />
-                      </div>
-                    ))}
-                  </div>
-                )}
+          {/* Component Palette */}
+          {leftPanel === "components" && (
+            <>
+              <div className="px-3 py-2 border-b border-border">
+                <div className="relative">
+                  <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Search components..."
+                    value={paletteSearch}
+                    onChange={(e) => setPaletteSearch(e.target.value)}
+                    className="h-7 pl-7 text-xs bg-muted/50 border-0"
+                  />
+                </div>
               </div>
-            ))}
-          </div>
-        </ScrollArea>
-
-        {/* Quick add shortcut */}
-        <div className="p-2 border-t border-border">
-          <p className="text-[10px] text-muted-foreground text-center">
-            Drag components onto the canvas
-          </p>
-        </div>
-      </div>
-
-      {/* === Center: Canvas === */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Canvas toolbar */}
-        <div className="flex items-center justify-between px-3 py-1.5 border-b border-border bg-card shrink-0">
-          <div className="flex items-center gap-2">
-            <Eye className="w-3.5 h-3.5 text-primary" />
-            <span className="text-xs font-semibold text-foreground">Canvas</span>
-            <Badge variant="secondary" className="text-[10px] h-4">
-              {currentPage?.components.length || 0} components
-            </Badge>
-          </div>
-          <div className="flex items-center gap-1">
-            {/* Viewport toggles */}
-            {(Object.entries(VIEWPORTS) as [ViewportSize, typeof VIEWPORTS["desktop"]][]).map(([key, vp]) => {
-              const Icon = vp.icon;
-              return (
-                <Button
-                  key={key}
-                  variant={viewport === key ? "default" : "ghost"}
-                  size="sm"
-                  className="h-6 w-6 p-0"
-                  onClick={() => setViewport(key)}
-                  title={vp.label}
-                >
-                  <Icon className="w-3 h-3" />
-                </Button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Canvas area */}
-        <div
-          ref={canvasRef}
-          className={cn(
-            "flex-1 min-h-0 bg-muted/30 overflow-auto flex justify-center p-4",
-            dropTargetPage !== null && "ring-2 ring-primary/30 ring-inset"
+              <ScrollArea className="flex-1">
+                <div className="p-2 space-y-1">
+                  {filteredCategories.map((category) => (
+                    <div key={category.name}>
+                      <button
+                        onClick={() => setExpandedCategory(expandedCategory === category.name ? null : category.name)}
+                        className="flex items-center gap-2 w-full px-2 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <category.icon className="w-3 h-3" />
+                        {category.name}
+                        <ChevronRight className={cn("w-3 h-3 ml-auto transition-transform", expandedCategory === category.name && "rotate-90")} />
+                      </button>
+                      {expandedCategory === category.name && (
+                        <div className="space-y-0.5 ml-1 mb-2">
+                          {category.items.map((item) => (
+                            <div
+                              key={item.type}
+                              draggable
+                              onDragStart={(e) => handlePaletteDragStart(e, item.type)}
+                              onDragEnd={handlePaletteDragEnd}
+                              className={cn(
+                                "flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-grab active:cursor-grabbing text-xs transition-all",
+                                "border border-transparent hover:border-border hover:bg-accent/50",
+                                draggedType === item.type && "opacity-50 border-primary/40 bg-primary/5"
+                              )}
+                            >
+                              <div className="w-6 h-6 rounded bg-muted flex items-center justify-center shrink-0">
+                                <item.icon className="w-3 h-3 text-muted-foreground" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="font-medium text-foreground truncate">{item.label}</p>
+                                <p className="text-[10px] text-muted-foreground truncate">{item.description}</p>
+                              </div>
+                              <GripVertical className="w-3 h-3 text-muted-foreground/50 shrink-0" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+              <div className="p-2 border-t border-border">
+                <p className="text-[10px] text-muted-foreground text-center">
+                  Drag components onto the canvas
+                </p>
+              </div>
+            </>
           )}
-          onDragOver={handleCanvasDragOver}
-          onDragLeave={handleCanvasDragLeave}
-          onDrop={handleCanvasDrop}
-        >
-          <div
-            className="bg-background rounded-lg border border-border shadow-sm overflow-hidden transition-all duration-300"
-            style={{
-              width: VIEWPORTS[viewport].width,
-              maxWidth: "100%",
-              minHeight: "100%",
-            }}
-          >
-            <AppPreviewRenderer
+
+          {/* Layer Panel */}
+          {leftPanel === "layers" && (
+            <LayerPanel
               config={config}
+              activePage={activePage}
               selectedComponent={selectedComponent}
               onSelectComponent={onSelectComponent}
-              onReorderComponents={handleReorderComponents}
               onDeleteComponent={handleDeleteComponent}
-              onAddComponent={(pi, type) => {
-                const updated = { ...config };
-                const pages = [...updated.pages];
-                const page = { ...pages[pi] };
-                page.components = [...page.components, { type, props: {} }];
-                pages[pi] = page;
-                updated.pages = pages;
-                onConfigUpdate(updated);
-              }}
+              onDuplicateComponent={handleDuplicateComponent}
+              onMoveComponent={handleReorderComponents}
+              onClearSelection={onClearSelection}
+            />
+          )}
+
+          {/* Page Manager */}
+          {leftPanel === "pages" && (
+            <PageManagerPanel
+              config={config}
+              activePage={activePage}
+              onSetActivePage={setActivePage}
               onAddPage={handleAddPage}
               onDeletePage={handleDeletePage}
+              onRenamePage={handleRenamePage}
             />
+          )}
+        </div>
 
-            {/* Drop zone indicator when dragging */}
-            {draggedType && currentPage?.components.length === 0 && (
-              <div className="p-8 border-2 border-dashed border-primary/30 rounded-xl m-4 flex flex-col items-center justify-center gap-2 bg-primary/5 animate-pulse">
-                <Plus className="w-8 h-8 text-primary/50" />
-                <p className="text-sm text-primary/70 font-medium">Drop component here</p>
-              </div>
+        {/* === Center: Canvas === */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Canvas toolbar */}
+          <div className="flex items-center justify-between px-3 py-1.5 border-b border-border bg-card shrink-0">
+            <div className="flex items-center gap-2">
+              <Eye className="w-3.5 h-3.5 text-primary" />
+              <span className="text-xs font-semibold text-foreground">Canvas</span>
+              <Badge variant="secondary" className="text-[10px] h-4">
+                {currentPage?.components.length || 0} components
+              </Badge>
+            </div>
+            <div className="flex items-center gap-1">
+              {/* Undo/Redo */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    onClick={() => undoRedo.undo()}
+                    disabled={!undoRedo.canUndo}
+                  >
+                    <Undo2 className="w-3 h-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Undo (Ctrl+Z)</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    onClick={() => undoRedo.redo()}
+                    disabled={!undoRedo.canRedo}
+                  >
+                    <Redo2 className="w-3 h-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Redo (Ctrl+Y)</TooltipContent>
+              </Tooltip>
+
+              <div className="w-px h-4 bg-border mx-1" />
+
+              {/* Zoom controls */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={zoomOut} disabled={zoom <= 50}>
+                    <ZoomOut className="w-3 h-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Zoom Out</TooltipContent>
+              </Tooltip>
+              <button
+                onClick={resetZoom}
+                className="text-[10px] font-medium text-muted-foreground hover:text-foreground min-w-[32px] text-center"
+              >
+                {zoom}%
+              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={zoomIn} disabled={zoom >= 150}>
+                    <ZoomIn className="w-3 h-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Zoom In</TooltipContent>
+              </Tooltip>
+
+              <div className="w-px h-4 bg-border mx-1" />
+
+              {/* Viewport toggles */}
+              {(Object.entries(VIEWPORTS) as [ViewportSize, typeof VIEWPORTS["desktop"]][]).map(([key, vp]) => {
+                const Icon = vp.icon;
+                return (
+                  <Tooltip key={key}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={viewport === key ? "default" : "ghost"}
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={() => setViewport(key)}
+                      >
+                        <Icon className="w-3 h-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{vp.label}</TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Canvas area */}
+          <div
+            ref={canvasRef}
+            className={cn(
+              "flex-1 min-h-0 bg-muted/30 overflow-auto flex justify-center p-4",
+              dropTargetPage !== null && "ring-2 ring-primary/30 ring-inset"
             )}
+            onDragOver={handleCanvasDragOver}
+            onDragLeave={handleCanvasDragLeave}
+            onDrop={handleCanvasDrop}
+          >
+            <div
+              className="bg-background rounded-lg border border-border shadow-sm overflow-hidden transition-all duration-300 origin-top"
+              style={{
+                width: VIEWPORTS[viewport].width,
+                maxWidth: "100%",
+                minHeight: "100%",
+                transform: `scale(${zoom / 100})`,
+                transformOrigin: "top center",
+              }}
+            >
+              <AppPreviewRenderer
+                config={config}
+                selectedComponent={selectedComponent}
+                onSelectComponent={onSelectComponent}
+                onReorderComponents={handleReorderComponents}
+                onDeleteComponent={handleDeleteComponent}
+                onAddComponent={(pi, type) => {
+                  const updated = { ...config };
+                  const pages = [...updated.pages];
+                  const page = { ...pages[pi] };
+                  page.components = [...page.components, { type, props: {} }];
+                  pages[pi] = page;
+                  updated.pages = pages;
+                  onConfigUpdate(updated);
+                }}
+                onAddPage={handleAddPage}
+                onDeletePage={handleDeletePage}
+              />
+
+              {/* Drop zone indicator when dragging */}
+              {draggedType && currentPage?.components.length === 0 && (
+                <div className="p-8 border-2 border-dashed border-primary/30 rounded-xl m-4 flex flex-col items-center justify-center gap-2 bg-primary/5 animate-pulse">
+                  <Plus className="w-8 h-8 text-primary/50" />
+                  <p className="text-sm text-primary/70 font-medium">Drop component here</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* === Right: Properties Panel === */}
-      {selectedComponent && selectedComp && (
-        <PropEditorSidebar
-          component={selectedComp}
-          componentIndex={selectedComponent.componentIndex}
-          pageIndex={selectedComponent.pageIndex}
-          onClose={onClearSelection}
-          onUpdate={onPropUpdate}
-        />
-      )}
-    </div>
+        {/* === Right: Properties Panel === */}
+        {selectedComponent && selectedComp && (
+          <PropEditorSidebar
+            component={selectedComp}
+            componentIndex={selectedComponent.componentIndex}
+            pageIndex={selectedComponent.pageIndex}
+            onClose={onClearSelection}
+            onUpdate={onPropUpdate}
+          />
+        )}
+      </div>
+    </TooltipProvider>
   );
 }
