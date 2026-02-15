@@ -467,53 +467,53 @@ function HeroPreview({ props, config, onNavigate }: { props: Record<string, any>
   
   if (isPortfolio) {
     return (
-      <div className="relative px-6 py-24 overflow-hidden">
+      <div className="relative px-4 sm:px-6 py-12 sm:py-24 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-background to-accent/5" />
         <div className="absolute top-10 right-1/4 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
         <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-accent/8 rounded-full blur-3xl" />
-        <div className="relative max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-10">
+        <div className="relative max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-6 sm:gap-10">
           {/* Avatar */}
-          <div className="relative">
-            <div className="w-40 h-40 rounded-full bg-gradient-primary p-1 shadow-primary-lg">
+          <div className="relative shrink-0">
+            <div className="w-24 h-24 sm:w-40 sm:h-40 rounded-full bg-gradient-primary p-1 shadow-primary-lg">
               <div className="w-full h-full rounded-full bg-card flex items-center justify-center">
-                <User className="w-16 h-16 text-primary/40" />
+                <User className="w-10 h-10 sm:w-16 sm:h-16 text-primary/40" />
               </div>
             </div>
-            <div className="absolute -bottom-1 -right-1 w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-lg">
-              <Check className="w-5 h-5 text-primary-foreground" />
+            <div className="absolute -bottom-1 -right-1 w-7 h-7 sm:w-10 sm:h-10 rounded-full bg-primary flex items-center justify-center shadow-lg">
+              <Check className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-primary-foreground" />
             </div>
           </div>
           {/* Content */}
-          <div className="flex-1 text-center md:text-left space-y-4">
+          <div className="flex-1 text-center md:text-left space-y-3 sm:space-y-4">
             <div className="space-y-1">
-              <p className="text-sm font-medium text-primary">
+              <p className="text-xs sm:text-sm font-medium text-primary">
                 {props.badge_text || "Hello, I'm"}
               </p>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground leading-tight tracking-tight">
+              <h1 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-foreground leading-tight tracking-tight">
                 {props.headline || "John Doe"}
               </h1>
             </div>
-            <p className="text-lg text-muted-foreground max-w-lg leading-relaxed">
+            <p className="text-sm sm:text-lg text-muted-foreground max-w-lg leading-relaxed mx-auto md:mx-0">
               {props.subtitle || "Full-Stack Developer & UI Designer crafting beautiful digital experiences."}
             </p>
-            <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2 justify-center md:justify-start">
               {["React", "TypeScript", "Node.js", "Figma"].map(tag => (
-                <Badge key={tag} variant="secondary" className="text-xs px-3 py-1">{tag}</Badge>
+                <Badge key={tag} variant="secondary" className="text-[10px] sm:text-xs px-2 sm:px-3 py-0.5 sm:py-1">{tag}</Badge>
               ))}
             </div>
-            <div className="flex gap-3 justify-center md:justify-start pt-2">
-              <Button size="lg" className="text-sm gap-2 shadow-primary-lg">
-                <Mail className="w-4 h-4" /> Contact Me
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center md:justify-start pt-2">
+              <Button size="sm" className="text-xs sm:text-sm gap-2 shadow-primary-lg">
+                <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Contact Me
               </Button>
-              <Button variant="outline" size="lg" className="text-sm gap-2">
-                <ArrowUpRight className="w-4 h-4" /> View Work
+              <Button variant="outline" size="sm" className="text-xs sm:text-sm gap-2">
+                <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> View Work
               </Button>
             </div>
             {/* Social links */}
-            <div className="flex gap-3 justify-center md:justify-start pt-1">
+            <div className="flex gap-2 sm:gap-3 justify-center md:justify-start pt-1">
               {[Github, Globe, Mail].map((Icon, i) => (
-                <div key={i} className="w-9 h-9 rounded-lg border border-border bg-card flex items-center justify-center hover:bg-accent cursor-pointer transition-colors">
-                  <Icon className="w-4 h-4 text-muted-foreground" />
+                <div key={i} className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg border border-border bg-card flex items-center justify-center hover:bg-accent cursor-pointer transition-colors">
+                  <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
                 </div>
               ))}
             </div>
