@@ -34,6 +34,7 @@ interface Props {
   selectedActivityId: string | null;
   onSelectActivity: (id: string | null) => void;
   onRemoveFromQueue: (id: string) => void;
+  onClearQueue?: () => void;
   isBuilding: boolean;
   buildElapsed: number;
 }
@@ -53,6 +54,7 @@ export function BuildActivitySidebar({
   selectedActivityId,
   onSelectActivity,
   onRemoveFromQueue,
+  onClearQueue,
   isBuilding,
   buildElapsed,
 }: Props) {
@@ -69,17 +71,25 @@ export function BuildActivitySidebar({
       {/* Queue Section */}
       {hasQueue && (
         <div className="border-b border-border">
-          <button
-            onClick={() => setShowQueue(!showQueue)}
-            className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <div className="flex items-center gap-1.5">
+          <div className="flex items-center justify-between px-3 py-2">
+            <button
+              onClick={() => setShowQueue(!showQueue)}
+              className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+            >
               <ListOrdered className="w-3 h-3" />
               <span>Prompt Queue</span>
               <Badge variant="secondary" className="text-[9px] h-4">{queue.filter(q => q.status === "queued").length}</Badge>
-            </div>
-            <ChevronRight className={cn("w-3 h-3 transition-transform", showQueue && "rotate-90")} />
-          </button>
+              <ChevronRight className={cn("w-3 h-3 transition-transform", showQueue && "rotate-90")} />
+            </button>
+            {queue.some(q => q.status === "queued") && onClearQueue && (
+              <button
+                onClick={onClearQueue}
+                className="text-[10px] text-destructive hover:text-destructive/80 font-medium transition-colors"
+              >
+                Clear All
+              </button>
+            )}
+          </div>
           {showQueue && (
             <div className="px-3 pb-2 space-y-1">
               {queue.map((item, i) => (

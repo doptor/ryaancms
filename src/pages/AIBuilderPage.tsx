@@ -226,6 +226,7 @@ export default function AIBuilderPage() {
   const [buildActivities, setBuildActivities] = useState<BuildActivity[]>([]);
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
   const isProcessingQueue = useRef(false);
+  const queueCancelledRef = useRef(false);
   const buildTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const buildStartTimeRef = useRef<number>(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -457,8 +458,10 @@ export default function AIBuilderPage() {
   const processQueue = useCallback(async () => {
     if (isProcessingQueue.current) return;
     isProcessingQueue.current = true;
+    queueCancelledRef.current = false;
 
     while (true) {
+      if (queueCancelledRef.current) break;
       const next = promptQueue.find(q => q.status === "queued");
       if (!next) break;
 
@@ -470,6 +473,13 @@ export default function AIBuilderPage() {
 
     isProcessingQueue.current = false;
   }, [promptQueue]);
+
+  // Clear entire queue
+  const clearQueue = useCallback(() => {
+    queueCancelledRef.current = true;
+    setPromptQueue(prev => prev.filter(q => q.status !== "queued"));
+    toast({ title: "🛑 Queue cleared", description: "All pending prompts have been removed." });
+  }, []);
 
   // Auto-process queue when building finishes
   useEffect(() => {
@@ -1967,6 +1977,7 @@ export default function AIBuilderPage() {
           if (id) setActiveTab("activity-detail");
         }}
         onRemoveFromQueue={(id) => setPromptQueue(prev => prev.filter(q => q.id !== id))}
+        onClearQueue={clearQueue}
         isBuilding={isBuilding}
         buildElapsed={buildElapsed}
       />
