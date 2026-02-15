@@ -196,90 +196,342 @@ textarea.input { min-height: 100px; resize: vertical; }
 body.editor-unlocked [data-editable]:hover { outline: 2px dashed var(--primary); outline-offset: 2px; cursor: text; }
 body.editor-unlocked [data-editable]:focus { outline: 2px solid var(--primary); outline-offset: 2px; background: rgba(99,102,241,0.05); }
 .editor-toolbar { position: fixed; top: 0; left: 0; right: 0; z-index: 9999; background: #1f2937; color: white; padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; font-family: var(--font); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
-.editor-toolbar button { background: var(--primary); color: white; border: none; padding: 6px 16px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+.editor-toolbar button { background: var(--primary); color: white; border: none; padding: 6px 16px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; margin-left: 4px; }
 .editor-toolbar button:hover { opacity: 0.9; }
 .editor-toolbar .editor-info { font-size: 0.75rem; opacity: 0.7; }
 body.editor-active { padding-top: 44px; }
+
+/* Section hover controls */
+body.editor-unlocked [data-section] { position: relative; transition: outline 0.15s; }
+body.editor-unlocked [data-section]:hover { outline: 2px dashed rgba(99,102,241,0.4); outline-offset: -2px; }
+body.editor-unlocked [data-section].drag-over { outline: 3px solid var(--primary); outline-offset: -3px; background: rgba(99,102,241,0.04); }
+
+/* Section toolbar */
+.section-toolbar { position: absolute; top: 4px; right: 4px; z-index: 100; display: none; gap: 4px; background: #1f2937; border-radius: 8px; padding: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+body.editor-unlocked [data-section]:hover .section-toolbar { display: flex; }
+.section-toolbar button { background: #374151; color: white; border: none; width: 28px; height: 28px; border-radius: 6px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; padding: 0; margin: 0; }
+.section-toolbar button:hover { background: var(--primary); }
+
+/* Drag handle */
+.drag-handle { position: absolute; top: 50%; left: 4px; transform: translateY(-50%); z-index: 100; display: none; cursor: grab; background: #1f2937; color: white; border-radius: 6px; padding: 8px 4px; font-size: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+body.editor-unlocked [data-section]:hover .drag-handle { display: block; }
+.drag-handle:active { cursor: grabbing; }
+
+/* Editor sidebar panel */
+.editor-panel { position: fixed; top: 44px; right: 0; bottom: 0; width: 300px; background: #111827; color: white; z-index: 9998; overflow-y: auto; transform: translateX(100%); transition: transform 0.25s; font-family: var(--font); box-shadow: -4px 0 16px rgba(0,0,0,0.3); }
+.editor-panel.open { transform: translateX(0); }
+.editor-panel h3 { font-size: 0.85rem; font-weight: 700; padding: 12px 16px 8px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; }
+.editor-panel .panel-section { padding: 0 16px 16px; border-bottom: 1px solid #1f2937; }
+.editor-panel label { display: block; font-size: 0.75rem; color: #9ca3af; margin-bottom: 4px; margin-top: 10px; }
+.editor-panel input[type="color"] { width: 100%; height: 36px; border: 1px solid #374151; border-radius: 6px; cursor: pointer; background: #1f2937; padding: 2px; }
+.editor-panel input[type="range"] { width: 100%; accent-color: var(--primary); }
+.editor-panel input[type="text"], .editor-panel select { width: 100%; padding: 6px 10px; border: 1px solid #374151; border-radius: 6px; background: #1f2937; color: white; font-size: 0.8rem; }
+.editor-panel .add-section-btn { display: block; width: 100%; padding: 10px; margin: 4px 0; border: 1px solid #374151; border-radius: 8px; background: #1f2937; color: white; font-size: 0.8rem; text-align: left; cursor: pointer; transition: all 0.15s; }
+.editor-panel .add-section-btn:hover { border-color: var(--primary); background: rgba(99,102,241,0.1); }
+.editor-panel .add-section-btn .btn-icon { display: inline-block; width: 20px; margin-right: 8px; text-align: center; }
+
+/* Image popover */
+.img-popover { position: absolute; z-index: 200; background: #1f2937; border-radius: 8px; padding: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); display: flex; gap: 4px; }
+.img-popover button { background: #374151; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; white-space: nowrap; }
+.img-popover button:hover { background: var(--primary); }
+
+/* Per-section style overlay */
+.section-style-panel { position: absolute; top: 40px; right: 40px; z-index: 150; background: #1f2937; border-radius: 10px; padding: 16px; width: 260px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); color: white; display: none; font-family: var(--font); }
+.section-style-panel.open { display: block; }
+.section-style-panel label { display: block; font-size: 0.7rem; color: #9ca3af; margin: 8px 0 4px; }
+.section-style-panel input[type="color"] { width: 100%; height: 32px; border: 1px solid #374151; border-radius: 6px; cursor: pointer; background: #1f2937; padding: 2px; }
+.section-style-panel input[type="range"] { width: 100%; accent-color: var(--primary); }
+.section-style-panel input[type="text"] { width: 100%; padding: 5px 8px; border: 1px solid #374151; border-radius: 6px; background: #111827; color: white; font-size: 0.75rem; }
+.section-style-panel select { width: 100%; padding: 5px 8px; border: 1px solid #374151; border-radius: 6px; background: #111827; color: white; font-size: 0.75rem; }
+.section-style-panel .close-btn { position: absolute; top: 8px; right: 8px; background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 16px; }
 `;
 }
 
 // ── Inline Editor JS ────────────────────────────────────────
 
 function generateEditorJS(password: string): string {
-  return `// RyaanCMS Inline Editor — password-protected content editing
+  return `// RyaanCMS Full Page Builder — password-protected
 (function() {
   'use strict';
   var STORAGE_KEY = 'ryaancms_edits';
+  var STRUCTURE_KEY = 'ryaancms_structure';
+  var THEME_KEY = 'ryaancms_theme';
   var PASS_KEY = 'ryaancms_editor_unlocked';
   var EDITOR_PASSWORD = '${password.replace(/'/g, "\\'")}';
   var edits = {};
   var isUnlocked = sessionStorage.getItem(PASS_KEY) === 'true';
+  var panelOpen = false;
 
-  // Load saved edits
-  try {
-    edits = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-  } catch(e) {}
+  try { edits = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) {}
 
-  // Apply saved edits on load
+  // ── Section Templates ──
+  var sectionTemplates = {
+    hero: '<section class="hero" data-section data-section-type="hero"><div class="container" style="max-width:640px;"><div class="badge" data-editable data-edit-id="__ID__">✨ New Section</div><h1 data-editable data-edit-id="__ID__">Your Headline Here</h1><p class="text-muted" data-editable data-edit-id="__ID__">Add your description text here.</p><div class="hero-actions"><a class="btn btn-primary" data-editable data-edit-id="__ID__">Get Started →</a></div></div></section>',
+    features: '<section class="section" data-section data-section-type="features"><div class="container"><div class="text-center" style="margin-bottom:40px;"><div class="badge" data-editable data-edit-id="__ID__">Features</div><h2 data-editable data-edit-id="__ID__">Your Features</h2></div><div class="grid grid-3" style="gap:20px;"><div class="feature-card"><div class="feature-icon">⚡</div><h3 data-editable data-edit-id="__ID__">Feature One</h3><p class="text-sm text-muted" data-editable data-edit-id="__ID__">Describe this feature.</p></div><div class="feature-card"><div class="feature-icon">🔒</div><h3 data-editable data-edit-id="__ID__">Feature Two</h3><p class="text-sm text-muted" data-editable data-edit-id="__ID__">Describe this feature.</p></div><div class="feature-card"><div class="feature-icon">🚀</div><h3 data-editable data-edit-id="__ID__">Feature Three</h3><p class="text-sm text-muted" data-editable data-edit-id="__ID__">Describe this feature.</p></div></div></div></section>',
+    cta: '<section style="padding:40px 24px;" data-section data-section-type="cta"><div class="cta-section"><h2 data-editable data-edit-id="__ID__">Ready to Get Started?</h2><p data-editable data-edit-id="__ID__">Join thousands building with our platform.</p><a class="btn" style="background:white;color:var(--primary);font-weight:700;" data-editable data-edit-id="__ID__">Start Free Trial →</a></div></section>',
+    testimonials: '<section class="section" style="background:var(--bg-card);" data-section data-section-type="testimonials"><div class="container"><div class="text-center" style="margin-bottom:40px;"><div class="badge" data-editable data-edit-id="__ID__">Testimonials</div><h2 data-editable data-edit-id="__ID__">What People Say</h2></div><div class="grid grid-3" style="gap:20px;"><div class="testimonial-card"><div class="testimonial-stars">★★★★★</div><p class="text-sm" data-editable data-edit-id="__ID__">"Add testimonial text here."</p><div class="testimonial-author"><div class="testimonial-avatar">A</div><div><div class="font-medium text-sm" data-editable data-edit-id="__ID__">Author Name</div><div class="text-xs text-muted" data-editable data-edit-id="__ID__">Role, Company</div></div></div></div></div></div></section>',
+    pricing: '<section class="section" data-section data-section-type="pricing"><div class="container"><div class="text-center" style="margin-bottom:40px;"><div class="badge" data-editable data-edit-id="__ID__">Pricing</div><h2 data-editable data-edit-id="__ID__">Choose Your Plan</h2></div><div class="pricing-grid"><div class="price-card"><h3 data-editable data-edit-id="__ID__">Basic</h3><div style="margin:20px 0;"><span class="price-amount" data-editable data-edit-id="__ID__">$0</span><span class="price-period" data-editable data-edit-id="__ID__">/month</span></div><a class="btn btn-outline w-full justify-center" data-editable data-edit-id="__ID__">Get Started</a></div><div class="price-card featured"><h3 data-editable data-edit-id="__ID__">Pro</h3><div style="margin:20px 0;"><span class="price-amount" data-editable data-edit-id="__ID__">$29</span><span class="price-period" data-editable data-edit-id="__ID__">/month</span></div><a class="btn btn-primary w-full justify-center" data-editable data-edit-id="__ID__">Get Started</a></div></div></div></section>',
+    contact: '<section class="section" data-section data-section-type="contact"><div class="container" style="max-width:600px;"><div class="text-center" style="margin-bottom:32px;"><div class="badge" data-editable data-edit-id="__ID__">Contact</div><h2 data-editable data-edit-id="__ID__">Get in Touch</h2></div><form class="contact-form mx-auto" onsubmit="event.preventDefault();alert(\\\'Message sent!\\\');"><div class="form-group"><label class="form-label" data-editable data-edit-id="__ID__">Name</label><input class="input" placeholder="Your name" /></div><div class="form-group"><label class="form-label" data-editable data-edit-id="__ID__">Email</label><input class="input" type="email" placeholder="you@example.com" /></div><div class="form-group"><label class="form-label" data-editable data-edit-id="__ID__">Message</label><textarea class="input" rows="4" placeholder="Your message..."></textarea></div><button class="btn btn-primary w-full justify-center" data-editable data-edit-id="__ID__">Send Message</button></form></div></section>',
+    stats: '<section class="section" data-section data-section-type="stats"><div class="container"><div class="stats-grid"><div class="stat-card"><div class="stat-value" data-editable data-edit-id="__ID__">100+</div><div class="stat-label" data-editable data-edit-id="__ID__">Customers</div></div><div class="stat-card"><div class="stat-value" data-editable data-edit-id="__ID__">99%</div><div class="stat-label" data-editable data-edit-id="__ID__">Uptime</div></div><div class="stat-card"><div class="stat-value" data-editable data-edit-id="__ID__">24/7</div><div class="stat-label" data-editable data-edit-id="__ID__">Support</div></div></div></div></section>',
+    text: '<section class="section" data-section data-section-type="text"><div class="container" style="max-width:700px;text-align:center;"><h2 data-editable data-edit-id="__ID__">Section Title</h2><p class="text-muted" data-editable data-edit-id="__ID__">Add your content here. Click to edit this text and make it your own.</p></div></section>',
+    newsletter: '<section class="section" style="background:var(--bg-card);" data-section data-section-type="newsletter"><div class="container text-center" style="max-width:500px;"><h2 data-editable data-edit-id="__ID__">Stay Updated</h2><p class="text-muted" data-editable data-edit-id="__ID__">Subscribe to our newsletter.</p><form onsubmit="event.preventDefault();alert(\\\'Subscribed!\\\');" class="flex gap-2 justify-center" style="margin-top:20px;"><input class="input" style="max-width:300px;" placeholder="Enter your email" type="email" /><button class="btn btn-primary" data-editable data-edit-id="__ID__">Subscribe</button></form></div></section>',
+    divider: '<section data-section data-section-type="divider" style="padding:20px 0;"><div class="container"><hr style="border:none;border-top:1px solid var(--border);" /></div></section>'
+  };
+
+  var idCounter = Date.now();
+  function newId() { return 'ed-' + (idCounter++); }
+
+  function prepTemplate(html) {
+    return html.replace(/__ID__/g, function() { return newId(); });
+  }
+
+  // ── Apply saved edits ──
   function applyEdits() {
     Object.keys(edits).forEach(function(id) {
       var el = document.querySelector('[data-edit-id="' + id + '"]');
       if (el) {
-        if (el.tagName === 'IMG') {
-          el.src = edits[id];
-        } else {
-          el.innerHTML = edits[id];
-        }
+        if (el.tagName === 'IMG') el.src = edits[id];
+        else el.innerHTML = edits[id];
       }
     });
   }
 
-  // Activate editor — only called after successful password
-  function initEditor() {
-    document.body.classList.add('editor-active');
-    document.body.classList.add('editor-unlocked');
+  // ── Apply saved theme ──
+  function applyTheme() {
+    try {
+      var theme = JSON.parse(localStorage.getItem(THEME_KEY) || '{}');
+      var root = document.documentElement;
+      if (theme.primary) root.style.setProperty('--primary', theme.primary);
+      if (theme.bg) root.style.setProperty('--bg', theme.bg);
+      if (theme.bgCard) root.style.setProperty('--bg-card', theme.bgCard);
+      if (theme.text) root.style.setProperty('--text', theme.text);
+      if (theme.textMuted) root.style.setProperty('--text-muted', theme.textMuted);
+      if (theme.border) root.style.setProperty('--border', theme.border);
+    } catch(e) {}
+  }
 
-    var toolbar = document.createElement('div');
-    toolbar.className = 'editor-toolbar';
-    toolbar.innerHTML = '<div class="flex items-center gap-3"><span style="font-weight:700;font-size:14px;">✏️ Live Editor</span><span class="editor-info">' + Object.keys(edits).length + ' edits</span></div><div class="flex items-center gap-2"><button onclick="window.__ryaanEditor.save()">💾 Save</button><button onclick="window.__ryaanEditor.download()" style="background:#374151;">⬇ Download</button><button onclick="window.__ryaanEditor.reset()" style="background:#ef4444;">↺ Reset</button><button onclick="window.__ryaanEditor.lock()" style="background:#6b7280;">🔒 Lock</button></div>';
-    document.body.prepend(toolbar);
+  // ── Inject section controls ──
+  function addSectionControls() {
+    document.querySelectorAll('[data-section]').forEach(function(sec) {
+      if (sec.querySelector('.section-toolbar')) return;
 
-    document.querySelectorAll('[data-editable]').forEach(function(el) {
-      if (el.tagName !== 'IMG') {
-        el.contentEditable = 'true';
-        el.addEventListener('blur', function() {
-          var id = el.getAttribute('data-edit-id');
-          if (id) {
-            edits[id] = el.innerHTML;
-            updateCount();
-          }
-        });
-      }
+      // Drag handle
+      var handle = document.createElement('div');
+      handle.className = 'drag-handle';
+      handle.innerHTML = '⠿';
+      handle.draggable = true;
+      handle.addEventListener('dragstart', function(e) {
+        sec.style.opacity = '0.5';
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', '');
+        window.__dragSection = sec;
+      });
+      handle.addEventListener('dragend', function() {
+        sec.style.opacity = '1';
+        window.__dragSection = null;
+        document.querySelectorAll('.drag-over').forEach(function(el) { el.classList.remove('drag-over'); });
+      });
+      sec.appendChild(handle);
+
+      // Drop target
+      sec.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (window.__dragSection && window.__dragSection !== sec) sec.classList.add('drag-over');
+      });
+      sec.addEventListener('dragleave', function() { sec.classList.remove('drag-over'); });
+      sec.addEventListener('drop', function(e) {
+        e.preventDefault();
+        sec.classList.remove('drag-over');
+        if (window.__dragSection && window.__dragSection !== sec) {
+          var parent = sec.parentNode;
+          var rect = sec.getBoundingClientRect();
+          var midY = rect.top + rect.height / 2;
+          if (e.clientY < midY) parent.insertBefore(window.__dragSection, sec);
+          else parent.insertBefore(window.__dragSection, sec.nextSibling);
+          saveStructure();
+        }
+      });
+
+      // Toolbar
+      var tb = document.createElement('div');
+      tb.className = 'section-toolbar';
+      tb.innerHTML = '<button title="Move Up" onclick="window.__ryaanEditor.moveSection(this,\\'up\\')">↑</button><button title="Move Down" onclick="window.__ryaanEditor.moveSection(this,\\'down\\')">↓</button><button title="Duplicate" onclick="window.__ryaanEditor.dupSection(this)">⧉</button><button title="Style" onclick="window.__ryaanEditor.styleSection(this)">🎨</button><button title="Background Image" onclick="window.__ryaanEditor.bgImage(this)">🖼</button><button title="Delete" onclick="window.__ryaanEditor.delSection(this)" style="background:#ef4444;">✕</button>';
+      sec.appendChild(tb);
+
+      // Per-section style panel
+      var sp = document.createElement('div');
+      sp.className = 'section-style-panel';
+      sp.innerHTML = '<button class="close-btn" onclick="this.parentElement.classList.remove(\\'open\\')">&times;</button><h3 style="font-size:0.8rem;font-weight:700;margin:0 0 8px;color:white;">Section Style</h3>'
+        + '<label>Background Type</label><select class="bg-type-sel"><option value="solid">Solid Color</option><option value="gradient">Gradient</option><option value="image">Image</option></select>'
+        + '<div class="bg-solid-ctrl"><label>Background Color</label><input type="color" class="bg-color-inp" value="#ffffff" /></div>'
+        + '<div class="bg-gradient-ctrl" style="display:none;"><label>Color 1</label><input type="color" class="grad-c1" value="#6366f1" /><label>Color 2</label><input type="color" class="grad-c2" value="#818cf8" /><label>Angle</label><input type="range" class="grad-angle" min="0" max="360" value="135" /><span class="grad-angle-val" style="font-size:0.7rem;color:#9ca3af;">135°</span></div>'
+        + '<div class="bg-image-ctrl" style="display:none;"><label>Image URL</label><input type="text" class="bg-img-url" placeholder="https://..." /><button onclick="window.__ryaanEditor.uploadSectionBg(this)" style="margin-top:6px;width:100%;padding:6px;background:#374151;border:1px solid #4b5563;border-radius:6px;color:white;cursor:pointer;font-size:0.75rem;">📁 Upload Image</button></div>'
+        + '<label>Opacity</label><input type="range" class="bg-opacity" min="0" max="100" value="100" /><span class="bg-opacity-val" style="font-size:0.7rem;color:#9ca3af;">100%</span>'
+        + '<label>Text Color</label><input type="color" class="text-color-inp" value="#111827" />';
+      sec.appendChild(sp);
+
+      // Wire up per-section style controls
+      var bgTypeSel = sp.querySelector('.bg-type-sel');
+      bgTypeSel.addEventListener('change', function() {
+        sp.querySelector('.bg-solid-ctrl').style.display = this.value === 'solid' ? '' : 'none';
+        sp.querySelector('.bg-gradient-ctrl').style.display = this.value === 'gradient' ? '' : 'none';
+        sp.querySelector('.bg-image-ctrl').style.display = this.value === 'image' ? '' : 'none';
+        applySectionStyle(sec, sp);
+      });
+      sp.querySelector('.bg-color-inp').addEventListener('input', function() { applySectionStyle(sec, sp); });
+      sp.querySelector('.grad-c1').addEventListener('input', function() { applySectionStyle(sec, sp); });
+      sp.querySelector('.grad-c2').addEventListener('input', function() { applySectionStyle(sec, sp); });
+      sp.querySelector('.grad-angle').addEventListener('input', function() {
+        sp.querySelector('.grad-angle-val').textContent = this.value + '°';
+        applySectionStyle(sec, sp);
+      });
+      sp.querySelector('.bg-img-url').addEventListener('change', function() { applySectionStyle(sec, sp); });
+      sp.querySelector('.bg-opacity').addEventListener('input', function() {
+        sp.querySelector('.bg-opacity-val').textContent = this.value + '%';
+        applySectionStyle(sec, sp);
+      });
+      sp.querySelector('.text-color-inp').addEventListener('input', function() { applySectionStyle(sec, sp); });
     });
+  }
 
+  function applySectionStyle(sec, sp) {
+    var type = sp.querySelector('.bg-type-sel').value;
+    var opacity = sp.querySelector('.bg-opacity').value / 100;
+    var textColor = sp.querySelector('.text-color-inp').value;
+
+    sec.style.color = textColor;
+
+    if (type === 'solid') {
+      var c = sp.querySelector('.bg-color-inp').value;
+      sec.style.background = hexToRgba(c, opacity);
+    } else if (type === 'gradient') {
+      var c1 = sp.querySelector('.grad-c1').value;
+      var c2 = sp.querySelector('.grad-c2').value;
+      var angle = sp.querySelector('.grad-angle').value;
+      sec.style.background = 'linear-gradient(' + angle + 'deg, ' + hexToRgba(c1, opacity) + ', ' + hexToRgba(c2, opacity) + ')';
+    } else if (type === 'image') {
+      var url = sp.querySelector('.bg-img-url').value;
+      if (url) {
+        sec.style.background = 'linear-gradient(rgba(0,0,0,' + (1 - opacity) + '),rgba(0,0,0,' + (1 - opacity) + ')),url(' + url + ') center/cover no-repeat';
+      }
+    }
+  }
+
+  function hexToRgba(hex, a) {
+    var r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+  }
+
+  // ── Image click handler ──
+  function setupImageHandlers() {
     document.querySelectorAll('img[data-editable]').forEach(function(img) {
       img.style.cursor = 'pointer';
-      img.addEventListener('click', function() {
-        var input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'image/*';
-        input.onchange = function(e) {
-          var file = e.target.files[0];
-          if (!file) return;
-          var reader = new FileReader();
-          reader.onload = function(ev) {
-            img.src = ev.target.result;
-            var id = img.getAttribute('data-edit-id');
-            if (id) {
-              edits[id] = ev.target.result;
-              updateCount();
-            }
-          };
-          reader.readAsDataURL(file);
-        };
-        input.click();
+      img.addEventListener('click', function(e) {
+        e.stopPropagation();
+        showImagePopover(img);
       });
     });
+  }
+
+  function showImagePopover(img) {
+    removePopovers();
+    var pop = document.createElement('div');
+    pop.className = 'img-popover';
+    var rect = img.getBoundingClientRect();
+    pop.style.top = (rect.bottom + window.scrollY + 4) + 'px';
+    pop.style.left = (rect.left + window.scrollX) + 'px';
+    pop.innerHTML = '<button onclick="window.__ryaanEditor.replaceImage(this)">🔄 Replace</button><button onclick="window.__ryaanEditor.imageLink(this)">🔗 Link</button>';
+    pop.dataset.targetId = img.getAttribute('data-edit-id');
+    document.body.appendChild(pop);
+    setTimeout(function() { document.addEventListener('click', removePopovers, { once: true }); }, 50);
+  }
+
+  function removePopovers() {
+    document.querySelectorAll('.img-popover').forEach(function(p) { p.remove(); });
+  }
+
+  // ── Save structure ──
+  function saveStructure() {
+    var body = document.body;
+    var sections = body.querySelectorAll('[data-section]');
+    var html = '';
+    sections.forEach(function(s) {
+      var clone = s.cloneNode(true);
+      clone.querySelectorAll('.section-toolbar,.drag-handle,.section-style-panel').forEach(function(el) { el.remove(); });
+      html += clone.outerHTML + '\\n';
+    });
+    localStorage.setItem(STRUCTURE_KEY, html);
+  }
+
+  // ── Build sidebar panel ──
+  function createPanel() {
+    var panel = document.createElement('div');
+    panel.className = 'editor-panel';
+    panel.id = 'editor-panel';
+
+    var html = '<h3>🎨 Global Theme</h3><div class="panel-section">'
+      + '<label>Primary Color</label><input type="color" id="theme-primary" value="#6366f1" />'
+      + '<label>Background</label><input type="color" id="theme-bg" value="#ffffff" />'
+      + '<label>Card Background</label><input type="color" id="theme-bg-card" value="#f9fafb" />'
+      + '<label>Text Color</label><input type="color" id="theme-text" value="#111827" />'
+      + '<label>Muted Text</label><input type="color" id="theme-text-muted" value="#6b7280" />'
+      + '<label>Border Color</label><input type="color" id="theme-border" value="#e5e7eb" />'
+      + '</div>';
+
+    html += '<h3>➕ Add Section</h3><div class="panel-section">';
+    var templates = [
+      { key: 'hero', icon: '🏠', label: 'Hero Banner' },
+      { key: 'features', icon: '⚡', label: 'Features Grid' },
+      { key: 'pricing', icon: '💰', label: 'Pricing Table' },
+      { key: 'testimonials', icon: '💬', label: 'Testimonials' },
+      { key: 'stats', icon: '📊', label: 'Stats Row' },
+      { key: 'cta', icon: '🎯', label: 'Call to Action' },
+      { key: 'contact', icon: '✉️', label: 'Contact Form' },
+      { key: 'newsletter', icon: '📰', label: 'Newsletter' },
+      { key: 'text', icon: '📝', label: 'Text Block' },
+      { key: 'divider', icon: '➖', label: 'Divider' },
+    ];
+    templates.forEach(function(t) {
+      html += '<button class="add-section-btn" onclick="window.__ryaanEditor.addSection(\\'' + t.key + '\\')" ><span class="btn-icon">' + t.icon + '</span>' + t.label + '</button>';
+    });
+    html += '</div>';
+
+    panel.innerHTML = html;
+    document.body.appendChild(panel);
+
+    // Wire theme color inputs
+    ['primary','bg','bg-card','text','text-muted','border'].forEach(function(key) {
+      var inp = document.getElementById('theme-' + key);
+      if (!inp) return;
+      inp.addEventListener('input', function() {
+        var cssVar = '--' + key.replace('bg-card','bg-card').replace('text-muted','text-muted');
+        document.documentElement.style.setProperty(cssVar, inp.value);
+        saveTheme();
+      });
+    });
+
+    // Load saved theme into inputs
+    try {
+      var saved = JSON.parse(localStorage.getItem(THEME_KEY) || '{}');
+      if (saved.primary) document.getElementById('theme-primary').value = saved.primary;
+      if (saved.bg) document.getElementById('theme-bg').value = saved.bg;
+      if (saved.bgCard) document.getElementById('theme-bg-card').value = saved.bgCard;
+      if (saved.text) document.getElementById('theme-text').value = saved.text;
+      if (saved.textMuted) document.getElementById('theme-text-muted').value = saved.textMuted;
+      if (saved.border) document.getElementById('theme-border').value = saved.border;
+    } catch(e) {}
+  }
+
+  function saveTheme() {
+    var theme = {};
+    var p = document.getElementById('theme-primary'); if (p) theme.primary = p.value;
+    var b = document.getElementById('theme-bg'); if (b) theme.bg = b.value;
+    var bc = document.getElementById('theme-bg-card'); if (bc) theme.bgCard = bc.value;
+    var t = document.getElementById('theme-text'); if (t) theme.text = t.value;
+    var tm = document.getElementById('theme-text-muted'); if (tm) theme.textMuted = tm.value;
+    var br = document.getElementById('theme-border'); if (br) theme.border = br.value;
+    localStorage.setItem(THEME_KEY, JSON.stringify(theme));
   }
 
   function updateCount() {
@@ -287,14 +539,54 @@ function generateEditorJS(password: string): string {
     if (info) info.textContent = Object.keys(edits).length + ' edits';
   }
 
+  // ── Activate editor ──
+  function initEditor() {
+    document.body.classList.add('editor-active', 'editor-unlocked');
+
+    var toolbar = document.createElement('div');
+    toolbar.className = 'editor-toolbar';
+    toolbar.innerHTML = '<div style="display:flex;align-items:center;gap:8px;"><span style="font-weight:700;font-size:14px;">✏️ Page Builder</span><span class="editor-info">' + Object.keys(edits).length + ' edits</span></div>'
+      + '<div style="display:flex;align-items:center;gap:4px;">'
+      + '<button onclick="window.__ryaanEditor.togglePanel()">🧩 Sections</button>'
+      + '<button onclick="window.__ryaanEditor.save()">💾 Save</button>'
+      + '<button onclick="window.__ryaanEditor.download()" style="background:#374151;">⬇ Download</button>'
+      + '<button onclick="window.__ryaanEditor.reset()" style="background:#ef4444;">↺ Reset</button>'
+      + '<button onclick="window.__ryaanEditor.lock()" style="background:#6b7280;">🔒 Lock</button>'
+      + '</div>';
+    document.body.prepend(toolbar);
+
+    // Make text editable
+    document.querySelectorAll('[data-editable]').forEach(function(el) {
+      if (el.tagName !== 'IMG') {
+        el.contentEditable = 'true';
+        el.addEventListener('blur', function() {
+          var id = el.getAttribute('data-edit-id');
+          if (id) { edits[id] = el.innerHTML; updateCount(); }
+        });
+      }
+    });
+
+    setupImageHandlers();
+    createPanel();
+    addSectionControls();
+  }
+
+  // ── Public API ──
   window.__ryaanEditor = {
     save: function() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(edits));
-      alert('✅ Changes saved to browser storage!');
+      saveStructure();
+      saveTheme();
+      alert('✅ All changes saved!');
     },
     download: function() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(edits));
-      var html = '<!DOCTYPE html>' + document.documentElement.outerHTML;
+      this.save();
+      // Remove editor UI from download
+      var clone = document.documentElement.cloneNode(true);
+      clone.querySelectorAll('.editor-toolbar,.editor-panel,.section-toolbar,.drag-handle,.section-style-panel,.img-popover').forEach(function(el) { el.remove(); });
+      clone.querySelectorAll('[contenteditable]').forEach(function(el) { el.removeAttribute('contenteditable'); });
+      clone.querySelector('body').classList.remove('editor-active','editor-unlocked');
+      var html = '<!DOCTYPE html>' + clone.outerHTML;
       var blob = new Blob([html], { type: 'text/html' });
       var a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
@@ -303,9 +595,11 @@ function generateEditorJS(password: string): string {
       URL.revokeObjectURL(a.href);
     },
     reset: function() {
-      if (confirm('Reset all edits? This cannot be undone.')) {
+      if (confirm('Reset ALL edits, structure, and theme? This cannot be undone.')) {
         edits = {};
         localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(STRUCTURE_KEY);
+        localStorage.removeItem(THEME_KEY);
         location.reload();
       }
     },
@@ -321,10 +615,164 @@ function generateEditorJS(password: string): string {
       } else if (entered !== null) {
         alert('❌ Incorrect password.');
       }
+    },
+    togglePanel: function() {
+      var p = document.getElementById('editor-panel');
+      if (p) { panelOpen = !panelOpen; p.classList.toggle('open', panelOpen); }
+    },
+    addSection: function(type) {
+      var tmpl = sectionTemplates[type];
+      if (!tmpl) return;
+      var div = document.createElement('div');
+      div.innerHTML = prepTemplate(tmpl);
+      var newSec = div.firstElementChild;
+      // Insert before footer or at end
+      var footer = document.querySelector('footer');
+      if (footer) footer.parentNode.insertBefore(newSec, footer);
+      else document.body.appendChild(newSec);
+      // Re-init controls
+      addSectionControls();
+      newSec.querySelectorAll('[data-editable]').forEach(function(el) {
+        if (el.tagName !== 'IMG') {
+          el.contentEditable = 'true';
+          el.addEventListener('blur', function() {
+            var id = el.getAttribute('data-edit-id');
+            if (id) { edits[id] = el.innerHTML; updateCount(); }
+          });
+        }
+      });
+      setupImageHandlers();
+      saveStructure();
+      newSec.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    },
+    moveSection: function(btn, dir) {
+      var sec = btn.closest('[data-section]');
+      if (!sec) return;
+      if (dir === 'up' && sec.previousElementSibling) sec.parentNode.insertBefore(sec, sec.previousElementSibling);
+      else if (dir === 'down' && sec.nextElementSibling) sec.parentNode.insertBefore(sec.nextElementSibling, sec);
+      saveStructure();
+    },
+    dupSection: function(btn) {
+      var sec = btn.closest('[data-section]');
+      if (!sec) return;
+      var clone = sec.cloneNode(true);
+      // Reset edit IDs
+      clone.querySelectorAll('[data-edit-id]').forEach(function(el) { el.setAttribute('data-edit-id', newId()); });
+      clone.querySelectorAll('.section-toolbar,.drag-handle,.section-style-panel').forEach(function(el) { el.remove(); });
+      sec.parentNode.insertBefore(clone, sec.nextSibling);
+      addSectionControls();
+      clone.querySelectorAll('[data-editable]').forEach(function(el) {
+        if (el.tagName !== 'IMG') {
+          el.contentEditable = 'true';
+          el.addEventListener('blur', function() {
+            var id = el.getAttribute('data-edit-id');
+            if (id) { edits[id] = el.innerHTML; updateCount(); }
+          });
+        }
+      });
+      setupImageHandlers();
+      saveStructure();
+    },
+    delSection: function(btn) {
+      var sec = btn.closest('[data-section]');
+      if (!sec) return;
+      if (confirm('Delete this section?')) { sec.remove(); saveStructure(); }
+    },
+    styleSection: function(btn) {
+      var sec = btn.closest('[data-section]');
+      if (!sec) return;
+      var panel = sec.querySelector('.section-style-panel');
+      if (panel) panel.classList.toggle('open');
+    },
+    bgImage: function(btn) {
+      var sec = btn.closest('[data-section]');
+      if (!sec) return;
+      var input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = function(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(ev) {
+          sec.style.background = 'url(' + ev.target.result + ') center/cover no-repeat';
+          saveStructure();
+        };
+        reader.readAsDataURL(file);
+      };
+      input.click();
+    },
+    uploadSectionBg: function(btn) {
+      var panel = btn.closest('.section-style-panel');
+      var sec = btn.closest('[data-section]');
+      var input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = function(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(ev) {
+          var urlInp = panel.querySelector('.bg-img-url');
+          if (urlInp) { urlInp.value = ev.target.result; }
+          applySectionStyle(sec, panel);
+        };
+        reader.readAsDataURL(file);
+      };
+      input.click();
+    },
+    replaceImage: function(btn) {
+      var pop = btn.closest('.img-popover');
+      var targetId = pop.dataset.targetId;
+      var img = document.querySelector('[data-edit-id="' + targetId + '"]');
+      removePopovers();
+      if (!img) return;
+      var input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = function(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(ev) {
+          img.src = ev.target.result;
+          edits[targetId] = ev.target.result;
+          updateCount();
+        };
+        reader.readAsDataURL(file);
+      };
+      input.click();
+    },
+    imageLink: function(btn) {
+      var pop = btn.closest('.img-popover');
+      var targetId = pop.dataset.targetId;
+      var img = document.querySelector('[data-edit-id="' + targetId + '"]');
+      removePopovers();
+      if (!img) return;
+      var url = prompt('Enter link URL:', img.parentElement.tagName === 'A' ? img.parentElement.href : '');
+      if (url === null) return;
+      if (url === '') {
+        // Remove link
+        if (img.parentElement.tagName === 'A') {
+          img.parentElement.replaceWith(img);
+        }
+      } else {
+        var openNew = confirm('Open in new tab?');
+        if (img.parentElement.tagName === 'A') {
+          img.parentElement.href = url;
+          img.parentElement.target = openNew ? '_blank' : '';
+        } else {
+          var a = document.createElement('a');
+          a.href = url;
+          if (openNew) a.target = '_blank';
+          img.parentNode.insertBefore(a, img);
+          a.appendChild(img);
+        }
+      }
     }
   };
 
-  // Keyboard shortcut: Ctrl+Shift+E to open password prompt
+  // Keyboard shortcut: Ctrl+Shift+E
   document.addEventListener('keydown', function(e) {
     if (e.ctrlKey && e.shiftKey && e.key === 'E') {
       e.preventDefault();
@@ -334,11 +782,9 @@ function generateEditorJS(password: string): string {
 
   // Init
   document.addEventListener('DOMContentLoaded', function() {
+    applyTheme();
     applyEdits();
-    if (isUnlocked) {
-      initEditor();
-    }
-    // No visible UI for visitors — editor is completely hidden
+    if (isUnlocked) initEditor();
   });
 })();
 `;
@@ -364,7 +810,7 @@ function renderNavbar(comp: ComponentConfig, config: AppConfig, imageMap: Map<st
       })
     : pages.filter(pg => pg.layout !== "dashboard").map((pg, i) => `<a href="${pg.route === "/" ? "index" : pg.route.replace(/^\//, "")}.html" class="nav-link${i === 0 ? " active" : ""}" data-editable data-edit-id="${eid()}">${pg.name}</a>`);
 
-  return `<nav class="navbar">
+  return `<nav class="navbar" data-section data-section-type="navbar">
   <div class="nav-logo">
     <div class="nav-logo-icon">${(p.logo_text || config.title || "R").charAt(0).toUpperCase()}</div>
     ${ed("span", p.logo_text || config.title || "Site")}
@@ -379,7 +825,7 @@ function renderNavbar(comp: ComponentConfig, config: AppConfig, imageMap: Map<st
 
 function renderHero(comp: ComponentConfig, config: AppConfig): string {
   const p = comp.props || {};
-  return `<section class="hero">
+  return `<section class="hero" data-section data-section-type="hero">
   <div class="container" style="max-width:640px;">
     ${ed("div", `✨ ${p.badge_text || "New Release"}`, "badge")}
     ${ed("h1", p.headline || config.title || "Build Something Amazing")}
@@ -400,7 +846,7 @@ function renderFooter(comp: ComponentConfig, config: AppConfig): string {
     { title: "Resources", links: ["Help Center", "Community", "Guides", "Tutorials"] },
     { title: "Legal", links: ["Privacy", "Terms", "Security", "Cookies"] },
   ];
-  return `<footer class="footer">
+  return `<footer class="footer" data-section data-section-type="footer">
   <div class="footer-grid">
     ${cols.map(c => `<div class="footer-col">
       ${ed("h4", c.title)}
@@ -418,7 +864,7 @@ function renderStatsRow(comp: ComponentConfig): string {
     { label: "Orders", value: "1,247" },
     { label: "Conversion", value: "3.24%" },
   ];
-  return `<section class="section"><div class="container">
+  return `<section class="section" data-section data-section-type="stats"><div class="container">
   <div class="stats-grid">
     ${metrics.map(m => `<div class="stat-card">
       ${ed("div", m.value, "stat-value")}
@@ -438,7 +884,7 @@ function renderFeaturesGrid(comp: ComponentConfig): string {
     { title: "24/7 Support", desc: "Expert support team available around the clock to help you." },
     { title: "Scalable", desc: "Grows with your business from startup to enterprise scale." },
   ];
-  return `<section class="section"><div class="container">
+  return `<section class="section" data-section data-section-type="features"><div class="container">
   <div class="text-center" style="margin-bottom:40px;">
     <div class="badge">Features</div>
     ${ed("h2", p.title || "Everything You Need", "")}
@@ -460,7 +906,7 @@ function renderPricingTable(comp: ComponentConfig): string {
     { name: "Pro", price: "$29", period: "/month", features: ["Unlimited projects", "100 GB storage", "Advanced analytics", "Priority support", "Custom domains"], featured: true },
     { name: "Enterprise", price: "$99", period: "/month", features: ["Everything in Pro", "Unlimited storage", "SSO & SAML", "Dedicated account manager", "SLA guarantee", "Custom integrations"], featured: false },
   ];
-  return `<section class="section"><div class="container">
+  return `<section class="section" data-section data-section-type="pricing"><div class="container">
   <div class="text-center" style="margin-bottom:40px;">
     ${ed("div", "Pricing", "badge")}
     ${ed("h2", "Simple, Transparent Pricing")}
@@ -485,7 +931,7 @@ function renderTestimonials(comp: ComponentConfig): string {
     { text: "We cut our development time by 60%. The AI features are incredibly powerful and intuitive.", name: "Michael Chen", role: "CTO, StartupX" },
     { text: "Best tool we've ever used. Our team productivity has skyrocketed since we switched.", name: "Emma Williams", role: "Lead Dev, DesignCo" },
   ];
-  return `<section class="section" style="background:var(--bg-card);"><div class="container">
+  return `<section class="section" style="background:var(--bg-card);" data-section data-section-type="testimonials"><div class="container">
   <div class="text-center" style="margin-bottom:40px;">
     ${ed("div", "Testimonials", "badge")}
     ${ed("h2", "Loved by Teams Worldwide")}
@@ -513,7 +959,7 @@ function renderFAQ(comp: ComponentConfig): string {
     { q: "Do you offer custom plans?", a: "Absolutely! Contact our sales team for custom enterprise solutions tailored to your needs." },
     { q: "What support options are available?", a: "We offer email support for all plans, with priority and dedicated support for Pro and Enterprise users." },
   ];
-  return `<section class="section"><div class="container" style="max-width:700px;">
+  return `<section class="section" data-section data-section-type="faq"><div class="container" style="max-width:700px;">
   <div class="text-center" style="margin-bottom:40px;">
     ${ed("div", "FAQ", "badge")}
     ${ed("h2", "Frequently Asked Questions")}
@@ -530,7 +976,7 @@ function renderFAQ(comp: ComponentConfig): string {
 
 function renderFinalCTA(comp: ComponentConfig): string {
   const p = comp.props || {};
-  return `<section style="padding:40px 24px;"><div class="cta-section">
+  return `<section style="padding:40px 24px;" data-section data-section-type="cta"><div class="cta-section">
   ${ed("h2", p.headline || "Ready to Get Started?")}
   ${ed("p", p.subtitle || "Join thousands of teams already building with our platform.")}
   ${ed("a", `${p.cta_text || "Start Free Trial"} →`, "btn")}
@@ -538,7 +984,7 @@ function renderFinalCTA(comp: ComponentConfig): string {
 }
 
 function renderContactForm(comp: ComponentConfig): string {
-  return `<section class="section"><div class="container" style="max-width:600px;">
+  return `<section class="section" data-section data-section-type="contact"><div class="container" style="max-width:600px;">
   <div class="text-center" style="margin-bottom:32px;">
     ${ed("div", "Contact", "badge")}
     ${ed("h2", "Get in Touch")}
@@ -558,7 +1004,7 @@ function renderContactForm(comp: ComponentConfig): string {
 
 function renderNewsletterCTA(comp: ComponentConfig): string {
   const p = comp.props || {};
-  return `<section class="section" style="background:var(--bg-card);"><div class="container text-center" style="max-width:500px;">
+  return `<section class="section" style="background:var(--bg-card);" data-section data-section-type="newsletter"><div class="container text-center" style="max-width:500px;">
   ${ed("h2", p.headline || "Stay Updated")}
   ${ed("p", p.subtitle || "Subscribe to our newsletter for the latest updates.", "text-muted")}
   <form onsubmit="event.preventDefault();alert('Subscribed!');" class="flex gap-2 justify-center" style="margin-top:20px;">
@@ -574,7 +1020,7 @@ function renderCardGrid(comp: ComponentConfig): string {
     { title: "API Reference", desc: "Complete API documentation with code examples and guides." },
     { title: "Best Practices", desc: "Learn the recommended patterns and workflows for success." },
   ];
-  return `<section class="section"><div class="container">
+  return `<section class="section" data-section data-section-type="cards"><div class="container">
   <div class="grid grid-3" style="gap:20px;">
     ${cards.map(c => `<div class="card">
       ${ed("h3", c.title)}
@@ -592,7 +1038,7 @@ function renderTeamSection(comp: ComponentConfig): string {
     { name: "Mike Johnson", role: "Head of Design" },
     { name: "Emily Davis", role: "Lead Engineer" },
   ];
-  return `<section class="section"><div class="container">
+  return `<section class="section" data-section data-section-type="team"><div class="container">
   <div class="text-center" style="margin-bottom:40px;">
     ${ed("div", "Team", "badge")}
     ${ed("h2", "Meet Our Team")}
@@ -613,7 +1059,7 @@ function renderBlogPreview(comp: ComponentConfig): string {
     { title: "Best Practices for Modern Development", excerpt: "Learn the patterns and workflows used by top teams.", date: "Jan 10, 2024" },
     { title: "What's New in Version 2.0", excerpt: "Explore the exciting new features and improvements.", date: "Jan 5, 2024" },
   ];
-  return `<section class="section"><div class="container">
+  return `<section class="section" data-section data-section-type="blog"><div class="container">
   <div class="text-center" style="margin-bottom:40px;">
     ${ed("div", "Blog", "badge")}
     ${ed("h2", "Latest Articles")}
@@ -630,7 +1076,7 @@ function renderBlogPreview(comp: ComponentConfig): string {
 }
 
 function renderGenericComponent(comp: ComponentConfig): string {
-  return `<section class="section"><div class="container">
+  return `<section class="section" data-section data-section-type="generic"><div class="container">
   <div class="card text-center">
     ${ed("h3", comp.type.replace(/_/g, " "))}
     ${ed("p", "This component is rendered as a placeholder in the static export.", "text-sm text-muted")}
@@ -720,7 +1166,7 @@ export async function exportToHTML(config: AppConfig, onProgress?: (msg: string)
 
   // Store password in editor.txt for the owner
   zip.file("editor.txt", `========================================
-  EDITOR PASSWORD — KEEP THIS PRIVATE
+  PAGE BUILDER PASSWORD — KEEP THIS PRIVATE
 ========================================
 
 Project: ${config.title || "Untitled"}
@@ -734,9 +1180,22 @@ HOW TO USE:
 1. Open any HTML page in your browser
 2. Press Ctrl+Shift+E to open the editor login
 3. Enter the password above
-4. The Live Editor toolbar will appear
-5. Click text to edit, click images to replace
-6. Use "Save" to persist, "Lock" to hide editor
+4. The Page Builder toolbar will appear
+
+FEATURES:
+• Click any text to edit it inline
+• Click images to replace or add links
+• Drag sections to reorder (grab ⠿ handle)
+• Use section toolbar: ↑↓ Move, ⧉ Duplicate,
+  🎨 Style (colors/gradient/opacity), 🖼 Background, ✕ Delete
+• Click "🧩 Sections" to add new sections
+  (Hero, Features, Pricing, Testimonials, etc.)
+• Global theme colors in the sidebar panel
+• Per-section: background color, gradient, image,
+  opacity, and text color controls
+• "Save" persists all changes to browser storage
+• "Download" exports clean HTML without editor UI
+• "Lock" hides the editor again
 
 NOTE: The editor is completely hidden from
 visitors. Only you (the owner) can activate
