@@ -2430,14 +2430,39 @@ export default function AIBuilderPage() {
               <ThemeSelector selectedTheme={selectedThemeId} onSelect={setSelectedThemeId} />
             </div>
             {buildComplete && (
-              <Button variant="ghost" size="sm" onClick={handleDownloadZip} className="gap-1.5 text-xs text-muted-foreground hidden lg:flex">
-                <Download className="w-3.5 h-3.5" /> ZIP
-              </Button>
-            )}
-            {buildComplete && (
-              <Button variant="ghost" size="sm" onClick={handleExportJSON} className="gap-1.5 text-xs text-muted-foreground hidden lg:flex">
-                <Download className="w-3.5 h-3.5" /> JSON
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-1.5 text-xs text-muted-foreground hidden lg:flex">
+                    <Download className="w-3.5 h-3.5" /> Download
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={async () => {
+                    if (!pipelineState?.config) return;
+                    try {
+                      const { exportToHTML } = await import("@/lib/engine/html-exporter");
+                      const result = await exportToHTML(pipelineState.config);
+                      const url = URL.createObjectURL(result.blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = result.filename;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                      toast({ title: "🌐 HTML Downloaded!", description: `${result.pageCount} page(s) exported.` });
+                    } catch (err: any) {
+                      toast({ title: "Export failed", description: err.message, variant: "destructive" });
+                    }
+                  }}>
+                    <Globe className="w-4 h-4 mr-2" /> HTML
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleDownloadZip}>
+                    <Code className="w-4 h-4 mr-2" /> React / Node.js
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExportJSON}>
+                    <FileText className="w-4 h-4 mr-2" /> JSON
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
             <Button
               variant="ghost" size="sm"
