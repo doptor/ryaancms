@@ -975,16 +975,10 @@ export default function SettingsPage() {
           })}
         </div>
 
-        {/* AI Integrations - always mounted, collapsed when not active to preserve dialog state */}
-        <div
-          className={activeSection === "ai-integrations" ? "" : "overflow-hidden h-0 opacity-0 pointer-events-none"}
-          aria-hidden={activeSection !== "ai-integrations"}
-        >
+        {/* Active section content */}
+        {activeSection === "ai-integrations" ? (
           <AIIntegrationSettings />
-        </div>
-
-        {/* Other sections */}
-        {activeSection !== "ai-integrations" && (
+        ) : (
           <Card>
             <CardContent className="pt-4 sm:pt-6 px-4 sm:px-6">
               {ActiveComponent && (
