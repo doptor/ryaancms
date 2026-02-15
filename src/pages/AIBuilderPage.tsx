@@ -431,11 +431,24 @@ export default function AIBuilderPage() {
   const saveConversation = useCallback(async (msgs: Message[]) => {
     if (!currentProject?.id || !user) return;
     try {
+      // Fetch existing memory to merge conversation into agent_log
+      const { data: existing } = await supabase
+        .from("project_memory")
+        .select("agent_log")
+        .eq("project_id", currentProject.id)
+        .maybeSingle();
+
+      const existingLog = (existing?.agent_log as any[]) || [];
+      // Replace or add conversation entry
+      const filteredLog = existingLog.filter((e: any) => e?.type !== "conversation");
+      const mergedLog = [...filteredLog, { type: "conversation", messages: msgs }];
+
       await supabase.from("project_memory").upsert({
         user_id: user.id,
         project_id: currentProject.id,
-        agent_log: [{ type: "conversation", messages: msgs }],
+        agent_log: mergedLog,
         status: pipelineState?.stage === "complete" ? "complete" : "in_progress",
+        updated_at: new Date().toISOString(),
       } as any, { onConflict: "project_id" });
     } catch {}
   }, [currentProject?.id, user, pipelineState?.stage]);
@@ -557,6 +570,8 @@ export default function AIBuilderPage() {
 
   const executeBuild = async (buildPrompt: string) => {
     setIsBuilding(true);
+    // Preserve previous config so preview isn't lost if build fails
+    const previousConfig = pipelineState?.config || null;
     setPipelineState(null);
     setBuildElapsed(0);
     setSelectedActivityId(null);
@@ -765,7 +780,7 @@ export default function AIBuilderPage() {
             }
 
             if (projectId) {
-              await supabase.from("project_memory").insert({
+              await supabase.from("project_memory").upsert({
                 user_id: currentUser.id,
                 project_id: projectId,
                 requirements: result.requirements || [],
@@ -781,7 +796,7 @@ export default function AIBuilderPage() {
                 suggestions: result.suggestions || [],
                 agent_log: result.agentLog || [],
                 status: "complete",
-              } as any);
+              } as any, { onConflict: "project_id" });
             }
           }
         } catch {}
@@ -885,6 +900,21 @@ export default function AIBuilderPage() {
           });
         }
       } else if (result.error) {
+        // Restore previous preview config if build failed
+        if (previousConfig) {
+          setPipelineState(prev => prev ? prev : {
+            stage: "complete", config: previousConfig, validation: null, schema: null, rbac: null,
+            testSuite: null, docs: null, theme: null, error: null,
+            requirements: [], taskPlan: [], suggestions: [], apiEndpoints: [],
+            qualityScore: {}, qualityIssues: [], qualityImprovements: [],
+            qualityVerdict: "", agentLog: [], workflows: [], businessRules: [],
+            permissionMatrix: [], folderStructure: {}, testScenarios: [], seedData: [],
+            bugs: [], autoFixes: [], riskScore: 0, webhooks: [], edgeFunctions: [],
+            errorFixMemory: [], documentationPlan: [], documentationChecklist: {},
+            securityChecklist: {}, defaultAdminCredentials: { email: "admin@admin.com", password: "admin123" },
+            installerSteps: [], pluginHooks: [], middlewareStack: [], reusableComponents: [], prismaSchemaHint: "",
+          });
+        }
         try {
           const { data: { user: currentUser } } = await supabase.auth.getUser();
           if (currentUser) {
