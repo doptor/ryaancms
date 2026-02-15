@@ -288,7 +288,12 @@ export default function AIBuilderPage() {
           setCurrentProject(data);
           currentProjectRef.current = data;
           localStorage.setItem("ai-builder-active-project-id", data.id);
-          // Load memory
+          // For NEW projects, skip memory loading — just set project and let auto-send handle build
+          if (incomingIsNew) {
+            setIsRestoring(false);
+            return;
+          }
+          // Load memory for existing projects
           const { data: memory } = await supabase
             .from("project_memory")
             .select("*")
@@ -671,7 +676,11 @@ export default function AIBuilderPage() {
       const duration = Date.now() - startTime;
       setPipelineState(result);
 
-      // Update build activities with completion details
+      // Auto-save preview config to localStorage so Preview page works immediately
+      if (result.stage === "complete" && result.config) {
+        try { localStorage.setItem("ai-builder-preview-config", JSON.stringify(result.config)); } catch {}
+      }
+
       if (result.stage === "complete" && result.config) {
         const config = result.config;
         const v = result.validation;
