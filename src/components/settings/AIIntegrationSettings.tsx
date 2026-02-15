@@ -567,6 +567,78 @@ export default function AIIntegrationSettings() {
               </div>
             </div>
 
+            {/* 10-Agent Pipeline Recommendations */}
+            <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <Brain className="w-4 h-4 text-primary" /> 10-Agent Autonomous Pipeline — Recommended API & Model per Agent
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="rounded-md border border-border bg-card p-3 space-y-1.5">
+                  <p className="text-xs font-semibold text-foreground">1. Requirement Analyst</p>
+                  <p className="text-[11px] text-muted-foreground">Converts prompt into FRS/SRS with smart questions</p>
+                  <p className="text-[11px]"><Badge variant="outline" className="text-[10px] mr-1">Best</Badge>OpenAI <code className="text-[10px]">gpt-5</code> · Gemini <code className="text-[10px]">gemini-2.5-pro</code></p>
+                  <p className="text-[11px]"><Badge variant="outline" className="text-[10px] mr-1">Budget</Badge>OpenAI <code className="text-[10px]">gpt-5-mini</code> · DeepSeek <code className="text-[10px]">deepseek-chat</code></p>
+                </div>
+                <div className="rounded-md border border-border bg-card p-3 space-y-1.5">
+                  <p className="text-xs font-semibold text-foreground">2. Product Manager</p>
+                  <p className="text-[11px] text-muted-foreground">Defines modules, user stories, roles & workflows</p>
+                  <p className="text-[11px]"><Badge variant="outline" className="text-[10px] mr-1">Best</Badge>OpenAI <code className="text-[10px]">gpt-5</code> · Anthropic <code className="text-[10px]">claude-sonnet-4</code></p>
+                  <p className="text-[11px]"><Badge variant="outline" className="text-[10px] mr-1">Budget</Badge>Gemini <code className="text-[10px]">gemini-2.5-flash</code> · Mistral <code className="text-[10px]">mistral-large-latest</code></p>
+                </div>
+                <div className="rounded-md border border-border bg-card p-3 space-y-1.5">
+                  <p className="text-xs font-semibold text-foreground">3. Task Planner</p>
+                  <p className="text-[11px] text-muted-foreground">Creates structured task plan with dependencies</p>
+                  <p className="text-[11px]"><Badge variant="outline" className="text-[10px] mr-1">Best</Badge>OpenAI <code className="text-[10px]">gpt-5</code> · Gemini <code className="text-[10px]">gemini-2.5-pro</code></p>
+                  <p className="text-[11px]"><Badge variant="outline" className="text-[10px] mr-1">Budget</Badge>OpenAI <code className="text-[10px]">gpt-5-mini</code> · Groq <code className="text-[10px]">llama-3.3-70b</code></p>
+                </div>
+                <div className="rounded-md border border-border bg-card p-3 space-y-1.5">
+                  <p className="text-xs font-semibold text-foreground">4. System Architect</p>
+                  <p className="text-[11px] text-muted-foreground">Designs folder structure, API patterns & reusable components</p>
+                  <p className="text-[11px]"><Badge variant="outline" className="text-[10px] mr-1">Best</Badge>Anthropic <code className="text-[10px]">claude-sonnet-4</code> · OpenAI <code className="text-[10px]">gpt-5</code></p>
+                  <p className="text-[11px]"><Badge variant="outline" className="text-[10px] mr-1">Budget</Badge>DeepSeek <code className="text-[10px]">deepseek-coder</code> · Mistral <code className="text-[10px]">codestral-latest</code></p>
+                </div>
+                <div className="rounded-md border border-border bg-card p-3 space-y-1.5">
+                  <p className="text-xs font-semibold text-foreground">5. Database Agent</p>
+                  <p className="text-[11px] text-muted-foreground">Generates MySQL/Prisma schema, migrations & seed data</p>
+                  <p className="text-[11px]"><Badge variant="outline" className="text-[10px] mr-1">Best</Badge>Anthropic <code className="text-[10px]">claude-sonnet-4</code> · Gemini <code className="text-[10px]">gemini-2.5-pro</code></p>
+                  <p className="text-[11px]"><Badge variant="outline" className="text-[10px] mr-1">Budget</Badge>DeepSeek <code className="text-[10px]">deepseek-coder</code> · OpenAI <code className="text-[10px]">gpt-5-mini</code></p>
+                </div>
+                <div className="rounded-md border border-border bg-card p-3 space-y-1.5">
+                  <p className="text-xs font-semibold text-foreground">6. Backend Agent</p>
+                  <p className="text-[11px] text-muted-foreground">Builds Express server, routes, controllers & RBAC</p>
+                  <p className="text-[11px]"><Badge variant="outline" className="text-[10px] mr-1">Best</Badge>Anthropic <code className="text-[10px]">claude-sonnet-4</code> · OpenAI <code className="text-[10px]">gpt-5</code></p>
+                  <p className="text-[11px]"><Badge variant="outline" className="text-[10px] mr-1">Fast</Badge>Groq <code className="text-[10px]">llama-3.3-70b</code> · DeepSeek <code className="text-[10px]">deepseek-coder</code></p>
+                </div>
+                <div className="rounded-md border border-border bg-card p-3 space-y-1.5">
+                  <p className="text-xs font-semibold text-foreground">7. UI/UX Designer</p>
+                  <p className="text-[11px] text-muted-foreground">Creates page layouts, forms, tables & responsive design</p>
+                  <p className="text-[11px]"><Badge variant="outline" className="text-[10px] mr-1">Best</Badge>Gemini <code className="text-[10px]">gemini-2.5-pro</code> · OpenAI <code className="text-[10px]">gpt-5</code></p>
+                  <p className="text-[11px]"><Badge variant="outline" className="text-[10px] mr-1">Budget</Badge>Gemini <code className="text-[10px]">gemini-2.5-flash</code> · xAI <code className="text-[10px]">grok-3</code></p>
+                </div>
+                <div className="rounded-md border border-border bg-card p-3 space-y-1.5">
+                  <p className="text-xs font-semibold text-foreground">8. Testing Agent</p>
+                  <p className="text-[11px] text-muted-foreground">Generates test scenarios & validates main flows</p>
+                  <p className="text-[11px]"><Badge variant="outline" className="text-[10px] mr-1">Best</Badge>OpenAI <code className="text-[10px]">gpt-5</code> · Anthropic <code className="text-[10px]">claude-sonnet-4</code></p>
+                  <p className="text-[11px]"><Badge variant="outline" className="text-[10px] mr-1">Budget</Badge>OpenAI <code className="text-[10px]">gpt-5-nano</code> · Gemini <code className="text-[10px]">gemini-2.5-flash-lite</code></p>
+                </div>
+                <div className="rounded-md border border-border bg-card p-3 space-y-1.5">
+                  <p className="text-xs font-semibold text-foreground">9. Debugger Agent</p>
+                  <p className="text-[11px] text-muted-foreground">Auto-detects & fixes build errors with retry loop</p>
+                  <p className="text-[11px]"><Badge variant="outline" className="text-[10px] mr-1">Best</Badge>Anthropic <code className="text-[10px]">claude-sonnet-4</code> · OpenAI <code className="text-[10px]">gpt-5</code></p>
+                  <p className="text-[11px]"><Badge variant="outline" className="text-[10px] mr-1">Fast</Badge>Groq <code className="text-[10px]">llama-3.3-70b</code> · DeepSeek <code className="text-[10px]">deepseek-reasoner</code></p>
+                </div>
+                <div className="rounded-md border border-border bg-card p-3 space-y-1.5">
+                  <p className="text-xs font-semibold text-foreground">10. Quality Reviewer</p>
+                  <p className="text-[11px] text-muted-foreground">Scores output quality, flags issues & suggests improvements</p>
+                  <p className="text-[11px]"><Badge variant="outline" className="text-[10px] mr-1">Best</Badge>OpenAI <code className="text-[10px]">gpt-5</code> · Gemini <code className="text-[10px]">gemini-2.5-pro</code></p>
+                  <p className="text-[11px]"><Badge variant="outline" className="text-[10px] mr-1">Budget</Badge>Perplexity <code className="text-[10px]">sonar-reasoning-pro</code> · Mistral <code className="text-[10px]">mistral-large-latest</code></p>
+                </div>
+              </div>
+              <p className="text-[11px] text-muted-foreground italic">
+                💡 <strong>Cost-effective combo:</strong> Use <strong>Gemini 2.5 Flash</strong> for agents 1-3, 7-8, 10 and <strong>Anthropic Claude Sonnet 4</strong> for agents 4-6, 9 (code-heavy tasks). For maximum quality, use <strong>GPT-5</strong> across all agents.
+              </p>
+            </div>
+
             <p className="mt-4 text-xs text-muted-foreground italic">
               💡 Tip: For this CMS, we recommend <strong>OpenAI gpt-5-mini</strong> or <strong>Gemini 2.5 Flash</strong> for general AI tasks (best balance of speed, quality & cost). For voice input, <strong>OpenAI Whisper</strong> gives the most accurate multilingual transcription.
             </p>
