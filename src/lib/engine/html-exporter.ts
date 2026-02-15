@@ -261,28 +261,28 @@ function generateEditorShortcutJS(password: string): string {
   }
 
   function doLogin() {
-    var pwd = prompt('🔑 Enter editor password (type RESET to recover):');
+    var hasCustom = !!localStorage.getItem(CUSTOM_PASS_KEY);
+    var promptMsg = hasCustom
+      ? '🔑 Enter your CUSTOM password (a previous RESET changed it).\nType RESET to restore the original password from editor.txt:'
+      : '🔑 Enter editor password (from editor.txt). Type RESET to recover:';
+    var pwd = prompt(promptMsg);
     if (pwd === null) return;
     if (pwd === 'RESET') {
       localStorage.removeItem(CUSTOM_PASS_KEY);
-      var chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-      var newPass = '';
-      for (var i = 0; i < 10; i++) newPass += chars.charAt(Math.floor(Math.random() * chars.length));
-      localStorage.setItem(CUSTOM_PASS_KEY, newPass);
       sessionStorage.setItem(PASS_KEY, 'true');
-      alert('Password reset! Your NEW password is: ' + newPass + ' -- SAVE THIS!');
+      alert('✅ Password restored to the original from editor.txt! Reloading...');
       location.reload();
       return;
     }
     var expected = getPassword();
     var trimmedPwd = pwd.trim();
-    console.log('[RyaanCMS Debug] Expected first 3:', expected.substring(0,3), 'Entered first 3:', trimmedPwd.substring(0,3));
     if (trimmedPwd === expected || pwd === expected) {
       sessionStorage.setItem(PASS_KEY, 'true');
       alert('✅ Editor unlocked! Reloading...');
       location.reload();
     } else {
-      alert('❌ Incorrect password.\\nHint: Password starts with "' + expected.substring(0,3) + '..."\\nYou entered: "' + trimmedPwd.substring(0,3) + '..."\\nType RESET to recover access.');
+      var source = hasCustom ? 'a CUSTOM password (not editor.txt)' : 'editor.txt';
+      alert('❌ Incorrect password.\nThe active password is from: ' + source + '\nHint: starts with "' + expected.substring(0,3) + '..."\nYou entered: "' + trimmedPwd.substring(0,3) + '..."\n\nType RESET to restore the original editor.txt password.');
     }
   }
 
