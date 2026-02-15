@@ -203,12 +203,35 @@ body.editor-active { padding-top: 44px; }
 
 // ── Inline Editor JS ────────────────────────────────────────
 
-function generateEditorJS(): string {
+function generateEditorJS(password?: string): string {
+  const passwordCheck = password
+    ? `
+  // Password protection
+  var EDITOR_PASSWORD = '${password.replace(/'/g, "\\'")}';
+  var PASS_KEY = 'ryaancms_editor_unlocked';
+  var isUnlocked = sessionStorage.getItem(PASS_KEY) === 'true';
+
+  function promptPassword() {
+    var entered = prompt('🔒 Enter editor password to enable editing:');
+    if (entered === EDITOR_PASSWORD) {
+      sessionStorage.setItem(PASS_KEY, 'true');
+      isUnlocked = true;
+      initEditor();
+    } else if (entered !== null) {
+      alert('❌ Incorrect password. Editing is disabled.');
+    }
+  }
+`
+    : `
+  var isUnlocked = true;
+`;
+
   return `// RyaanCMS Inline Editor — lightweight content editing
 (function() {
   'use strict';
   var STORAGE_KEY = 'ryaancms_edits';
   var edits = {};
+${passwordCheck}
 
   // Load saved edits
   try {
@@ -313,7 +336,16 @@ function generateEditorJS(): string {
   // Init
   document.addEventListener('DOMContentLoaded', function() {
     applyEdits();
-    initEditor();
+    if (isUnlocked) {
+      initEditor();
+    }${password ? ` else {
+      // Show a lock button for password entry
+      var lockBtn = document.createElement('div');
+      lockBtn.className = 'editor-toolbar';
+      lockBtn.innerHTML = '<div class="flex items-center gap-3"><span style="font-weight:700;font-size:14px;">🔒 Editor Locked</span><span class="editor-info">Enter password to edit</span></div><div><button onclick="promptPassword()">🔑 Unlock Editor</button></div>';
+      document.body.prepend(lockBtn);
+      document.body.classList.add('editor-active');
+    }` : ''}
   });
 })();
 `;
@@ -669,7 +701,7 @@ export interface HTMLExportResult {
   imageCount: number;
 }
 
-export async function exportToHTML(config: AppConfig, onProgress?: (msg: string) => void): Promise<HTMLExportResult> {
+export async function exportToHTML(config: AppConfig, onProgress?: (msg: string) => void, editorPassword?: string): Promise<HTMLExportResult> {
   const zip = new JSZip();
   const slug = config.title?.toLowerCase().replace(/\s+/g, "-") || "project";
 
@@ -681,7 +713,7 @@ export async function exportToHTML(config: AppConfig, onProgress?: (msg: string)
   zip.file("css/styles.css", generateCSS(config));
 
   onProgress?.("Generating editor...");
-  zip.file("js/editor.js", generateEditorJS());
+  zip.file("js/editor.js", generateEditorJS(editorPassword));
 
   // Add downloaded images
   onProgress?.(`Bundling ${imageMap.size} images...`);
