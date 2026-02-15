@@ -478,6 +478,116 @@ export default function AIBuilderPage() {
     }
   }, [isBuilding, promptQueue]);
 
+  // Detect if user input is a question (not a build prompt)
+  const isQuestion = useCallback((text: string): boolean => {
+    const t = text.trim().toLowerCase();
+    // Starts with question words
+    if (/^(what|how|why|when|where|who|which|can|could|is|are|do|does|did|will|would|should|tell me|explain|describe|show me|help me understand)[\s?]/.test(t)) return true;
+    // Ends with question mark
+    if (t.endsWith("?")) return true;
+    // Common conversational patterns that are NOT build requests
+    if (/^(hi|hello|hey|thanks|thank you|ok|okay|sure|great|nice|good|awesome)\b/.test(t) && t.length < 60) return true;
+    return false;
+  }, []);
+
+  // Handle Q&A via AI streaming
+  const handleQA = useCallback(async (question: string, msgs: Message[]) => {
+    // Gather project context for the AI
+    const projectContext = {
+      title: currentProject?.title,
+      prompt: currentProject?.prompt,
+      status: currentProject?.status,
+      pages: pipelineState?.config?.pages || [],
+      modules: pipelineState?.config?.modules || [],
+      collections: pipelineState?.config?.collections || [],
+    };
+
+    let assistantContent = "";
+    const updateAssistant = (chunk: string) => {
+      assistantContent += chunk;
+      setMessages(prev => {
+        const last = prev[prev.length - 1];
+        if (last?.role === "ai" && last.content === assistantContent.slice(0, -chunk.length) || last?.role === "ai" && assistantContent.startsWith(last.content.slice(0, 20))) {
+          return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: assistantContent } : m);
+        }
+        return [...prev, { role: "ai" as const, content: assistantContent }];
+      });
+    };
+
+    try {
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat-qa`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ question, projectContext }),
+      });
+
+      if (!resp.ok || !resp.body) {
+        const errorData = await resp.json().catch(() => ({ error: "AI service unavailable" }));
+        setMessages(prev => [...prev, { role: "ai", content: `⚠️ ${errorData.error || "Could not get a response. Please try again."}` }]);
+        return;
+      }
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let textBuffer = "";
+      let streamDone = false;
+
+      while (!streamDone) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        textBuffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (line.startsWith(":") || line.trim() === "") continue;
+          if (!line.startsWith("data: ")) continue;
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === "[DONE]") { streamDone = true; break; }
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+            if (content) updateAssistant(content);
+          } catch {
+            textBuffer = line + "\n" + textBuffer;
+            break;
+          }
+        }
+      }
+
+      // Final flush
+      if (textBuffer.trim()) {
+        for (let raw of textBuffer.split("\n")) {
+          if (!raw) continue;
+          if (raw.endsWith("\r")) raw = raw.slice(0, -1);
+          if (raw.startsWith(":") || raw.trim() === "") continue;
+          if (!raw.startsWith("data: ")) continue;
+          const jsonStr = raw.slice(6).trim();
+          if (jsonStr === "[DONE]") continue;
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+            if (content) updateAssistant(content);
+          } catch {}
+        }
+      }
+
+      // Save conversation with the AI response
+      setMessages(prev => {
+        saveConversation(prev);
+        return prev;
+      });
+    } catch (err) {
+      console.error("Q&A error:", err);
+      setMessages(prev => [...prev, { role: "ai", content: "⚠️ Something went wrong. Please try again." }]);
+    }
+  }, [currentProject, pipelineState, saveConversation]);
+
   const sendMessage = async (text: string) => {
     if (!text.trim()) return;
 
@@ -498,7 +608,6 @@ export default function AIBuilderPage() {
     setInput("");
     const newMessages: Message[] = [...messages, { role: "user", content: text }];
     setMessages(newMessages);
-    // Auto-save conversation after every user message
     saveConversation(newMessages);
 
     // Check if user is confirming next phase
@@ -511,9 +620,14 @@ export default function AIBuilderPage() {
         ...prev,
         { role: "ai", content: `⚡ Great! Starting **Phase ${phase.phase}: ${phase.title}**...\n\n_${phase.description}_` },
       ]);
-      // Small delay for UX
       await new Promise(r => setTimeout(r, 500));
       await executeBuild(phase.prompt);
+      return;
+    }
+
+    // === Q&A Detection: answer questions instead of building ===
+    if (isQuestion(text) && !awaitingPhaseConfirm) {
+      await handleQA(text, newMessages);
       return;
     }
 
