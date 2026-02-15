@@ -248,20 +248,41 @@ body.editor-unlocked [data-section]:hover .drag-handle { display: block; }
 }
 
 // Standalone fallback keyboard handler — SEPARATE script to survive editor JS errors
-function generateEditorShortcutJS(): string {
-  return `document.addEventListener('keydown', function(ev) {
-  if (ev.ctrlKey && ev.shiftKey && (ev.key === 'E' || ev.key === 'e' || ev.keyCode === 69)) {
-    ev.preventDefault();
-    if (window.__ryaanEditor && typeof window.__ryaanEditor.unlock === 'function') {
-      if (sessionStorage.getItem('ryaancms_editor_unlocked') !== 'true') {
-        window.__ryaanEditor.unlock();
+// This is a FULLY FUNCTIONAL login that works even if the main editor IIFE crashes
+function generateEditorShortcutJS(password: string): string {
+  const escapedPass = password.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  return `(function(){
+  var PASS_KEY = 'ryaancms_editor_unlocked';
+  var CUSTOM_PASS_KEY = 'ryaancms_custom_password';
+  var DEFAULT_PASSWORD = '${escapedPass}';
+
+  document.addEventListener('keydown', function(ev) {
+    if (ev.ctrlKey && ev.shiftKey && (ev.key === 'E' || ev.key === 'e' || ev.keyCode === 69)) {
+      ev.preventDefault();
+      // If already unlocked, skip
+      if (sessionStorage.getItem(PASS_KEY) === 'true') {
+        alert('Editor is already unlocked. If the toolbar is not visible, reload the page.');
+        return;
       }
-    } else {
-      var pwd = prompt('Enter editor password:');
-      if (pwd !== null) alert('Editor module failed to load. Check browser console (F12) for errors.');
+      // If main editor loaded successfully, use its unlock
+      if (window.__ryaanEditor && typeof window.__ryaanEditor.unlock === 'function') {
+        window.__ryaanEditor.unlock();
+        return;
+      }
+      // Fallback: standalone password prompt
+      var pwd = prompt('🔑 Enter editor password:');
+      if (pwd === null) return;
+      var expected = localStorage.getItem(CUSTOM_PASS_KEY) || DEFAULT_PASSWORD;
+      if (pwd === expected) {
+        sessionStorage.setItem(PASS_KEY, 'true');
+        alert('✅ Editor unlocked! Reloading page to activate toolbar...');
+        location.reload();
+      } else {
+        alert('❌ Incorrect password. Please try again.');
+      }
     }
-  }
-});`;
+  });
+})();`;
 }
 
 // ── Inline Editor JS ────────────────────────────────────────
@@ -1283,7 +1304,7 @@ function renderComponent(comp: ComponentConfig, config: AppConfig, imageMap: Map
 
 // ── Page → HTML ─────────────────────────────────────────────
 
-function generatePageHTML(page: PageConfig, config: AppConfig, imageMap: Map<string, { blob: Blob; localPath: string }>, pages: PageConfig[], cssPath: string, editorJS: string): string {
+function generatePageHTML(page: PageConfig, config: AppConfig, imageMap: Map<string, { blob: Blob; localPath: string }>, pages: PageConfig[], cssPath: string, editorJS: string, password: string): string {
   editCounter = 0;
   const components = page.components.map(c => renderComponent(c, config, imageMap, pages)).join("\n\n");
   
@@ -1302,7 +1323,7 @@ function generatePageHTML(page: PageConfig, config: AppConfig, imageMap: Map<str
 <body>
 ${components}
 <script>${editorJS.replace(/<\/script/gi, '<\\/script')}<\/script>
-<script>${generateEditorShortcutJS()}<\/script>
+<script>${generateEditorShortcutJS(password).replace(/<\/script/gi, '<\\/script')}<\/script>
 </body>
 </html>`;
 }
@@ -1536,7 +1557,7 @@ export async function exportToHTML(config: AppConfig, onProgress?: (msg: string)
 <body class="bg-background text-foreground min-h-screen" style="font-family: ${font};">
 ${finalHTML}
 <script>${generateEditorJS(password).replace(/<\/script/gi, '<\\/script')}<\/script>
-<script>${generateEditorShortcutJS()}<\/script>
+<script>${generateEditorShortcutJS(password).replace(/<\/script/gi, '<\\/script')}<\/script>
 </body>
 </html>`;
 
@@ -1561,7 +1582,7 @@ ${finalHTML}
 
     for (const page of pages) {
       const filename = page.route === "/" ? "index.html" : `${page.route.replace(/^\//, "").replace(/\//g, "-")}.html`;
-      const html = generatePageHTML(page, config, imageMap, pages, "css/styles.css", editorJS);
+      const html = generatePageHTML(page, config, imageMap, pages, "css/styles.css", editorJS, password);
       zip.file(filename, html);
     }
   }
