@@ -256,30 +256,50 @@ function generateEditorShortcutJS(password: string): string {
   var CUSTOM_PASS_KEY = 'ryaancms_custom_password';
   var DEFAULT_PASSWORD = '${escapedPass}';
 
+  function getPassword() {
+    return localStorage.getItem(CUSTOM_PASS_KEY) || DEFAULT_PASSWORD;
+  }
+
+  function doLogin() {
+    var pwd = prompt('🔑 Enter editor password (type RESET to recover):');
+    if (pwd === null) return;
+    if (pwd === 'RESET') {
+      localStorage.removeItem(CUSTOM_PASS_KEY);
+      var chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+      var newPass = '';
+      for (var i = 0; i < 10; i++) newPass += chars.charAt(Math.floor(Math.random() * chars.length));
+      localStorage.setItem(CUSTOM_PASS_KEY, newPass);
+      sessionStorage.setItem(PASS_KEY, 'true');
+      alert('Password reset! Your NEW password is: ' + newPass + ' -- SAVE THIS!');
+      location.reload();
+      return;
+    }
+    var expected = getPassword();
+    console.log('[RyaanCMS Debug] Expected password length:', expected.length, 'Entered length:', pwd.length);
+    if (pwd === expected) {
+      sessionStorage.setItem(PASS_KEY, 'true');
+      alert('✅ Editor unlocked! Reloading...');
+      location.reload();
+    } else {
+      alert('❌ Incorrect password. Tip: Type RESET to recover access.\\nExpected ' + expected.length + ' chars, you entered ' + pwd.length + ' chars.');
+    }
+  }
+
   document.addEventListener('keydown', function(ev) {
     if (ev.ctrlKey && ev.shiftKey && (ev.key === 'E' || ev.key === 'e' || ev.keyCode === 69)) {
       ev.preventDefault();
-      // If already unlocked, skip
       if (sessionStorage.getItem(PASS_KEY) === 'true') {
-        alert('Editor is already unlocked. If the toolbar is not visible, reload the page.');
+        if (window.__ryaanEditor) return; // main editor active
+        alert('Editor session is active but toolbar failed to load. Try refreshing the page.');
         return;
       }
-      // If main editor loaded successfully, use its unlock
+      // If main editor loaded, use its unlock (has security question support)
       if (window.__ryaanEditor && typeof window.__ryaanEditor.unlock === 'function') {
         window.__ryaanEditor.unlock();
         return;
       }
-      // Fallback: standalone password prompt
-      var pwd = prompt('🔑 Enter editor password:');
-      if (pwd === null) return;
-      var expected = localStorage.getItem(CUSTOM_PASS_KEY) || DEFAULT_PASSWORD;
-      if (pwd === expected) {
-        sessionStorage.setItem(PASS_KEY, 'true');
-        alert('✅ Editor unlocked! Reloading page to activate toolbar...');
-        location.reload();
-      } else {
-        alert('❌ Incorrect password. Please try again.');
-      }
+      // Fallback standalone login
+      doLogin();
     }
   });
 })();`;
