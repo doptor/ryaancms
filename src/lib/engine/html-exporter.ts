@@ -652,12 +652,21 @@ function generateEditorJS(password: string): string {
       location.reload();
     },
     unlock: function() {
-      var entered = prompt('🔒 Enter editor password:');
+      var entered = prompt('🔒 Enter editor password:\n\nForgot password? Type RESET to restore default password from editor.txt');
+      if (entered === null) return;
+      if (entered === 'RESET') {
+        if (confirm('⚠️ This will reset your password to the original default password shown in editor.txt file.\\n\\nContinue?')) {
+          localStorage.removeItem(CUSTOM_PASS_KEY);
+          EDITOR_PASSWORD = DEFAULT_PASSWORD;
+          alert('✅ Password reset to default!\\n\\nYour password is now the original one from editor.txt.\\nUse it to unlock the editor.');
+        }
+        return;
+      }
       if (entered === EDITOR_PASSWORD) {
         sessionStorage.setItem(PASS_KEY, 'true');
         location.reload();
-      } else if (entered !== null) {
-        alert('❌ Incorrect password.');
+      } else {
+        alert('❌ Incorrect password.\\n\\n💡 Tip: Type RESET to restore default password from editor.txt');
       }
     },
     togglePanel: function() {
@@ -1539,12 +1548,18 @@ FEATURES:
 • "🔑 Password" — change your editor password
 • "Lock" hides the editor again
 
-PASSWORD RESET:
+PASSWORD MANAGEMENT:
 • Click the "🔑 Password" button in the toolbar
 • Enter your current password
 • Set a new password (min 6 characters)
 • Your new password is saved in browser storage
-• The original password in this file still works as fallback
+
+FORGOT PASSWORD?
+• Press Ctrl+Shift+E to open the login prompt
+• Type RESET (all caps) instead of a password
+• Confirm the reset — your password will revert
+  to the original default password shown above
+• Then use the default password to log in again
 
 ⚠️ Do NOT upload this file to your server!
 
