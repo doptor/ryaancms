@@ -226,7 +226,22 @@ export function analyzePrompt(prompt: string): PromptAnalysis {
   ];
 
   const hasFullBuildKeyword = fullBuildKeywords.some(k => trimmed.toLowerCase().includes(k));
-  const isComplex = wordCount > 30 || (hasFullBuildKeyword && wordCount > 15);
+
+  // If a full-build keyword is present, always route to full pipeline regardless of word count
+  if (hasFullBuildKeyword) {
+    const phases = wordCount > 30 ? generatePhases(trimmed) : undefined;
+    const appreciation = APPRECIATIONS[Math.floor(Math.random() * APPRECIATIONS.length)];
+    return {
+      scope: "full",
+      buildTarget,
+      stepsNeeded: ALL_STEPS,
+      reason: "Full application build required",
+      phases,
+      appreciation,
+    };
+  }
+
+  const isComplex = wordCount > 30;
 
   if (isComplex) {
     const phases = generatePhases(trimmed);
