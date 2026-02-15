@@ -652,13 +652,21 @@ function generateEditorJS(password: string): string {
       location.reload();
     },
     unlock: function() {
-      var entered = prompt('🔒 Enter editor password:\n\nForgot password? Type RESET to restore default password from editor.txt');
+      var entered = prompt('🔒 Enter editor password:\\n\\nForgot password? Type RESET to recover access');
       if (entered === null) return;
       if (entered === 'RESET') {
-        if (confirm('⚠️ This will reset your password to the original default password shown in editor.txt file.\\n\\nContinue?')) {
+        if (confirm('⚠️ This will reset your password and unlock the editor immediately.\\n\\nYou will be asked to set a new password.\\n\\nContinue?')) {
           localStorage.removeItem(CUSTOM_PASS_KEY);
           EDITOR_PASSWORD = DEFAULT_PASSWORD;
-          alert('✅ Password reset to default!\\n\\nYour password is now the original one from editor.txt.\\nUse it to unlock the editor.');
+          sessionStorage.setItem(PASS_KEY, 'true');
+          // Generate new random password
+          var chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+          var newPass = '';
+          for (var i = 0; i < 10; i++) newPass += chars.charAt(Math.floor(Math.random() * chars.length));
+          EDITOR_PASSWORD = newPass;
+          localStorage.setItem(CUSTOM_PASS_KEY, newPass);
+          alert('✅ Password recovered!\\n\\n🔑 Your NEW password is:\\n\\n' + newPass + '\\n\\n⚠️ SAVE THIS PASSWORD! Write it down now.\\nThe editor is now unlocked.');
+          location.reload();
         }
         return;
       }
@@ -666,7 +674,7 @@ function generateEditorJS(password: string): string {
         sessionStorage.setItem(PASS_KEY, 'true');
         location.reload();
       } else {
-        alert('❌ Incorrect password.\\n\\n💡 Tip: Type RESET to restore default password from editor.txt');
+        alert('❌ Incorrect password.\\n\\n💡 Forgot? Type RESET to generate a new password');
       }
     },
     togglePanel: function() {
