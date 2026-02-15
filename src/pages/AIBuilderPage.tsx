@@ -78,6 +78,7 @@ import { WorkflowAutomationPanel } from "@/components/ai-builder/WorkflowAutomat
 import { AdvancedAnalyticsPanel } from "@/components/ai-builder/AdvancedAnalyticsPanel";
 import { ErrorBoundaryPanel } from "@/components/ai-builder/ErrorBoundaryPanel";
 import { AccessibilityCheckerPanel } from "@/components/ai-builder/AccessibilityCheckerPanel";
+import { BuildTargetGuide } from "@/components/ai-builder/BuildTargetGuide";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getThemePreset } from "@/lib/engine/theme-generator";
@@ -1387,6 +1388,9 @@ export default function AIBuilderPage() {
             </button>
           ))}
         </div>
+
+        {/* Build Target Guide */}
+        <BuildTargetGuide />
 
         {/* Template Library */}
         <div className="mt-8 space-y-3">
