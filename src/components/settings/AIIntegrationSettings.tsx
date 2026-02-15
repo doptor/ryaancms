@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/accordion";
 
 type AIStatus = "active" | "inactive" | "error";
-type AIProvider = "openai" | "gemini" | "anthropic" | "mistral" | "cohere" | "meta" | "deepseek" | "groq" | "perplexity" | "xai" | "orchestration" | "custom";
+type AIProvider = "openai" | "gemini" | "anthropic" | "mistral" | "cohere" | "meta" | "deepseek" | "groq" | "perplexity" | "xai" | "custom";
 type AITaskType = "app_builder" | "code_gen" | "speech_to_text" | "branding" | "content" | "general";
 
 const TASK_LABELS: Record<AITaskType, { label: string; description: string }> = {
@@ -254,26 +254,6 @@ const PROVIDERS: ProviderConfig[] = [
       link: "https://console.x.ai",
       linkLabel: "xAI Console",
       notes: "Free credits available for new users. Grok models support multimodal inputs.",
-    },
-  },
-  {
-    value: "orchestration",
-    label: "Orchestration",
-    models: ["multi-agent-pipeline", "requirement-analyst", "task-planner", "system-architect", "ui-ux-designer", "quality-reviewer"],
-    defaultEndpoint: "",
-    keyPrefix: "",
-    keyPlaceholder: "your-orchestration-api-key",
-    instructions: {
-      steps: [
-        "Orchestration routes your prompt through a multi-agent AI pipeline",
-        "Agents: Requirement Analyst → Task Planner → System Architect → UI/UX Designer → Quality Reviewer",
-        "Configure the API endpoint of your orchestration provider (must be OpenAI-compatible)",
-        "Provide your API key for the orchestration service",
-        "Assign this integration to 'App Builder' task for full pipeline orchestration",
-      ],
-      link: "",
-      linkLabel: "",
-      notes: "Use this provider to power the AI Builder's multi-agent pipeline. It chains multiple specialized agents for comprehensive app generation.",
     },
   },
   {
