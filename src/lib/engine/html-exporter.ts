@@ -247,6 +247,23 @@ body.editor-unlocked [data-section]:hover .drag-handle { display: block; }
 `;
 }
 
+// Standalone fallback keyboard handler — SEPARATE script to survive editor JS errors
+function generateEditorShortcutJS(): string {
+  return `document.addEventListener('keydown', function(ev) {
+  if (ev.ctrlKey && ev.shiftKey && (ev.key === 'E' || ev.key === 'e' || ev.keyCode === 69)) {
+    ev.preventDefault();
+    if (window.__ryaanEditor && typeof window.__ryaanEditor.unlock === 'function') {
+      if (sessionStorage.getItem('ryaancms_editor_unlocked') !== 'true') {
+        window.__ryaanEditor.unlock();
+      }
+    } else {
+      var pwd = prompt('Enter editor password:');
+      if (pwd !== null) alert('Editor module failed to load. Check browser console (F12) for errors.');
+    }
+  }
+});`;
+}
+
 // ── Inline Editor JS ────────────────────────────────────────
 
 function generateEditorJS(password: string): string {
@@ -946,23 +963,8 @@ try {
 } catch(editorErr) {
   console.error('RyaanCMS Editor failed to load:', editorErr);
 }
-
-// Standalone keyboard shortcut — works even if editor IIFE fails
-document.addEventListener('keydown', function(ev) {
-  if (ev.ctrlKey && ev.shiftKey && (ev.key === 'E' || ev.key === 'e' || ev.keyCode === 69)) {
-    ev.preventDefault();
-    if (window.__ryaanEditor && typeof window.__ryaanEditor.unlock === 'function') {
-      if (sessionStorage.getItem('ryaancms_editor_unlocked') !== 'true') {
-        window.__ryaanEditor.unlock();
-      }
-    } else {
-      alert('Editor failed to load. Please check the browser console (F12) for errors.');
-    }
-  }
-});
 `;
 }
-
 // ── Component → HTML Converters ─────────────────────────────
 
 let editCounter = 0;
@@ -1300,6 +1302,7 @@ function generatePageHTML(page: PageConfig, config: AppConfig, imageMap: Map<str
 <body>
 ${components}
 <script>${editorJS.replace(/<\/script/gi, '<\\/script')}<\/script>
+<script>${generateEditorShortcutJS()}<\/script>
 </body>
 </html>`;
 }
@@ -1533,6 +1536,7 @@ export async function exportToHTML(config: AppConfig, onProgress?: (msg: string)
 <body class="bg-background text-foreground min-h-screen" style="font-family: ${font};">
 ${finalHTML}
 <script>${generateEditorJS(password).replace(/<\/script/gi, '<\\/script')}<\/script>
+<script>${generateEditorShortcutJS()}<\/script>
 </body>
 </html>`;
 
