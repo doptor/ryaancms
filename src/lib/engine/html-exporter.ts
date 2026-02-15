@@ -116,7 +116,7 @@ h3 { font-size: 1.125rem; font-weight: 600; }
 .nav-link:hover, .nav-link.active { color: var(--text); background: var(--bg-card); }
 
 /* Hero */
-.hero { padding: 80px 24px; text-align: center; background: linear-gradient(135deg, var(--primary-light), white, rgba(168,162,255,0.08)); }
+.hero { padding: 80px 24px; text-align: center; background: linear-gradient(135deg, var(--primary-light), #ffffff, rgba(168,162,255,0.08)); }
 .hero h1 { margin-bottom: 16px; }
 .hero p { color: var(--text-muted); max-width: 540px; margin: 0 auto 24px; }
 .hero-actions { display: flex; gap: 12px; justify-content: center; }
@@ -257,7 +257,9 @@ function generateEditorJS(password: string): string {
   var STRUCTURE_KEY = 'ryaancms_structure';
   var THEME_KEY = 'ryaancms_theme';
   var PASS_KEY = 'ryaancms_editor_unlocked';
-  var EDITOR_PASSWORD = '${password.replace(/'/g, "\\'")}';
+  var CUSTOM_PASS_KEY = 'ryaancms_custom_password';
+  var DEFAULT_PASSWORD = '${password.replace(/'/g, "\\'")}';
+  var EDITOR_PASSWORD = localStorage.getItem(CUSTOM_PASS_KEY) || DEFAULT_PASSWORD;
   var edits = {};
   var isUnlocked = sessionStorage.getItem(PASS_KEY) === 'true';
   var panelOpen = false;
@@ -590,6 +592,7 @@ function generateEditorJS(password: string): string {
       + '<button onclick="window.__ryaanEditor.togglePanel()">🧩 Sections</button>'
       + '<button onclick="window.__ryaanEditor.save()">💾 Save</button>'
       + '<button onclick="window.__ryaanEditor.download()" style="background:#374151;">⬇ Download</button>'
+      + '<button onclick="window.__ryaanEditor.changePassword()" style="background:#374151;">🔑 Password</button>'
       + '<button onclick="window.__ryaanEditor.reset()" style="background:#ef4444;">↺ Reset</button>'
       + '<button onclick="window.__ryaanEditor.lock()" style="background:#6b7280;">🔒 Lock</button>'
       + '</div>';
@@ -809,6 +812,26 @@ function generateEditorJS(password: string): string {
           a.appendChild(img);
         }
       }
+    },
+    changePassword: function() {
+      var current = prompt('Enter current password:');
+      if (current !== EDITOR_PASSWORD) {
+        if (current !== null) alert('❌ Incorrect current password.');
+        return;
+      }
+      var newPass = prompt('Enter new password (min 6 characters):');
+      if (!newPass || newPass.length < 6) {
+        if (newPass !== null) alert('❌ Password must be at least 6 characters.');
+        return;
+      }
+      var confirm2 = prompt('Confirm new password:');
+      if (confirm2 !== newPass) {
+        alert('❌ Passwords do not match.');
+        return;
+      }
+      EDITOR_PASSWORD = newPass;
+      localStorage.setItem(CUSTOM_PASS_KEY, newPass);
+      alert('✅ Password changed successfully! Use your new password next time you unlock the editor.');
     }
   };
 
@@ -1213,15 +1236,12 @@ function capturePreviewDOM(): string | null {
 
   // Remove interactive editor UI elements
   clone.querySelectorAll(
-    "[data-component-index] > .absolute, button, [class*='grip'], [class*='context-menu'], [class*='ring-']"
+    "[data-component-index] > .absolute, [class*='grip'], [class*='context-menu'], [class*='ring-']"
   ).forEach((el) => {
-    // Keep visible content buttons (like CTA buttons in the preview)
     const parent = el.closest("[data-component-type]");
     if (parent && (el.tagName === "BUTTON" || el.tagName === "A")) {
-      // Keep buttons that are part of the rendered component content
       return;
     }
-    // Remove drag handles and selection indicators
     if (el.classList.contains("absolute") && el.querySelector("svg")) {
       el.remove();
     }
@@ -1243,6 +1263,67 @@ function capturePreviewDOM(): string | null {
     const parent = el.closest(".p-4");
     if (parent && !parent.closest("[data-component-type]")) {
       parent.remove();
+    }
+  });
+
+  // ── Make all content editable by injecting data-editable attributes ──
+  let editId = 0;
+  const editableTags = ["H1", "H2", "H3", "H4", "H5", "H6", "P", "SPAN", "LI", "TD", "TH", "LABEL", "BLOCKQUOTE", "FIGCAPTION"];
+  
+  clone.querySelectorAll(editableTags.join(",")).forEach((el) => {
+    // Skip if it's an empty container or has only child elements (no direct text)
+    if (!el.textContent?.trim()) return;
+    // Skip elements that are purely structural wrappers
+    if (el.children.length > 0 && !el.childNodes[0]?.textContent?.trim()) return;
+    el.setAttribute("data-editable", "");
+    el.setAttribute("data-edit-id", `cap-${++editId}`);
+  });
+
+  // Make buttons and links editable
+  clone.querySelectorAll("a, button").forEach((el) => {
+    if (!el.textContent?.trim()) return;
+    // Skip links that are just wrappers for images
+    if (el.children.length === 1 && el.children[0].tagName === "IMG") return;
+    el.setAttribute("data-editable", "");
+    el.setAttribute("data-edit-id", `cap-${++editId}`);
+  });
+
+  // Make images editable (for replacement)
+  clone.querySelectorAll("img").forEach((el) => {
+    el.setAttribute("data-editable", "");
+    el.setAttribute("data-edit-id", `cap-${++editId}`);
+  });
+
+  // ── Mark top-level sections with data-section for the section toolbar ──
+  // Find component wrappers or major semantic elements
+  const topChildren = clone.querySelectorAll("[data-component-type], section, nav, footer, header, main > div, .section");
+  topChildren.forEach((el) => {
+    if (!el.hasAttribute("data-section")) {
+      el.setAttribute("data-section", "");
+      el.setAttribute("data-section-type", el.getAttribute("data-component-type") || el.tagName.toLowerCase());
+    }
+  });
+
+  // If no data-section found, wrap direct children
+  if (clone.querySelectorAll("[data-section]").length === 0) {
+    Array.from(clone.children).forEach((child) => {
+      if (child instanceof HTMLElement && child.tagName !== "SCRIPT" && child.tagName !== "STYLE") {
+        child.setAttribute("data-section", "");
+        child.setAttribute("data-section-type", "block");
+      }
+    });
+  }
+
+  // ── Force light backgrounds on sections ──
+  clone.querySelectorAll("[data-section]").forEach((sec) => {
+    const el = sec as HTMLElement;
+    // Only set if no explicit dark background
+    const bg = el.style.background || el.style.backgroundColor;
+    if (!bg || bg.includes("dark") || bg.includes("rgb(0") || bg.includes("#000") || bg.includes("#111") || bg.includes("#1")) {
+      // Don't override gradient or image backgrounds
+      if (!bg.includes("gradient") && !bg.includes("url(")) {
+        el.style.backgroundColor = "";
+      }
     }
   });
 
@@ -1326,10 +1407,13 @@ export async function exportToHTML(config: AppConfig, onProgress?: (msg: string)
     }
   <\/script>
   <style>
-    body { font-family: ${font}; -webkit-font-smoothing: antialiased; }
+    body { font-family: ${font}; -webkit-font-smoothing: antialiased; background: #ffffff; }
     * { border-color: hsl(220 13% 88%); }
     .bg-gradient-primary { background: linear-gradient(135deg, hsl(243 75% 58%), hsl(270 70% 60%)); }
     .text-gradient { background: linear-gradient(135deg, hsl(243 75% 58%), hsl(270 70% 60%)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    /* Light section backgrounds */
+    [data-section] { background-color: #ffffff; }
+    [data-section]:nth-child(even) { background-color: #f9fafb; }
     /* Remove any leftover interactive styles */
     [data-component-index] { cursor: default !important; }
     [class*="group-hover"] { display: none !important; }
@@ -1392,6 +1476,8 @@ HOW TO USE:
 FEATURES:
 • Click any text to edit it inline
 • Click images to replace or add links
+• Click buttons & links to edit text
+• Edit menu/nav items directly
 • Drag sections to reorder (grab ⠿ handle)
 • Use section toolbar: ↑↓ Move, ⧉ Duplicate,
   🎨 Style (colors/gradient/opacity), 🖼 Background, ✕ Delete
@@ -1399,7 +1485,15 @@ FEATURES:
 • Global theme colors in the sidebar panel
 • "Save" persists all changes to browser storage
 • "Download" exports clean HTML without editor UI
+• "🔑 Password" — change your editor password
 • "Lock" hides the editor again
+
+PASSWORD RESET:
+• Click the "🔑 Password" button in the toolbar
+• Enter your current password
+• Set a new password (min 6 characters)
+• Your new password is saved in browser storage
+• The original password in this file still works as fallback
 
 ⚠️ Do NOT upload this file to your server!
 
