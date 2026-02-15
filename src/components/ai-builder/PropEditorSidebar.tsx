@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { X, RotateCcw, Paintbrush, Pipette } from "lucide-react";
+import { X, RotateCcw, Paintbrush, Pipette, ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ComponentConfig, ComponentType } from "@/lib/engine";
 import { getComponentMeta } from "@/lib/engine";
@@ -197,7 +197,7 @@ export function PropEditorSidebar({ component, componentIndex, pageIndex, onClos
             
             {/* Mode selector */}
             <div className="flex rounded-md border border-border overflow-hidden">
-              {(["none", "solid", "gradient", "custom"] as const).map((mode) => (
+              {(["none", "solid", "gradient", "image", "custom"] as const).map((mode) => (
                 <button
                   key={mode}
                   onClick={() => {
@@ -206,18 +206,20 @@ export function PropEditorSidebar({ component, componentIndex, pageIndex, onClos
                       handleChange("_bg_color", "");
                       handleChange("_bg_gradient", "");
                       handleChange("_bg_custom", "");
+                      handleChange("_bg_image", "");
+                      handleChange("_bg_image_opacity", "");
                     } else {
                       handleChange("_bg_mode", mode);
                     }
                   }}
                   className={cn(
-                    "flex-1 px-2 py-1 text-[10px] font-medium transition-colors",
+                    "flex-1 px-1.5 py-1 text-[9px] font-medium transition-colors",
                     (editedProps._bg_mode || "none") === mode
                       ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:bg-accent"
                   )}
                 >
-                  {mode === "none" ? "None" : mode === "solid" ? "Solid" : mode === "gradient" ? "Gradient" : "Custom"}
+                  {mode === "none" ? "None" : mode === "solid" ? "Solid" : mode === "gradient" ? "Grad" : mode === "image" ? "Image" : "CSS"}
                 </button>
               ))}
             </div>
@@ -288,6 +290,95 @@ export function PropEditorSidebar({ component, componentIndex, pageIndex, onClos
               </div>
             )}
 
+            {/* Image with opacity */}
+            {editedProps._bg_mode === "image" && (
+              <div className="space-y-2">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-medium text-foreground">Image URL</label>
+                  <Input
+                    value={editedProps._bg_image || ""}
+                    onChange={(e) => handleChange("_bg_image", e.target.value)}
+                    placeholder="https://images.unsplash.com/..."
+                    className="h-7 text-xs"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-medium text-foreground">Overlay Opacity</label>
+                    <span className="text-[10px] text-muted-foreground">{Math.round((editedProps._bg_image_opacity ?? 0.5) * 100)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={editedProps._bg_image_opacity ?? 0.5}
+                    onChange={(e) => handleChange("_bg_image_opacity", parseFloat(e.target.value))}
+                    className="w-full h-1.5 rounded-full appearance-none bg-border accent-primary cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[9px] text-muted-foreground">
+                    <span>Clear</span>
+                    <span>Dark</span>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-medium text-foreground">Overlay Color</label>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="color"
+                      value={editedProps._bg_image_overlay_color || "#000000"}
+                      onChange={(e) => handleChange("_bg_image_overlay_color", e.target.value)}
+                      className="w-7 h-7 rounded-md border border-border cursor-pointer"
+                    />
+                    <Input
+                      value={editedProps._bg_image_overlay_color || "#000000"}
+                      onChange={(e) => handleChange("_bg_image_overlay_color", e.target.value)}
+                      placeholder="#000000"
+                      className="h-7 text-xs flex-1"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-medium text-foreground">Size</label>
+                  <div className="flex rounded-md border border-border overflow-hidden">
+                    {(["cover", "contain", "auto"] as const).map((sz) => (
+                      <button
+                        key={sz}
+                        onClick={() => handleChange("_bg_image_size", sz)}
+                        className={cn(
+                          "flex-1 px-2 py-0.5 text-[10px] font-medium transition-colors",
+                          (editedProps._bg_image_size || "cover") === sz
+                            ? "bg-primary text-primary-foreground"
+                            : "text-muted-foreground hover:bg-accent"
+                        )}
+                      >
+                        {sz}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-medium text-foreground">Position</label>
+                  <div className="grid grid-cols-3 gap-0.5 border border-border rounded-md overflow-hidden">
+                    {["top left","top center","top right","center left","center","center right","bottom left","bottom center","bottom right"].map((pos) => (
+                      <button
+                        key={pos}
+                        onClick={() => handleChange("_bg_image_position", pos)}
+                        className={cn(
+                          "px-1 py-1 text-[8px] font-medium transition-colors",
+                          (editedProps._bg_image_position || "center") === pos
+                            ? "bg-primary text-primary-foreground"
+                            : "text-muted-foreground hover:bg-accent"
+                        )}
+                      >
+                        {pos.replace("center", "mid").split(" ").map(w => w[0].toUpperCase()).join("")}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Custom CSS */}
             {editedProps._bg_mode === "custom" && (
               <div className="space-y-1.5">
@@ -302,18 +393,36 @@ export function PropEditorSidebar({ component, componentIndex, pageIndex, onClos
             )}
 
             {/* Live preview */}
-            {(editedProps._bg_mode === "solid" || editedProps._bg_mode === "gradient" || editedProps._bg_mode === "custom") && (
+            {(editedProps._bg_mode === "solid" || editedProps._bg_mode === "gradient" || editedProps._bg_mode === "custom" || editedProps._bg_mode === "image") && (
               <div className="space-y-1">
                 <span className="text-[10px] text-muted-foreground">Preview</span>
                 <div
-                  className="h-8 rounded-md border border-border"
+                  className="h-12 rounded-md border border-border relative overflow-hidden"
                   style={{
                     background:
                       editedProps._bg_mode === "solid" ? editedProps._bg_color :
                       editedProps._bg_mode === "gradient" ? editedProps._bg_gradient :
-                      editedProps._bg_custom || undefined,
+                      editedProps._bg_mode === "custom" ? editedProps._bg_custom :
+                      undefined,
                   }}
-                />
+                >
+                  {editedProps._bg_mode === "image" && editedProps._bg_image && (
+                    <>
+                      <img
+                        src={editedProps._bg_image}
+                        alt="bg preview"
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                      <div
+                        className="absolute inset-0"
+                        style={{
+                          backgroundColor: editedProps._bg_image_overlay_color || "#000000",
+                          opacity: editedProps._bg_image_opacity ?? 0.5,
+                        }}
+                      />
+                    </>
+                  )}
+                </div>
               </div>
             )}
           </div>

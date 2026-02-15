@@ -267,6 +267,7 @@ function PageRenderer({ page, config, pageIndex, selectedComponent, onSelectComp
                 </div>
               )}
               <div
+                className={cn(comp.props?._bg_mode === "image" && "relative overflow-hidden")}
                 style={{
                   background:
                     comp.props?._bg_mode === "solid" ? comp.props?._bg_color :
@@ -275,7 +276,29 @@ function PageRenderer({ page, config, pageIndex, selectedComponent, onSelectComp
                     undefined,
                 }}
               >
-                <ComponentRenderer component={comp} config={config} onNavigate={onNavigate} onUpdateProp={onUpdateComponentProp ? (key, val) => onUpdateComponentProp(pageIndex, i, key, val) : undefined} />
+                {comp.props?._bg_mode === "image" && comp.props?._bg_image && (
+                  <>
+                    <img
+                      src={comp.props._bg_image}
+                      alt=""
+                      className="absolute inset-0 w-full h-full pointer-events-none"
+                      style={{
+                        objectFit: (comp.props._bg_image_size as any) || "cover",
+                        objectPosition: comp.props._bg_image_position || "center",
+                      }}
+                    />
+                    <div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{
+                        backgroundColor: comp.props._bg_image_overlay_color || "#000000",
+                        opacity: comp.props._bg_image_opacity ?? 0.5,
+                      }}
+                    />
+                  </>
+                )}
+                <div className={cn(comp.props?._bg_mode === "image" && "relative z-[1]")}>
+                  <ComponentRenderer component={comp} config={config} onNavigate={onNavigate} onUpdateProp={onUpdateComponentProp ? (key, val) => onUpdateComponentProp(pageIndex, i, key, val) : undefined} />
+                </div>
               </div>
             </div>
             {isDropTarget && dragIndex !== null && dragIndex < i && (
