@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import type { AppConfig, PageConfig, ComponentConfig } from "@/lib/engine";
 import { useState, useRef, useCallback } from "react";
 import { EditableText, EditableImage, EditableLink } from "./InlineEditable";
+import { ContentBlocksRenderer, type ContentBlock } from "./ContentBlocksEditor";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -296,9 +297,15 @@ function PageRenderer({ page, config, pageIndex, selectedComponent, onSelectComp
                     />
                   </>
                 )}
+                {comp.props?._content_position === "above" && comp.props?._content_blocks?.length > 0 && (
+                  <ContentBlocksRenderer blocks={comp.props._content_blocks as ContentBlock[]} columns={comp.props._content_columns as number || 1} />
+                )}
                 <div className={cn(comp.props?._bg_mode === "image" && "relative z-[1]")}>
                   <ComponentRenderer component={comp} config={config} onNavigate={onNavigate} onUpdateProp={onUpdateComponentProp ? (key, val) => onUpdateComponentProp(pageIndex, i, key, val) : undefined} />
                 </div>
+                {(comp.props?._content_position || "below") === "below" && comp.props?._content_blocks?.length > 0 && (
+                  <ContentBlocksRenderer blocks={comp.props._content_blocks as ContentBlock[]} columns={comp.props._content_columns as number || 1} />
+                )}
               </div>
             </div>
             {isDropTarget && dragIndex !== null && dragIndex < i && (
