@@ -24,7 +24,7 @@ import {
 
 type AIStatus = "active" | "inactive" | "error";
 type AIProvider = "openai" | "gemini" | "anthropic" | "mistral" | "cohere" | "meta" | "deepseek" | "groq" | "perplexity" | "xai" | "custom";
-type AITaskType = "app_builder" | "code_gen" | "speech_to_text" | "branding" | "content" | "general" | "agent_1" | "agent_2" | "agent_3" | "agent_4" | "agent_5" | "agent_6" | "agent_7" | "agent_8" | "agent_9" | "agent_10";
+type AITaskType = "app_builder" | "code_gen" | "speech_to_text" | "branding" | "content" | "general" | "agent_1" | "agent_2" | "agent_3" | "agent_4" | "agent_5" | "agent_6" | "agent_7" | "agent_8" | "agent_9" | "agent_10" | "agent_11" | "agent_12";
 
 const TASK_LABELS: Record<AITaskType, { label: string; description: string; group: "task" | "agent" }> = {
   app_builder: { label: "App Builder", description: "AI Builder prompt → config generation", group: "task" },
@@ -43,6 +43,8 @@ const TASK_LABELS: Record<AITaskType, { label: string; description: string; grou
   agent_8: { label: "Agent 8 — Testing Agent", description: "Creates test scenarios", group: "agent" },
   agent_9: { label: "Agent 9 — Debugger Agent", description: "Auto-fixes errors", group: "agent" },
   agent_10: { label: "Agent 10 — Quality Reviewer", description: "Final validation & scoring", group: "agent" },
+  agent_11: { label: "Agent 11 — Copywriter Agent", description: "Generates UI copy & microcopy", group: "agent" },
+  agent_12: { label: "Agent 12 — UI Reviewer Agent", description: "Reviews UI quality & consistency", group: "agent" },
 };
 
 interface AIIntegration {
@@ -297,6 +299,8 @@ const seedData: AIIntegration[] = [
   { id: "agent-8", name: "Agent 8 — Testing Agent", provider: "openai", model: "gpt-5-mini", apiEndpoint: "https://api.openai.com/v1", apiKey: "", status: "inactive", usageCount: 0, lastUsed: "-", createdAt: "2026-02-15", useFor: ["code_gen", "agent_8"] },
   { id: "agent-9", name: "Agent 9 — Debugger Agent", provider: "anthropic", model: "claude-sonnet-4-20250514", apiEndpoint: "https://api.anthropic.com/v1", apiKey: "", status: "inactive", usageCount: 0, lastUsed: "-", createdAt: "2026-02-15", useFor: ["code_gen", "agent_9"] },
   { id: "agent-10", name: "Agent 10 — Quality Reviewer", provider: "openai", model: "gpt-5-mini", apiEndpoint: "https://api.openai.com/v1", apiKey: "", status: "inactive", usageCount: 0, lastUsed: "-", createdAt: "2026-02-15", useFor: ["general", "agent_10"] },
+  { id: "agent-11", name: "Agent 11 — Copywriter Agent", provider: "gemini", model: "gemini-2.5-flash", apiEndpoint: "https://generativelanguage.googleapis.com", apiKey: "", status: "inactive", usageCount: 0, lastUsed: "-", createdAt: "2026-02-15", useFor: ["content", "agent_11"] },
+  { id: "agent-12", name: "Agent 12 — UI Reviewer Agent", provider: "openai", model: "gpt-5-mini", apiEndpoint: "https://api.openai.com/v1", apiKey: "", status: "inactive", usageCount: 0, lastUsed: "-", createdAt: "2026-02-15", useFor: ["general", "agent_12"] },
 ];
 
 const PAGE_SIZE = 10;
