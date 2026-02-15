@@ -7,6 +7,14 @@ import PulseDemo from "@/components/landing/PulseDemo";
 import VaultDemo from "@/components/landing/VaultDemo";
 import { useBranding } from "@/contexts/BrandingContext";
 
+const navLinks = [
+  { label: "Features", href: "#features" },
+  { label: "Architecture", href: "#architecture" },
+  { label: "AI Agents", href: "#agents" },
+  { label: "Marketplace", href: "#marketplace" },
+  { label: "Docs", href: "/docs", isRoute: true },
+];
+
 
 const features = [
   {
@@ -125,6 +133,20 @@ export default function LandingPage() {
             <span className="text-base sm:text-lg font-bold text-foreground">{siteName}</span>
           </Link>
 
+          <div className="hidden md:flex items-center gap-6 lg:gap-8">
+            {navLinks.map((link) =>
+              (link as any).isRoute ? (
+                <Link key={link.href} to={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  {link.label}
+                </Link>
+              ) : (
+                <a key={link.href} href={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  {link.label}
+                </a>
+              )
+            )}
+          </div>
+
 
           <div className="hidden md:flex items-center gap-3">
             <Button variant="ghost" size="sm" asChild>
@@ -145,11 +167,19 @@ export default function LandingPage() {
         </div>
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-border bg-card p-4 space-y-3">
-            <Link to="/auth" onClick={() => setMobileMenuOpen(false)}>
-              <Button variant="ghost" size="sm" className="w-full">Sign In</Button>
-            </Link>
+            {navLinks.map((link) =>
+              (link as any).isRoute ? (
+                <Link key={link.href} to={link.href} className="block text-sm text-muted-foreground hover:text-foreground" onClick={() => setMobileMenuOpen(false)}>
+                  {link.label}
+                </Link>
+              ) : (
+                <a key={link.href} href={link.href} className="block text-sm text-muted-foreground hover:text-foreground" onClick={() => setMobileMenuOpen(false)}>
+                  {link.label}
+                </a>
+              )
+            )}
             <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
-              <Button variant="hero" size="sm" className="w-full">Get Started</Button>
+              <Button variant="hero" size="sm" className="w-full mt-2">Get Started</Button>
             </Link>
           </div>
         )}

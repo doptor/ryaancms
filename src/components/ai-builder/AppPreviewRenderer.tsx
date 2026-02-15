@@ -56,45 +56,6 @@ export function AppPreviewRenderer({ config, selectedComponent, onSelectComponen
 
   return (
     <div className="flex flex-col h-full">
-      {/* Page tabs */}
-      {config.pages.length > 1 && (
-        <div className="flex items-center gap-1 px-3 py-1.5 border-b border-border bg-card overflow-x-auto">
-          {config.pages.map((page, i) => (
-            <button
-              key={page.route}
-              onClick={() => setActivePage(i)}
-              className={cn(
-                "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors",
-                activePage === i ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent"
-              )}
-            >
-              {page.name}
-              {onDeletePage && config.pages.length > 1 && (
-                <span
-                  onClick={(e) => { e.stopPropagation(); onDeletePage(i); if (activePage >= config.pages.length - 1) setActivePage(Math.max(0, activePage - 1)); }}
-                  className="ml-1 p-0.5 rounded hover:bg-destructive/10 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <X className="w-2.5 h-2.5" />
-                </span>
-              )}
-            </button>
-          ))}
-          {onAddPage && (
-            <button
-              onClick={() => {
-                const name = prompt("Page name:");
-                if (name) {
-                  const route = "/" + name.toLowerCase().replace(/\s+/g, "-");
-                  onAddPage(name, route, "public");
-                }
-              }}
-              className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-            >
-              <Plus className="w-3 h-3" /> Page
-            </button>
-          )}
-        </div>
-      )}
 
       <ScrollArea className="flex-1">
         <div className="bg-background min-h-full">
