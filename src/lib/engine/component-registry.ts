@@ -6,7 +6,7 @@
 // === Core Types ===
 
 export type ComponentType =
-  | "hero" | "navbar" | "footer" | "sidebar"
+  | "blank" | "hero" | "navbar" | "footer" | "sidebar"
   | "crud_table" | "form" | "chart" | "card_grid"
   | "stats_row" | "auth_form" | "pricing_table"
   | "media_gallery" | "search_bar" | "notification_center"
@@ -146,6 +146,21 @@ export interface ApiEndpoint {
 // === Component Registry ===
 
 export const componentRegistry: ComponentMeta[] = [
+  {
+    type: "blank",
+    label: "Blank Section",
+    category: "layout",
+    description: "Empty container — customize freely with backgrounds, content blocks, images, text, and links",
+    icon: "Square",
+    tenant_safe: true,
+    requires_auth: false,
+    requires_modules: [],
+    allowed_layouts: ["public", "marketing", "dashboard", "auth", "fullscreen"],
+    props_schema: [
+      { name: "min_height", type: "enum", enum_values: ["auto", "small", "medium", "large", "full"], default: "medium", description: "Minimum section height" },
+      { name: "padding", type: "enum", enum_values: ["none", "small", "medium", "large"], default: "medium", description: "Inner padding" },
+    ],
+  },
   {
     type: "hero",
     label: "Hero Section",
