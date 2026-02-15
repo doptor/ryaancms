@@ -408,7 +408,7 @@ function ComponentRenderer({ component, config, onNavigate, onUpdateProp }: { co
     case "search_bar": return <SearchBarPreview props={props} />;
     case "kanban_board": return <KanbanPreview props={props} />;
     case "calendar": return <CalendarPreview props={props} />;
-    case "media_gallery": return <MediaGalleryPreview props={props} config={config} />;
+    case "media_gallery": return <MediaGalleryPreview props={props} config={config} onUpdateProp={up} />;
     case "notification_center": return <NotificationPreview props={props} />;
     case "timeline": return <TimelinePreview props={props} />;
     case "file_upload": return <FileUploadPreview props={props} />;
@@ -632,7 +632,7 @@ function HeroPreview({ props, config, onNavigate, onUpdateProp }: { props: Recor
         )}
         <div className={cn("flex gap-3 pt-2", alignment === "center" ? "justify-center" : "")}>
           {onUpdateProp ? (
-            <EditableLink label={props.cta_text || "Get Started"} onSaveLabel={(v) => onUpdateProp("cta_text", v)}>
+            <EditableLink label={props.cta_text || "Get Started"} url={props.cta_url || "#"} onSaveLabel={(v) => onUpdateProp("cta_text", v)} onSaveUrl={(v) => onUpdateProp("cta_url", v)}>
               <Button size="lg" className="text-sm gap-2 shadow-primary-lg">
                 {props.cta_text || "Get Started"} <ArrowUpRight className="w-4 h-4" />
               </Button>
@@ -1270,7 +1270,7 @@ function CalendarPreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function MediaGalleryPreview({ props, config }: { props: Record<string, any>; config: AppConfig }) {
+function MediaGalleryPreview({ props, config, onUpdateProp }: { props: Record<string, any>; config: AppConfig; onUpdateProp?: PropUpdater }) {
   const cols = props.columns || 3;
   const isPortfolio = /portfolio|personal|resume|cv|freelanc/i.test(config.project_type + " " + (config.description || "") + " " + (config.title || ""));
 
@@ -1329,15 +1329,24 @@ function MediaGalleryPreview({ props, config }: { props: Record<string, any>; co
         <Button variant="outline" size="sm" className="h-7 text-xs gap-1"><Upload className="w-3 h-3" /> Upload</Button>
       </div>
       <div className={cn("grid gap-2.5", `grid-cols-${Math.min(cols, 4)}`)}>
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className={cn(
-            "aspect-square rounded-xl bg-gradient-to-br flex items-center justify-center cursor-pointer",
-            "hover:ring-2 hover:ring-primary/30 hover:scale-[1.02] transition-all duration-200",
-            gradients[i]
-          )}>
-            <Image className="w-6 h-6 text-muted-foreground/30" />
-          </div>
-        ))}
+        {Array.from({ length: 6 }).map((_, i) => {
+          const imgSrc = props[`image_${i}`] || "";
+          return (
+            <EditableImage key={i} src={imgSrc} onSave={(url) => onUpdateProp?.(`image_${i}`, url)} className="aspect-square">
+              <div className={cn(
+                "aspect-square rounded-xl bg-gradient-to-br flex items-center justify-center cursor-pointer overflow-hidden",
+                "hover:ring-2 hover:ring-primary/30 hover:scale-[1.02] transition-all duration-200",
+                gradients[i]
+              )}>
+                {imgSrc ? (
+                  <img src={imgSrc} alt={`Gallery ${i + 1}`} className="w-full h-full object-cover" />
+                ) : (
+                  <Image className="w-6 h-6 text-muted-foreground/30" />
+                )}
+              </div>
+            </EditableImage>
+          );
+        })}
       </div>
     </div>
   );
@@ -2044,12 +2053,28 @@ function FinalCtaPreview({ props, onUpdateProp }: { props: Record<string, any>; 
               </p>
             )}
             <div className="flex flex-wrap gap-3 justify-center pt-2">
-              <Button size="lg" className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 text-sm font-semibold gap-2 shadow-lg">
-                {props.primary_cta || "Get Started Free"} <ArrowRight className="w-4 h-4" />
-              </Button>
-              <Button variant="outline" size="lg" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 text-sm">
-                {props.secondary_cta || "Talk to Sales"}
-              </Button>
+              {onUpdateProp ? (
+                <EditableLink label={props.primary_cta || "Get Started Free"} url={props.primary_cta_url || "#"} onSaveLabel={(v) => onUpdateProp("primary_cta", v)} onSaveUrl={(v) => onUpdateProp("primary_cta_url", v)}>
+                  <Button size="lg" className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 text-sm font-semibold gap-2 shadow-lg">
+                    {props.primary_cta || "Get Started Free"} <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </EditableLink>
+              ) : (
+                <Button size="lg" className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 text-sm font-semibold gap-2 shadow-lg">
+                  {props.primary_cta || "Get Started Free"} <ArrowRight className="w-4 h-4" />
+                </Button>
+              )}
+              {onUpdateProp ? (
+                <EditableLink label={props.secondary_cta || "Talk to Sales"} url={props.secondary_cta_url || "#"} onSaveLabel={(v) => onUpdateProp("secondary_cta", v)} onSaveUrl={(v) => onUpdateProp("secondary_cta_url", v)}>
+                  <Button variant="outline" size="lg" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 text-sm">
+                    {props.secondary_cta || "Talk to Sales"}
+                  </Button>
+                </EditableLink>
+              ) : (
+                <Button variant="outline" size="lg" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 text-sm">
+                  {props.secondary_cta || "Talk to Sales"}
+                </Button>
+              )}
             </div>
             <p className="text-xs text-primary-foreground/60">No credit card required · Free 14-day trial · Cancel anytime</p>
           </div>
