@@ -749,11 +749,13 @@ export default function AIBuilderPage() {
             const activeProject = currentProjectRef.current;
             let projectId = activeProject?.id;
             if (activeProject) {
-              await supabase.from("projects").update({
-                prompt: originalPrompt || buildPrompt,
-                title: config.title || activeProject.title || "Untitled",
-                status: "generated",
-              }).eq("id", activeProject.id);
+              // Only update title if the project doesn't already have one (first build)
+              // Never overwrite the original prompt — it defines the project identity
+              const updates: Record<string, any> = { status: "generated" };
+              if (!activeProject.title || activeProject.title === "Untitled" || activeProject.title === "Quick Update") {
+                updates.title = config.title || activeProject.title || "Untitled";
+              }
+              await supabase.from("projects").update(updates).eq("id", activeProject.id);
             } else {
               const { data: project } = await supabase.from("projects").insert({
                 user_id: currentUser.id,
