@@ -277,12 +277,16 @@ const PROVIDERS: ProviderConfig[] = [
 ];
 
 const seedData: AIIntegration[] = [
-  { id: "1", name: "Content Writer", provider: "openai", model: "gpt-4o", apiEndpoint: "https://api.openai.com/v1", apiKey: "sk-...abc1", status: "active", usageCount: 12480, lastUsed: "2026-02-13", createdAt: "2025-11-01", useFor: ["content", "general"] },
-  { id: "2", name: "Schema Generator", provider: "gemini", model: "gemini-2.5-pro", apiEndpoint: "https://generativelanguage.googleapis.com", apiKey: "AIza...xyz2", status: "active", usageCount: 3210, lastUsed: "2026-02-12", createdAt: "2025-12-15", useFor: ["app_builder"] },
-  { id: "3", name: "SEO Optimizer", provider: "anthropic", model: "claude-3-opus-20240229", apiEndpoint: "https://api.anthropic.com/v1", apiKey: "sk-ant...def3", status: "inactive", usageCount: 870, lastUsed: "2026-01-28", createdAt: "2026-01-05", useFor: ["content"] },
-  { id: "4", name: "Image Tagger", provider: "gemini", model: "gemini-2.5-flash", apiEndpoint: "https://generativelanguage.googleapis.com", apiKey: "AIza...ghi4", status: "active", usageCount: 5640, lastUsed: "2026-02-13", createdAt: "2025-10-20", useFor: ["speech_to_text", "general"] },
-  { id: "5", name: "Layout AI", provider: "openai", model: "gpt-4o-mini", apiEndpoint: "https://api.openai.com/v1", apiKey: "sk-...jkl5", status: "error", usageCount: 142, lastUsed: "2026-02-10", createdAt: "2026-02-01", useFor: ["code_gen"] },
-  { id: "6", name: "Workflow Bot", provider: "mistral", model: "mistral-large-latest", apiEndpoint: "https://api.mistral.ai/v1", apiKey: "mist-...mno6", status: "active", usageCount: 980, lastUsed: "2026-02-11", createdAt: "2026-01-18", useFor: ["general"] },
+  { id: "agent-1", name: "Agent 1 — Requirement Analyst", provider: "gemini", model: "gemini-2.5-flash", apiEndpoint: "https://generativelanguage.googleapis.com", apiKey: "", status: "inactive", usageCount: 0, lastUsed: "-", createdAt: "2026-02-15", useFor: ["app_builder"] },
+  { id: "agent-2", name: "Agent 2 — Product Manager", provider: "gemini", model: "gemini-2.5-flash", apiEndpoint: "https://generativelanguage.googleapis.com", apiKey: "", status: "inactive", usageCount: 0, lastUsed: "-", createdAt: "2026-02-15", useFor: ["app_builder"] },
+  { id: "agent-3", name: "Agent 3 — Task Planner", provider: "gemini", model: "gemini-2.5-flash", apiEndpoint: "https://generativelanguage.googleapis.com", apiKey: "", status: "inactive", usageCount: 0, lastUsed: "-", createdAt: "2026-02-15", useFor: ["app_builder"] },
+  { id: "agent-4", name: "Agent 4 — System Architect", provider: "anthropic", model: "claude-sonnet-4-20250514", apiEndpoint: "https://api.anthropic.com/v1", apiKey: "", status: "inactive", usageCount: 0, lastUsed: "-", createdAt: "2026-02-15", useFor: ["code_gen"] },
+  { id: "agent-5", name: "Agent 5 — Database Agent", provider: "anthropic", model: "claude-sonnet-4-20250514", apiEndpoint: "https://api.anthropic.com/v1", apiKey: "", status: "inactive", usageCount: 0, lastUsed: "-", createdAt: "2026-02-15", useFor: ["code_gen"] },
+  { id: "agent-6", name: "Agent 6 — Backend Agent", provider: "anthropic", model: "claude-sonnet-4-20250514", apiEndpoint: "https://api.anthropic.com/v1", apiKey: "", status: "inactive", usageCount: 0, lastUsed: "-", createdAt: "2026-02-15", useFor: ["code_gen"] },
+  { id: "agent-7", name: "Agent 7 — UI/UX Designer", provider: "gemini", model: "gemini-2.5-flash", apiEndpoint: "https://generativelanguage.googleapis.com", apiKey: "", status: "inactive", usageCount: 0, lastUsed: "-", createdAt: "2026-02-15", useFor: ["app_builder"] },
+  { id: "agent-8", name: "Agent 8 — Testing Agent", provider: "openai", model: "gpt-5-mini", apiEndpoint: "https://api.openai.com/v1", apiKey: "", status: "inactive", usageCount: 0, lastUsed: "-", createdAt: "2026-02-15", useFor: ["code_gen"] },
+  { id: "agent-9", name: "Agent 9 — Debugger Agent", provider: "anthropic", model: "claude-sonnet-4-20250514", apiEndpoint: "https://api.anthropic.com/v1", apiKey: "", status: "inactive", usageCount: 0, lastUsed: "-", createdAt: "2026-02-15", useFor: ["code_gen"] },
+  { id: "agent-10", name: "Agent 10 — Quality Reviewer", provider: "openai", model: "gpt-5-mini", apiEndpoint: "https://api.openai.com/v1", apiKey: "", status: "inactive", usageCount: 0, lastUsed: "-", createdAt: "2026-02-15", useFor: ["general"] },
 ];
 
 const PAGE_SIZE = 5;
