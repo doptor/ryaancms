@@ -318,7 +318,7 @@ function CopyButton({ text }: { text: string }) {
 }
 
 export default function AIIntegrationSettings() {
-  const [items, setItems] = useState<AIIntegration[]>([]);
+  const [items, setItems] = useState<AIIntegration[]>(seedData);
   const [loaded, setLoaded] = useState(false);
   const [search, setSearch] = useState("");
   const [filterProvider, setFilterProvider] = useState<string>("all");
