@@ -837,35 +837,22 @@ async function runAgent(
   }
 
   try {
-    let endpoint: string;
-    let authKey: string;
-    let modelOverride: string | undefined;
-
-    if (userApiConfig) {
-      // Use user's own API key
-      console.log(`Using user's ${userApiConfig.provider} API key for agent: ${agent.name}`);
-      endpoint = userApiConfig.endpoint.endsWith("/chat/completions")
-        ? userApiConfig.endpoint
-        : `${userApiConfig.endpoint}/chat/completions`;
-      authKey = userApiConfig.apiKey;
-      modelOverride = userApiConfig.model || "gpt-5";
-    } else {
-      // Fallback to Lovable AI gateway
-      const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-      if (!lovableKey) {
-        return { success: false, error: "No API key available. Please add an API key in Settings → AI Integrations.", agentName: agent.name };
-      }
-      console.log(`Using Lovable AI gateway for agent: ${agent.name}`);
-      endpoint = "https://api.lovable.dev/v1/chat/completions";
-      authKey = lovableKey;
-      modelOverride = "google/gemini-2.5-flash";
+    if (!userApiConfig) {
+      return { success: false, error: "No API key configured. Please add your own API key in Settings → AI Integrations.", agentName: agent.name };
     }
 
-    const finalBody = modelOverride
-      ? JSON.stringify({ ...JSON.parse(requestBody), model: modelOverride })
-      : requestBody;
-
-    const response = await callAI(endpoint, authKey, finalBody);
+    console.log(`Using user's ${userApiConfig.provider} API key for agent: ${agent.name}`);
+    const userBody = JSON.stringify({
+      ...JSON.parse(requestBody),
+      model: userApiConfig.model || "gpt-5",
+    });
+    const response = await callAI(
+      userApiConfig.endpoint.endsWith("/chat/completions")
+        ? userApiConfig.endpoint
+        : `${userApiConfig.endpoint}/chat/completions`,
+      userApiConfig.apiKey,
+      userBody
+    );
 
     if (!response.ok) {
       if (response.status === 429) return { success: false, error: "Rate limit exceeded. Please try again shortly.", agentName: agent.name };
