@@ -157,7 +157,7 @@ export class AIPipelineOrchestrator {
     this.themePreset = preset;
   }
 
-  async execute(prompt: string, scope?: "micro" | "light" | "moderate" | "full", stepsNeeded?: number[]): Promise<PipelineState> {
+  async execute(prompt: string, scope?: "micro" | "light" | "moderate" | "full", stepsNeeded?: number[], existingConfig?: import("./index").AppConfig | null): Promise<PipelineState> {
     this.state = { ...INITIAL_STATE };
     const effectiveScope = scope || "full";
 
@@ -169,20 +169,25 @@ export class AIPipelineOrchestrator {
         this.emit("designing", "🎨 Applying changes...");
         await this.delay(300);
 
-        // Build a minimal config from the prompt
-        this.state.config = {
-          project_type: "custom",
-          build_target: "application",
-          title: "Quick Update",
-          description: prompt,
-          modules: [],
-          roles: [],
-          features: [],
-          pages: [],
-          collections: [],
-          style: {},
-          multi_tenant: false,
-        };
+        // Preserve existing config if available, otherwise create minimal one
+        if (existingConfig && existingConfig.pages.length > 0) {
+          this.state.config = JSON.parse(JSON.stringify(existingConfig));
+          this.state.config!.description = prompt;
+        } else {
+          this.state.config = {
+            project_type: "custom",
+            build_target: "application",
+            title: "Quick Update",
+            description: prompt,
+            modules: [],
+            roles: [],
+            features: [],
+            pages: [],
+            collections: [],
+            style: {},
+            multi_tenant: false,
+          };
+        }
         this.state.requirements = [prompt];
         this.state.qualityScore = { overall_score: 100 };
         this.state.qualityVerdict = "Quick update — no full review needed";

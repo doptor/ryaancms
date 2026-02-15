@@ -176,7 +176,7 @@ function generatePhases(prompt: string): ProjectPhase[] {
   return phases;
 }
 
-export function analyzePrompt(prompt: string): PromptAnalysis {
+export function analyzePrompt(prompt: string, hasExistingProject?: boolean): PromptAnalysis {
   const trimmed = prompt.trim();
   const wordCount = trimmed.split(/\s+/).length;
   const buildTarget = detectBuildTarget(trimmed);
@@ -190,6 +190,24 @@ export function analyzePrompt(prompt: string): PromptAnalysis {
   for (const pattern of phaseCommands) {
     if (pattern.test(trimmed)) {
       return { scope: "moderate", buildTarget, stepsNeeded: ALL_STEPS, reason: "Phase continuation" };
+    }
+  }
+
+  // === Edit-intent detection: if there's an existing project, check if this is an edit/update ===
+  const editIntentPatterns = [
+    /\b(fix|update|change|modify|edit|adjust|tweak|improve|make)\b/i,
+    /\b(add|remove|move|swap|reorder)\s+(a\s+)?(section|component|menu|link|button|page|field)/i,
+    /\b(not working|doesn'?t work|can'?t|won'?t|broken|issue|bug|problem)\b/i,
+    /\b(linkable|clickable|scrollable|responsive|visible|hidden)\b/i,
+    /\b(menu|nav|navigation|header|footer|sidebar)\b.*\b(link|click|open|scroll|anchor|jump)\b/i,
+    /\b(link|click|open|scroll|anchor|jump)\b.*\b(menu|nav|navigation|header|footer|sidebar)\b/i,
+  ];
+
+  if (hasExistingProject) {
+    const hasEditIntent = editIntentPatterns.some(p => p.test(trimmed));
+    if (hasEditIntent) {
+      // Route edit-intent prompts to moderate (updates existing) instead of full (creates new)
+      return { scope: "moderate", buildTarget, stepsNeeded: MODERATE_STEPS, reason: "Edit/update to existing project detected" };
     }
   }
 
@@ -227,8 +245,16 @@ export function analyzePrompt(prompt: string): PromptAnalysis {
 
   const hasFullBuildKeyword = fullBuildKeywords.some(k => trimmed.toLowerCase().includes(k));
 
-  // If a full-build keyword is present, always route to full pipeline regardless of word count
+  // If existing project and full-build keyword, only trigger full if it's clearly a NEW project request
   if (hasFullBuildKeyword) {
+    // If there's an existing project, only trigger full build for explicit "build a new..." or "create a new..." patterns
+    if (hasExistingProject) {
+      const newProjectPattern = /\b(build|create|generate|make)\s+(me\s+)?(a\s+)?(new|another|different|separate)\b/i;
+      if (!newProjectPattern.test(trimmed)) {
+        // Treat as moderate update to existing project
+        return { scope: "moderate", buildTarget, stepsNeeded: ALL_STEPS, reason: "Updating existing project with new features" };
+      }
+    }
     const phases = wordCount > 30 ? generatePhases(trimmed) : undefined;
     const appreciation = APPRECIATIONS[Math.floor(Math.random() * APPRECIATIONS.length)];
     return {
@@ -244,6 +270,10 @@ export function analyzePrompt(prompt: string): PromptAnalysis {
   const isComplex = wordCount > 30;
 
   if (isComplex) {
+    // For existing projects with complex prompts, still treat as moderate update
+    if (hasExistingProject) {
+      return { scope: "moderate", buildTarget, stepsNeeded: ALL_STEPS, reason: "Complex update to existing project" };
+    }
     const phases = generatePhases(trimmed);
     const appreciation = APPRECIATIONS[Math.floor(Math.random() * APPRECIATIONS.length)];
     return {
