@@ -16,7 +16,7 @@ import {
   Table, Lock, LayoutGrid, Search, Bell,
   Calendar, Columns, Clock, MapPin, Download,
   Shield, AlertTriangle, Info, Image, Upload, FileCode2,
-  TrendingUp, Link2, X, Eye, ChevronDown, ChevronUp,
+  TrendingUp, Link2, X, Eye, ChevronDown, ChevronUp, ChevronRight,
   ArrowUp, Plus, Layers, RefreshCw, Package,
   GitBranch, Settings, History, Book, Container,
   Users, Activity, FolderOpen, Server,
@@ -103,6 +103,10 @@ type Message = {
 type ProgressStep = {
   label: string;
   status: "done" | "in_progress" | "pending" | "error";
+  errorDetail?: string;
+  agentData?: any;
+  provider?: string;
+  model?: string;
 };
 
 const STAGE_MAP: Record<PipelineStage, number> = {
@@ -222,6 +226,7 @@ export default function AIBuilderPage() {
   const [selectedContentType, setSelectedContentType] = useState<string>(incomingContentType || "website");
   const [showColorPresets, setShowColorPresets] = useState(false);
   const [buildElapsed, setBuildElapsed] = useState(0);
+  const [selectedStepIndex, setSelectedStepIndex] = useState<number | null>(null);
   const [promptQueue, setPromptQueue] = useState<QueuedPrompt[]>([]);
   const [buildActivities, setBuildActivities] = useState<BuildActivity[]>([]);
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null);
@@ -802,7 +807,18 @@ export default function AIBuilderPage() {
           return prev.map((s, i) => ({
             ...s,
             status: i < current ? "done" : i === current ? "error" : "pending",
+            ...(i === current ? { errorDetail: event.message || "Unknown error" } : {}),
           }));
+        });
+      }
+      // Capture agent completion data on done events
+      if (event.stage !== "error" && event.stage !== "complete" && event.agentData) {
+        setProgress((prev) => {
+          const activeIdx = prev.findIndex((s) => s.status === "in_progress");
+          if (activeIdx >= 0 && event.agentData?.agent) {
+            return prev.map((s, i) => i === activeIdx ? { ...s, agentData: event.agentData } : s);
+          }
+          return prev;
         });
       }
     });
@@ -1506,20 +1522,65 @@ export default function AIBuilderPage() {
           {showAdvancedPipeline && (
             <div className="space-y-1 pt-1 border-t border-border">
               {progress.map((step, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  {step.status === "done" ? <CheckCircle2 className="w-3 h-3 text-primary" /> :
-                   step.status === "in_progress" ? <Loader2 className="w-3 h-3 text-primary animate-spin" /> :
-                   step.status === "error" ? <AlertCircle className="w-3 h-3 text-destructive" /> :
-                   <Circle className="w-3 h-3 text-muted-foreground/30" />}
+                <button
+                  key={i}
+                  onClick={() => setSelectedStepIndex(selectedStepIndex === i ? null : i)}
+                  className={cn(
+                    "w-full flex items-center gap-2 px-1.5 py-1 rounded-md transition-all text-left",
+                    selectedStepIndex === i ? "bg-primary/10 border border-primary/20" : "hover:bg-accent/40",
+                    (step.status === "done" || step.status === "error") && "cursor-pointer"
+                  )}
+                >
+                  {step.status === "done" ? <CheckCircle2 className="w-3 h-3 text-primary shrink-0" /> :
+                   step.status === "in_progress" ? <Loader2 className="w-3 h-3 text-primary animate-spin shrink-0" /> :
+                   step.status === "error" ? <AlertCircle className="w-3 h-3 text-destructive shrink-0" /> :
+                   <Circle className="w-3 h-3 text-muted-foreground/30 shrink-0" />}
                   <span className={cn(
-                    "text-[11px]",
+                    "text-[11px] flex-1",
                     step.status === "done" ? "text-muted-foreground" :
                     step.status === "in_progress" ? "text-foreground font-medium" :
                     step.status === "error" ? "text-destructive" :
                     "text-muted-foreground/50"
                   )}>{step.label}</span>
-                </div>
+                  {selectedStepIndex === i && <ChevronRight className="w-3 h-3 text-primary shrink-0" />}
+                </button>
               ))}
+            </div>
+          )}
+
+          {/* Step detail panel (inline) */}
+          {selectedStepIndex !== null && progress[selectedStepIndex] && (
+            <div className="border-t border-border pt-3 mt-2 space-y-2 animate-fade-in">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-semibold text-foreground">{progress[selectedStepIndex].label}</h4>
+                <button onClick={() => setSelectedStepIndex(null)} className="text-muted-foreground hover:text-foreground transition-colors">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <Badge variant={progress[selectedStepIndex].status === "error" ? "destructive" : progress[selectedStepIndex].status === "done" ? "default" : "secondary"} className="text-[10px] capitalize">
+                {progress[selectedStepIndex].status}
+              </Badge>
+              {progress[selectedStepIndex].errorDetail && (
+                <div className="rounded-lg bg-destructive/5 border border-destructive/20 p-2.5 space-y-1">
+                  <p className="text-[10px] font-semibold text-destructive uppercase">Error Detail</p>
+                  <p className="text-xs text-destructive/90 break-words font-mono">{progress[selectedStepIndex].errorDetail}</p>
+                </div>
+              )}
+              {progress[selectedStepIndex].agentData && (
+                <div className="rounded-lg bg-muted/50 border border-border p-2.5 space-y-1">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase">Agent Output</p>
+                  <pre className="text-[10px] font-mono text-foreground overflow-auto max-h-40 whitespace-pre-wrap break-words">
+                    {JSON.stringify(progress[selectedStepIndex].agentData, null, 2).slice(0, 1000)}
+                  </pre>
+                </div>
+              )}
+              {!progress[selectedStepIndex].errorDetail && !progress[selectedStepIndex].agentData && (
+                <p className="text-xs text-muted-foreground">
+                  {progress[selectedStepIndex].status === "pending" ? "Waiting to start..." :
+                   progress[selectedStepIndex].status === "in_progress" ? "Currently processing..." :
+                   "No additional details available."}
+                </p>
+              )}
             </div>
           )}
         </div>

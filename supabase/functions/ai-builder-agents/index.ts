@@ -973,6 +973,25 @@ async function runAgent(
     ? `User Request: "${userPrompt}"\n\n--- Previous Agent Outputs ---\n${contextStr}`
     : `User Request: "${userPrompt}"`;
 
+  // Helper to extract a human-readable error from provider response text
+  const extractErrorDetail = (status: number, provider: string, model: string, errText: string): string => {
+    const prefix = `[${provider}/${model}] HTTP ${status}`;
+    try {
+      const json = JSON.parse(errText);
+      // Gemini
+      if (json?.error?.message) return `${prefix}: ${json.error.message.slice(0, 200)}`;
+      // Anthropic
+      if (json?.error?.message) return `${prefix}: ${json.error.message.slice(0, 200)}`;
+      // OpenAI
+      if (json?.error?.message) return `${prefix}: ${json.error.message.slice(0, 200)}`;
+      // Generic
+      if (typeof json?.message === "string") return `${prefix}: ${json.message.slice(0, 200)}`;
+    } catch {}
+    // Non-JSON
+    if (errText.length > 0) return `${prefix}: ${errText.slice(0, 150)}`;
+    return prefix;
+  };
+
   try {
     console.log(`Agent ${agent.name}: using ${config.provider}/${config.model}`);
     
@@ -984,8 +1003,10 @@ async function runAgent(
       if (!response.ok) {
         const errText = await response.text().catch(() => "");
         console.error(`Agent ${agent.name} (Gemini) failed: HTTP ${response.status} — ${errText}`);
-        if (response.status === 429) return { success: false, error: "Rate limit exceeded. Please try again shortly.", agentName: agent.name };
-        return { success: false, error: `Agent ${agent.name} failed: HTTP ${response.status}`, agentName: agent.name };
+        const detail = extractErrorDetail(response.status, "Gemini", config.model, errText);
+        if (response.status === 429) return { success: false, error: `Rate limit exceeded ${detail}`, agentName: agent.name };
+        if (response.status === 401 || response.status === 403) return { success: false, error: `Invalid or expired API key. ${detail}`, agentName: agent.name };
+        return { success: false, error: detail, agentName: agent.name };
       }
       const data = await response.json();
       parsed = parseGeminiResponse(data);
@@ -994,8 +1015,10 @@ async function runAgent(
       if (!response.ok) {
         const errText = await response.text().catch(() => "");
         console.error(`Agent ${agent.name} (Anthropic) failed: HTTP ${response.status} — ${errText}`);
-        if (response.status === 429) return { success: false, error: "Rate limit exceeded. Please try again shortly.", agentName: agent.name };
-        return { success: false, error: `Agent ${agent.name} failed: HTTP ${response.status}`, agentName: agent.name };
+        const detail = extractErrorDetail(response.status, "Anthropic", config.model, errText);
+        if (response.status === 429) return { success: false, error: `Rate limit exceeded. ${detail}`, agentName: agent.name };
+        if (response.status === 401 || response.status === 403) return { success: false, error: `Invalid or expired API key. ${detail}`, agentName: agent.name };
+        return { success: false, error: detail, agentName: agent.name };
       }
       const data = await response.json();
       parsed = parseAnthropicResponse(data);
@@ -1005,19 +1028,21 @@ async function runAgent(
       if (!response.ok) {
         const errText = await response.text().catch(() => "");
         console.error(`Agent ${agent.name} (OpenAI) failed: HTTP ${response.status} — ${errText}`);
-        if (response.status === 429) return { success: false, error: "Rate limit exceeded. Please try again shortly.", agentName: agent.name };
-        if (response.status === 402) return { success: false, error: "AI credits exhausted.", agentName: agent.name };
-        return { success: false, error: `Agent ${agent.name} failed: HTTP ${response.status}`, agentName: agent.name };
+        const detail = extractErrorDetail(response.status, "OpenAI", config.model, errText);
+        if (response.status === 429) return { success: false, error: `Rate limit exceeded. ${detail}`, agentName: agent.name };
+        if (response.status === 402) return { success: false, error: `AI credits exhausted. ${detail}`, agentName: agent.name };
+        if (response.status === 401 || response.status === 403) return { success: false, error: `Invalid or expired API key. ${detail}`, agentName: agent.name };
+        return { success: false, error: detail, agentName: agent.name };
       }
       const data = await response.json();
       parsed = parseOpenAIResponse(data);
     }
 
-    if (!parsed) return { success: false, error: `Agent ${agent.name} did not return structured output`, agentName: agent.name };
+    if (!parsed) return { success: false, error: `[${config.provider}/${config.model}] Agent did not return structured output. The model may not support tool calling.`, agentName: agent.name };
 
     return { success: true, data: parsed.args, agentName: agent.name };
   } catch (e) {
-    return { success: false, error: e instanceof Error ? e.message : "Unknown error", agentName: agent.name };
+    return { success: false, error: `[${config.provider}/${config.model}] ${e instanceof Error ? e.message : "Unknown network error"}`, agentName: agent.name };
   }
 }
 
