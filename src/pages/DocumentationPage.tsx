@@ -46,6 +46,7 @@ const docMenu: DocSection[] = [
     title: "AI Builder",
     children: [
       { id: "ai-builder-overview", title: "Overview" },
+      { id: "build-targets", title: "Build Targets Guide" },
       { id: "ten-agent-pipeline", title: "10-Agent Pipeline" },
       { id: "master-system-prompt", title: "Master System Prompt" },
       { id: "autonomous-build-loop", title: "Autonomous Build Loop" },
@@ -334,6 +335,92 @@ Schema changes are deployed with zero downtime:
 ### How to Access
 
 Navigate to **Dashboard → AI Builder** from the sidebar.`,
+  },
+  "build-targets": {
+    title: "Build Targets Guide",
+    content: `The AI Builder supports **6 build target types**. Each has a specific lifecycle for creation, activation, usage, distribution, and dependencies.
+
+### Build Target Comparison
+
+| Target | Create | Activate | Use | Download | Marketplace | Dependency |
+|--------|--------|----------|-----|----------|-------------|------------|
+| 🌐 **Website** | AI Builder | Deploy Panel | Preview/Published URL | ZIP Export | Share as Template | None |
+| 📱 **Application** | AI Builder | Deploy Panel | Dashboard or standalone | ZIP Export | Share as App | None |
+| 🧩 **Plugin** | AI Builder / Plugin Wizard | My Installed → Toggle | Extends host app/website | .rypkg / ZIP | Submit for review | ⚠️ Requires a host |
+| 🌐+📱 **Website + App** | AI Builder | Deploy Panel | Public site + Admin dashboard | ZIP Export | Combined package | None |
+| 📱+🧩 **App + Plugin** | AI Builder | Deploy + Install Plugin | App standalone, Plugin extends | ZIP Export | Listed separately | Plugin depends on App |
+| 🌐+📱+🧩 **Full Stack** | AI Builder | All components | Website + App + Plugin ecosystem | ZIP Export | Bundled ecosystem | Plugin depends on App |
+
+### Website (🌐)
+
+**What it is:** Static or dynamic websites — landing pages, blogs, portfolios, marketing sites.
+
+- **Create:** AI Builder → Select 🌐 Website → Describe your site
+- **Activate:** Deploy Panel → Publish or GitHub Push
+- **Use:** Preview tab → Live sandboxed URL
+- **Download:** ZIP Export with full React + Vite source code
+- **Marketplace:** Share as a Template for other RyaanCMS users to install
+- **Standalone:** Yes — no dependencies required
+
+### Application (📱)
+
+**What it is:** Full-stack apps — SaaS, dashboards, CRMs, admin panels with backend logic.
+
+- **Create:** AI Builder → Select 📱 Application → Describe your app
+- **Activate:** Deploy Panel → Publish with database & auth
+- **Use:** Inside dashboard or as standalone app with full CRUD
+- **Download:** ZIP Export with frontend + backend + database schema
+- **Marketplace:** Share as an Application for other RyaanCMS users
+- **Standalone:** Yes — no dependencies required
+
+### Plugin (🧩)
+
+**What it is:** Modular extensions that add features to an existing Website or Application.
+
+- **Create:** AI Builder → Select 🧩 Plugin → Describe the plugin, OR use the Plugin Generator Wizard
+- **Activate:** Marketplace → My Installed → Toggle Active
+- **Use:** Extends the host app/website — adds pages, APIs, or UI components
+- **Download:** .rypkg format or ZIP with plugin manifest
+- **Marketplace:** Submit to Marketplace for review → Available for all RyaanCMS users
+- **⚠️ Dependency:** Requires a host — must declare which Website or Application it extends. Cannot run standalone.
+
+### Website + Application (🌐+📱)
+
+**What it is:** Combined package — public-facing website with a backend application (e.g., e-commerce).
+
+- **Create:** AI Builder → Select 🌐+📱 Website + App → Describe both parts
+- **Activate:** Deploy Panel → Publish as a combined project
+- **Use:** Website serves public visitors, App handles admin/dashboard with auth
+- **Download:** ZIP Export with unified frontend + backend + database
+- **Marketplace:** Share as a combined Template + Application package
+
+### App + Plugin (📱+🧩)
+
+**What it is:** Application with companion plugin — the plugin extends the app's functionality.
+
+- **Create:** AI Builder → Select 📱+🧩 App + Plugin → Describe app and its extension
+- **Activate:** Deploy Panel for App, then install Plugin from My Installed
+- **Use:** App runs standalone, Plugin adds optional extra features
+- **Download:** ZIP Export with app source + separate plugin package
+- **Marketplace:** App and Plugin listed separately — Plugin declares dependency on the App
+
+### Full Stack (🌐+📱+🧩)
+
+**What it is:** Complete ecosystem — Website + Application + Plugin all generated together.
+
+- **Create:** AI Builder → Select 🌐+📱+🧩 Full Stack → Describe the full vision
+- **Activate:** Deploy all components: Website, App, and Plugin
+- **Use:** Website for visitors, App for users/admins, Plugin for extensibility
+- **Download:** ZIP Export with all source code in organized structure
+- **Marketplace:** All three components available as a bundled ecosystem
+- **Dependency:** Plugin depends on the Application within the bundle
+
+### Key Rules
+
+1. **Plugins always need a host** — they cannot run standalone and must declare which Website or Application they extend
+2. **All targets are exportable** — every build target produces downloadable source code
+3. **All targets are shareable** — everything can be submitted to the Marketplace for other RyaanCMS users
+4. **The AI auto-detects your target** — the prompt analyzer identifies keywords to determine the right build target automatically`,
   },
   "ten-agent-pipeline": {
     title: "10-Agent Autonomous Pipeline",
