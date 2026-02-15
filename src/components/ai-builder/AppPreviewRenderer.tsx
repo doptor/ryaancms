@@ -18,7 +18,7 @@ import {
   Clock, MapPin, CreditCard, Settings, FileText, Shield,
   ChevronDown, Plus, MoreHorizontal, Edit, Trash2, Copy, ChevronUp,
   LayoutGrid, Code, ExternalLink, Zap, Globe, Heart,
-  Package, Activity, ArrowRight, Play, Hash, Filter,
+  Package, Activity, ArrowRight, Play, Hash, Filter, Square,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AppConfig, PageConfig, ComponentConfig } from "@/lib/engine";
@@ -495,6 +495,7 @@ function ComponentRenderer({ component, config, onNavigate, onUpdateProp }: { co
     case "cta_with_image": return <CtaWithImagePreview props={props} onUpdateProp={up} />;
     case "logo_carousel": return <LogoCarouselPreview props={props} onUpdateProp={up} />;
     case "data_import": return <DataImportPreview props={props} onUpdateProp={up} />;
+    case "blank": return <BlankSectionPreview props={props} />;
     case "sidebar": return null;
     case "dashboard_layout": return null;
     default:
@@ -2547,6 +2548,22 @@ function DataImportPreview({ props, onUpdateProp }: { props: Record<string, any>
       <div className="flex justify-end gap-2 pt-2">
         <Button variant="outline" size="sm" className="text-xs h-8">Map Columns</Button>
         <Button size="sm" className="text-xs h-8">Import All</Button>
+      </div>
+    </div>
+  );
+}
+
+function BlankSectionPreview({ props }: { props: Record<string, any> }) {
+  const heightMap: Record<string, string> = { auto: "", small: "min-h-[120px]", medium: "min-h-[240px]", large: "min-h-[400px]", full: "min-h-[80vh]" };
+  const paddingMap: Record<string, string> = { none: "p-0", small: "p-4", medium: "p-8", large: "p-16" };
+  const h = heightMap[props.min_height || "medium"] || "";
+  const p = paddingMap[props.padding || "medium"] || "p-8";
+
+  return (
+    <div className={`${h} ${p} flex items-center justify-center`}>
+      <div className="text-center text-muted-foreground/40 select-none">
+        <Square className="w-8 h-8 mx-auto mb-2 opacity-40" />
+        <p className="text-xs">Blank Section — use sidebar to add content</p>
       </div>
     </div>
   );
