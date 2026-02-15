@@ -10,3 +10,4 @@ export * from "./docs-generator";
 export * from "./theme-generator";
 export * from "./code-generator";
 export * from "./template-library";
+export * from "./html-exporter";

@@ -6,7 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Github, Download, Rocket, FolderDown,
   CheckCircle2, Loader2, Copy, Terminal,
-  Shield, ExternalLink,
+  Shield, ExternalLink, Globe,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import type { AppConfig } from "@/lib/engine";
 import { generateProjectCode } from "@/lib/engine/code-generator";
+import { exportToHTML } from "@/lib/engine/html-exporter";
 import JSZip from "jszip";
 
 interface DeployPanelProps {
@@ -34,6 +35,8 @@ export function DeployPanel({ config, sql, onExportJSON, onExportSQL }: DeployPa
   const [deployStatus, setDeployStatus] = useState<"idle" | "success" | "error">("idle");
   const [githubUrl, setGithubUrl] = useState("");
   const [isSubmittingApproval, setIsSubmittingApproval] = useState(false);
+  const [isExportingHTML, setIsExportingHTML] = useState(false);
+  const [htmlExportProgress, setHtmlExportProgress] = useState("");
 
   if (!config) {
     return (
@@ -296,6 +299,51 @@ export function DeployPanel({ config, sql, onExportJSON, onExportSQL }: DeployPa
               <Separator />
               <Button onClick={handleDownloadZip} className="w-full gap-2" size="sm">
                 <FolderDown className="w-3.5 h-3.5" /> Download Full Source Code (ZIP)
+              </Button>
+              <Separator />
+              <div className="rounded-lg border border-border p-3 space-y-2 bg-muted/30">
+                <div className="flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-primary" />
+                  <div>
+                    <p className="text-xs font-medium text-foreground">Static HTML Export</p>
+                    <p className="text-[10px] text-muted-foreground">HTML pages + images + inline editor. Upload to any server.</p>
+                  </div>
+                </div>
+                {htmlExportProgress && (
+                  <p className="text-[10px] text-primary">{htmlExportProgress}</p>
+                )}
+              </div>
+              <Button
+                onClick={async () => {
+                  if (!config) return;
+                  setIsExportingHTML(true);
+                  setHtmlExportProgress("");
+                  try {
+                    const result = await exportToHTML(config, setHtmlExportProgress);
+                    const url = URL.createObjectURL(result.blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = result.filename;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    toast({
+                      title: "🌐 HTML Export Downloaded!",
+                      description: `${result.pageCount} page(s), ${result.imageCount} image(s) bundled with inline editor.`,
+                    });
+                  } catch (err: any) {
+                    toast({ title: "Export failed", description: err.message, variant: "destructive" });
+                  } finally {
+                    setIsExportingHTML(false);
+                    setHtmlExportProgress("");
+                  }
+                }}
+                disabled={isExportingHTML}
+                variant="outline"
+                className="w-full gap-2"
+                size="sm"
+              >
+                {isExportingHTML ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Globe className="w-3.5 h-3.5" />}
+                {isExportingHTML ? "Exporting..." : "Download as HTML (with Editor)"}
               </Button>
             </div>
           </div>
