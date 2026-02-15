@@ -1187,24 +1187,191 @@ function generatePassword(): string {
   return Array.from(arr, (b) => chars[b % chars.length]).join("");
 }
 
+// ── Capture Preview DOM ─────────────────────────────────────
+
+function getComputedCSS(): string {
+  const sheets = Array.from(document.styleSheets);
+  let css = "";
+  for (const sheet of sheets) {
+    try {
+      const rules = Array.from(sheet.cssRules || []);
+      for (const rule of rules) {
+        css += rule.cssText + "\n";
+      }
+    } catch {
+      // skip cross-origin sheets
+    }
+  }
+  return css;
+}
+
+function capturePreviewDOM(): string | null {
+  const container = document.querySelector("[data-preview-container]");
+  if (!container) return null;
+
+  const clone = container.cloneNode(true) as HTMLElement;
+
+  // Remove interactive editor UI elements
+  clone.querySelectorAll(
+    "[data-component-index] > .absolute, button, [class*='grip'], [class*='context-menu'], [class*='ring-']"
+  ).forEach((el) => {
+    // Keep visible content buttons (like CTA buttons in the preview)
+    const parent = el.closest("[data-component-type]");
+    if (parent && (el.tagName === "BUTTON" || el.tagName === "A")) {
+      // Keep buttons that are part of the rendered component content
+      return;
+    }
+    // Remove drag handles and selection indicators
+    if (el.classList.contains("absolute") && el.querySelector("svg")) {
+      el.remove();
+    }
+  });
+
+  // Remove grip handles and selection badges
+  clone.querySelectorAll(".opacity-0.group-hover\\:opacity-100").forEach(el => el.remove());
+  clone.querySelectorAll("[class*='ring-primary'], [class*='ring-offset']").forEach(el => {
+    el.classList.remove(
+      ...Array.from(el.classList).filter(c => c.includes("ring-") || c.includes("cursor-pointer"))
+    );
+  });
+
+  // Remove draggable attributes
+  clone.querySelectorAll("[draggable]").forEach(el => el.removeAttribute("draggable"));
+
+  // Remove "Add Component" button area
+  clone.querySelectorAll("[class*='border-dashed']").forEach(el => {
+    const parent = el.closest(".p-4");
+    if (parent && !parent.closest("[data-component-type]")) {
+      parent.remove();
+    }
+  });
+
+  return clone.innerHTML;
+}
+
 export async function exportToHTML(config: AppConfig, onProgress?: (msg: string) => void): Promise<HTMLExportResult> {
   const zip = new JSZip();
   const slug = config.title?.toLowerCase().replace(/\s+/g, "-") || "project";
-
-  // Auto-generate a unique password for each download
   const password = generatePassword();
 
-  onProgress?.("Collecting images...");
-  const imageUrls = collectImageUrls(config);
-  const imageMap = await downloadImages(imageUrls);
+  onProgress?.("Capturing preview...");
 
-  onProgress?.("Generating CSS...");
+  // Try DOM capture first for pixel-perfect export
+  const capturedHTML = capturePreviewDOM();
+
+  if (capturedHTML) {
+    // ── Pixel-perfect mode: captured from live preview ──
+    onProgress?.("Extracting styles...");
+
+    const computedCSS = getComputedCSS();
+
+    // Collect image URLs from the captured HTML
+    const imgUrls = new Set<string>();
+    const imgRegex = /src="(https?:\/\/[^"]+)"/g;
+    let match;
+    while ((match = imgRegex.exec(capturedHTML)) !== null) {
+      imgUrls.add(match[1]);
+    }
+
+    onProgress?.(`Downloading ${imgUrls.size} images...`);
+    const imageMap = await downloadImages(Array.from(imgUrls));
+
+    // Replace remote URLs with local paths in captured HTML
+    let finalHTML = capturedHTML;
+    for (const [url, { localPath }] of imageMap) {
+      finalHTML = finalHTML.split(url).join(localPath);
+    }
+
+    // Bundle images
+    for (const [, { blob, localPath }] of imageMap) {
+      zip.file(localPath, blob);
+    }
+
+    const primary = config.style?.primary_color || "#6366f1";
+    const font = config.style?.font || "'Inter', system-ui, -apple-system, sans-serif";
+
+    const pageHTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${config.title || "Site"}</title>
+  <meta name="description" content="${config.description || ""}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"><\/script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            border: 'hsl(220 13% 88%)',
+            input: 'hsl(220 13% 88%)',
+            ring: 'hsl(243 75% 58%)',
+            background: 'hsl(220 20% 97%)',
+            foreground: 'hsl(230 25% 10%)',
+            primary: { DEFAULT: 'hsl(243 75% 58%)', foreground: 'hsl(0 0% 100%)' },
+            secondary: { DEFAULT: 'hsl(220 14% 92%)', foreground: 'hsl(230 25% 10%)' },
+            muted: { DEFAULT: 'hsl(220 14% 92%)', foreground: 'hsl(220 10% 46%)' },
+            accent: { DEFAULT: 'hsl(250 100% 97%)', foreground: 'hsl(243 75% 58%)' },
+            destructive: { DEFAULT: 'hsl(0 72% 50%)', foreground: 'hsl(0 0% 100%)' },
+            card: { DEFAULT: 'hsl(0 0% 100%)', foreground: 'hsl(230 25% 10%)' },
+            popover: { DEFAULT: 'hsl(0 0% 100%)', foreground: 'hsl(230 25% 10%)' },
+          },
+          borderRadius: { lg: '0.75rem', md: 'calc(0.75rem - 2px)', sm: 'calc(0.75rem - 4px)' },
+          fontFamily: { sans: [${font.split(",").map(f => `'${f.trim().replace(/'/g, "")}'`).join(", ")}] },
+        }
+      }
+    }
+  <\/script>
+  <style>
+    body { font-family: ${font}; -webkit-font-smoothing: antialiased; }
+    * { border-color: hsl(220 13% 88%); }
+    .bg-gradient-primary { background: linear-gradient(135deg, hsl(243 75% 58%), hsl(270 70% 60%)); }
+    .text-gradient { background: linear-gradient(135deg, hsl(243 75% 58%), hsl(270 70% 60%)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    /* Remove any leftover interactive styles */
+    [data-component-index] { cursor: default !important; }
+    [class*="group-hover"] { display: none !important; }
+  </style>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="bg-background text-foreground min-h-screen" style="font-family: ${font};">
+${finalHTML}
+<script src="js/editor.js"><\/script>
+</body>
+</html>`;
+
+    zip.file("index.html", pageHTML);
+
+  } else {
+    // ── Fallback: generate from config data ──
+    onProgress?.("Collecting images...");
+    const imageUrls = collectImageUrls(config);
+    const imageMap = await downloadImages(imageUrls);
+
+    onProgress?.("Generating CSS...");
+    zip.file("css/styles.css", generateCSS(config));
+
+    for (const [, { blob, localPath }] of imageMap) {
+      zip.file(localPath, blob);
+    }
+
+    const pages = config.pages.filter(p => p.layout !== "dashboard" || config.pages.length === 1);
+    onProgress?.(`Generating ${pages.length} page(s)...`);
+
+    for (const page of pages) {
+      const filename = page.route === "/" ? "index.html" : `${page.route.replace(/^\//, "").replace(/\//g, "-")}.html`;
+      const html = generatePageHTML(page, config, imageMap, pages, "css/styles.css", "js/editor.js");
+      zip.file(filename, html);
+    }
+  }
+
+  // Always include editor JS and CSS
   zip.file("css/styles.css", generateCSS(config));
-
-  onProgress?.("Generating editor...");
   zip.file("js/editor.js", generateEditorJS(password));
 
-  // Store password in editor.txt for the owner
+  // Store password in editor.txt
   zip.file("editor.txt", `========================================
   PAGE BUILDER PASSWORD — KEEP THIS PRIVATE
 ========================================
@@ -1229,39 +1396,15 @@ FEATURES:
 • Use section toolbar: ↑↓ Move, ⧉ Duplicate,
   🎨 Style (colors/gradient/opacity), 🖼 Background, ✕ Delete
 • Click "🧩 Sections" to add new sections
-  (Hero, Features, Pricing, Testimonials, etc.)
 • Global theme colors in the sidebar panel
-• Per-section: background color, gradient, image,
-  opacity, and text color controls
 • "Save" persists all changes to browser storage
 • "Download" exports clean HTML without editor UI
 • "Lock" hides the editor again
-
-NOTE: The editor is completely hidden from
-visitors. Only you (the owner) can activate
-it using the keyboard shortcut + password.
 
 ⚠️ Do NOT upload this file to your server!
 ========================================
 `);
 
-  // Add downloaded images
-  onProgress?.(`Bundling ${imageMap.size} images...`);
-  for (const [, { blob, localPath }] of imageMap) {
-    zip.file(localPath, blob);
-  }
-
-  // Generate HTML pages
-  const pages = config.pages.filter(p => p.layout !== "dashboard" || config.pages.length === 1);
-  onProgress?.(`Generating ${pages.length} page(s)...`);
-
-  for (const page of pages) {
-    const filename = page.route === "/" ? "index.html" : `${page.route.replace(/^\//, "").replace(/\//g, "-")}.html`;
-    const html = generatePageHTML(page, config, imageMap, pages, "css/styles.css", "js/editor.js");
-    zip.file(filename, html);
-  }
-
-  // Add a README
   zip.file("README.md", [
     `# ${config.title || "Project"}`,
     "",
@@ -1270,33 +1413,27 @@ it using the keyboard shortcut + password.
     "Generated by **RyaanCMS AI Builder**",
     "",
     "## Files",
-    `- \`*.html\` — Page files (${pages.length} pages)`,
-    "- `css/styles.css` — All styles",
-    "- `js/editor.js` — Inline content editor (password-protected)",
-    "- `editor.txt` — Editor password (DO NOT upload to server!)",
-    `- \`images/\` — Downloaded images (${imageMap.size} files)`,
+    "- `index.html` — Main page (pixel-perfect capture)",
+    "- `css/styles.css` — Editor styles",
+    "- `js/editor.js` — Page builder (password-protected)",
+    "- `editor.txt` — Editor password (DO NOT upload!)",
+    "- `images/` — Downloaded images",
     "",
     "## Editing",
     "1. Upload all files **except editor.txt** to your web server",
-    "2. Open any HTML page in a browser",
-    "3. Press **Ctrl+Shift+E** to open the editor login prompt",
-    "4. Enter the password from `editor.txt`",
-    "5. Edit text, replace images, save changes",
-    "",
-    "## Notes",
-    "- The editor is completely hidden from visitors",
-    "- Only the owner with the password can activate the editor",
-    "- Changes are saved to browser localStorage",
-    '- Use "Lock" button to hide the editor again',
+    "2. Open index.html in a browser",
+    "3. Press **Ctrl+Shift+E** → enter password from editor.txt",
+    "4. Edit text, images, sections, and save",
   ].join("\n"));
 
   onProgress?.("Creating ZIP...");
   const blob = await zip.generateAsync({ type: "blob" });
+  const imageCount = Object.keys(zip.files).filter(k => k.startsWith("images/")).length;
 
   return {
     blob,
     filename: `${slug}-html.zip`,
-    pageCount: pages.length,
-    imageCount: imageMap.size,
+    pageCount: 1,
+    imageCount,
   };
 }
