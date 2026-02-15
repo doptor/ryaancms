@@ -8,6 +8,7 @@ import type { ComponentConfig, ComponentType } from "@/lib/engine";
 import { getComponentMeta } from "@/lib/engine";
 import { useState, useEffect } from "react";
 import { ContentBlocksEditor, type ContentBlock } from "./ContentBlocksEditor";
+import { ImageUploadField } from "./ImageUploadField";
 
 // Preset color swatches
 const COLOR_PRESETS = [
@@ -295,12 +296,11 @@ export function PropEditorSidebar({ component, componentIndex, pageIndex, onClos
             {editedProps._bg_mode === "image" && (
               <div className="space-y-2">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-medium text-foreground">Image URL</label>
-                  <Input
+                  <label className="text-[10px] font-medium text-foreground">Image URL or Upload</label>
+                  <ImageUploadField
                     value={editedProps._bg_image || ""}
-                    onChange={(e) => handleChange("_bg_image", e.target.value)}
-                    placeholder="https://images.unsplash.com/..."
-                    className="h-7 text-xs"
+                    onChange={(v) => handleChange("_bg_image", v)}
+                    placeholder="https://... or upload"
                   />
                 </div>
                 <div className="space-y-1">
