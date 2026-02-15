@@ -198,11 +198,19 @@ export class AIPipelineOrchestrator {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+      let authToken = supabaseKey;
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) authToken = session.access_token;
+      } catch {}
+
       const response = await fetch(`${supabaseUrl}/functions/v1/ai-builder-agents`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${supabaseKey}`,
+          Authorization: `Bearer ${authToken}`,
+          apikey: supabaseKey,
         },
         body: JSON.stringify({ prompt, scope: effectiveScope, stepsNeeded }),
       });
