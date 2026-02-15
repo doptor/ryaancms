@@ -9,25 +9,11 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
-
     const formData = await req.formData();
     const audioFile = formData.get("audio") as File;
     if (!audioFile) throw new Error("No audio file provided");
 
-    // Convert audio to base64 (chunk-safe for large files)
-    const arrayBuffer = await audioFile.arrayBuffer();
-    const bytes = new Uint8Array(arrayBuffer);
-    let binary = "";
-    const chunkSize = 8192;
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-      binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-    }
-    const base64Audio = btoa(binary);
-    const mimeType = audioFile.type || "audio/webm";
-
-    // Fetch user's own API keys from site_settings for fallback (task: speech_to_text)
+    // Fetch user's own API keys from site_settings
     let userApiConfig: { provider: string; endpoint: string; apiKey: string; model: string } | null = null;
     try {
       const authHeader = req.headers.get("authorization");
@@ -53,103 +39,93 @@ serve(async (req) => {
       console.log("Could not fetch user API config (non-fatal):", e);
     }
 
-    const geminiBody = JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        {
-          role: "system",
-          content: "You are a speech-to-text transcriber. Listen to the audio and transcribe it accurately in the SAME language that is spoken. If the speaker speaks Bangla, transcribe in Bangla. If English, transcribe in English. Preserve the original language. Return ONLY the transcribed text, nothing else. If you cannot understand the audio, return an empty string.",
-        },
-        {
-          role: "user",
-          content: [
-            {
-              type: "input_audio",
-              input_audio: {
-                data: base64Audio,
-                format: mimeType.includes("webm") ? "webm" : mimeType.includes("mp4") ? "mp4" : "wav",
-              },
-            },
-            { type: "text", text: "Transcribe this audio to text in its original spoken language. Do NOT translate." },
-          ],
-        },
-      ],
-    });
-
-    // Try user's own API key FIRST if available
-    let response: Response;
-    if (userApiConfig) {
-      console.log(`Using user's ${userApiConfig.provider} API key as primary for speech-to-text`);
-      if (userApiConfig.provider === "openai") {
-        // Use Whisper API for OpenAI
-        const whisperForm = new FormData();
-        whisperForm.append("file", audioFile, "recording.webm");
-        whisperForm.append("model", "whisper-1");
-        const whisperEndpoint = userApiConfig.endpoint.endsWith("/v1")
-          ? `${userApiConfig.endpoint}/audio/transcriptions`
-          : `${userApiConfig.endpoint}/v1/audio/transcriptions`;
-        response = await fetch(whisperEndpoint, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${userApiConfig.apiKey}` },
-          body: whisperForm,
-        });
-        if (response.ok) {
-          const whisperData = await response.json();
-          return new Response(JSON.stringify({ success: true, transcript: whisperData.text || "" }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-        console.log(`User Whisper API failed (${response.status}), falling back to Lovable AI`);
-        await response.text();
-      } else {
-        // For other providers, try chat completions with audio
-        const fallbackBody = JSON.stringify({
-          ...JSON.parse(geminiBody),
-          model: userApiConfig.model,
-        });
-        const fallbackEndpoint = userApiConfig.endpoint.endsWith("/chat/completions")
-          ? userApiConfig.endpoint : `${userApiConfig.endpoint}/chat/completions`;
-        response = await fetch(fallbackEndpoint, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${userApiConfig.apiKey}`, "Content-Type": "application/json" },
-          body: fallbackBody,
-        });
-        if (response.ok) {
-          const data = await response.json();
-          const transcript = data.choices?.[0]?.message?.content?.trim() || "";
-          return new Response(JSON.stringify({ success: true, transcript }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-        console.log(`User API failed (${response.status}), falling back to Lovable AI`);
-        await response.text();
-      }
+    if (!userApiConfig) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "No API key configured. Please add your own API key in Settings → AI Integrations.", 
+        transcript: "" 
+      }), {
+        status: 402,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
-    // Fallback to Lovable AI Gateway
-    response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-      body: geminiBody,
-    });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error("Transcription failed:", response.status, errText);
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ success: false, error: "no_credits", transcript: "" }), {
-          status: 200,
+    // Use user's own API key
+    console.log(`Using user's ${userApiConfig.provider} API key for speech-to-text`);
+    
+    if (userApiConfig.provider === "openai") {
+      // Use Whisper API for OpenAI
+      const whisperForm = new FormData();
+      whisperForm.append("file", audioFile, "recording.webm");
+      whisperForm.append("model", "whisper-1");
+      const whisperEndpoint = userApiConfig.endpoint.endsWith("/v1")
+        ? `${userApiConfig.endpoint}/audio/transcriptions`
+        : `${userApiConfig.endpoint}/v1/audio/transcriptions`;
+      const response = await fetch(whisperEndpoint, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${userApiConfig.apiKey}` },
+        body: whisperForm,
+      });
+      if (response.ok) {
+        const whisperData = await response.json();
+        return new Response(JSON.stringify({ success: true, transcript: whisperData.text || "" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      throw new Error("Transcription failed");
+      const errText = await response.text();
+      console.error(`Whisper API failed (${response.status}):`, errText);
+      throw new Error(`Speech-to-text failed: ${response.status}`);
+    } else {
+      // For other providers, try chat completions with audio
+      const arrayBuffer = await audioFile.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      let binary = "";
+      const chunkSize = 8192;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+      }
+      const base64Audio = btoa(binary);
+      const mimeType = audioFile.type || "audio/webm";
+
+      const fallbackEndpoint = userApiConfig.endpoint.endsWith("/chat/completions")
+        ? userApiConfig.endpoint : `${userApiConfig.endpoint}/chat/completions`;
+      const response = await fetch(fallbackEndpoint, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${userApiConfig.apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: userApiConfig.model,
+          messages: [
+            {
+              role: "system",
+              content: "You are a speech-to-text transcriber. Listen to the audio and transcribe it accurately in the SAME language that is spoken. If the speaker speaks Bangla, transcribe in Bangla. If English, transcribe in English. Preserve the original language. Return ONLY the transcribed text, nothing else.",
+            },
+            {
+              role: "user",
+              content: [
+                {
+                  type: "input_audio",
+                  input_audio: {
+                    data: base64Audio,
+                    format: mimeType.includes("webm") ? "webm" : mimeType.includes("mp4") ? "mp4" : "wav",
+                  },
+                },
+                { type: "text", text: "Transcribe this audio to text in its original spoken language. Do NOT translate." },
+              ],
+            },
+          ],
+        }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const transcript = data.choices?.[0]?.message?.content?.trim() || "";
+        return new Response(JSON.stringify({ success: true, transcript }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const errText = await response.text();
+      console.error(`User API failed (${response.status}):`, errText);
+      throw new Error(`Speech-to-text failed: ${response.status}`);
     }
-
-    const data = await response.json();
-    const transcript = data.choices?.[0]?.message?.content?.trim() || data.text || "";
-
-    return new Response(JSON.stringify({ success: true, transcript }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
   } catch (e) {
     console.error("speech-to-text error:", e);
     return new Response(JSON.stringify({

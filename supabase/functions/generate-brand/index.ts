@@ -29,48 +29,38 @@ async function getUserApiConfig(req: Request, taskType = "general") {
   } catch { return null; }
 }
 
-async function aiRequest(url: string, headers: Record<string, string>, body: string, userApiConfig: any) {
-  if (userApiConfig) {
-    console.log(`Using user's ${userApiConfig.provider} API key as primary`);
-    const parsed = JSON.parse(body);
-    parsed.model = userApiConfig.model || "gpt-5";
-    const userEndpoint = userApiConfig.endpoint.endsWith("/chat/completions")
-      ? userApiConfig.endpoint : `${userApiConfig.endpoint}/chat/completions`;
-    const userResponse = await fetch(userEndpoint, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${userApiConfig.apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify(parsed),
-    });
-    if (userResponse.ok) return userResponse;
-    console.log(`User API failed (${userResponse.status}), falling back to Lovable AI`);
-    await userResponse.text();
-  }
-  return await fetch(url, { method: "POST", headers, body });
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const { prompt, projectId } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
     const userApiConfig = await getUserApiConfig(req, "branding");
+    if (!userApiConfig) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "No API key configured. Please add your own API key in Settings → AI Integrations.",
+        brandName: "AppX", 
+        logoUrl: null 
+      }),
+        { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
-    // Step 1: Generate brand name
-    const nameResponse = await aiRequest(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
-      { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-      JSON.stringify({
-        model: "google/gemini-2.5-flash-lite",
+    // Step 1: Generate brand name using user's API
+    const userEndpoint = userApiConfig.endpoint.endsWith("/chat/completions")
+      ? userApiConfig.endpoint : `${userApiConfig.endpoint}/chat/completions`;
+
+    const nameResponse = await fetch(userEndpoint, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${userApiConfig.apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: userApiConfig.model || "gpt-5",
         messages: [
           { role: "system", content: "You are a brand naming expert. Given a project description, generate exactly ONE creative, catchy, memorable brand name. Rules: 1) Must be a single word, 2) 4-8 characters, 3) Easy to pronounce, 4) Modern and tech-friendly, 5) No existing major brand names. Respond with ONLY the brand name, nothing else." },
           { role: "user", content: `Project: ${prompt}` }
         ],
       }),
-      userApiConfig
-    );
+    });
 
     if (!nameResponse.ok) {
       const errText = await nameResponse.text();
@@ -81,42 +71,11 @@ serve(async (req) => {
     const nameData = await nameResponse.json();
     const brandName = (nameData.choices?.[0]?.message?.content || "AppX").trim().split(/\s+/)[0].replace(/[^a-zA-Z0-9]/g, "");
 
-    // Step 2: Generate logo (only via Lovable gateway since it needs image generation)
+    // Logo generation is skipped — it required Lovable AI Gateway image generation
+    // Users can upload their own logo via project settings
     let logoUrl = null;
-    const logoResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image",
-        messages: [
-          { role: "user", content: `Create a minimalist, modern app logo icon for a brand called "${brandName}". The logo should be: a simple geometric shape or abstract symbol, flat design with a single vibrant color on white background, professional and clean, suitable for a ${prompt.slice(0, 100)} application. Square format, no text, no words, just the icon symbol.` }
-        ],
-        modalities: ["image", "text"],
-      }),
-    });
 
-    if (logoResponse.ok) {
-      const logoData = await logoResponse.json();
-      const imageData = logoData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-
-      if (imageData && projectId) {
-        try {
-          const base64Data = imageData.replace(/^data:image\/\w+;base64,/, "");
-          const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
-          const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-          const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-          const supabase = createClient(supabaseUrl, supabaseKey);
-          const fileName = `${projectId}/logo.png`;
-          const { error: uploadError } = await supabase.storage.from("project-logos").upload(fileName, binaryData, { contentType: "image/png", upsert: true });
-          if (!uploadError) {
-            const { data: urlData } = supabase.storage.from("project-logos").getPublicUrl(fileName);
-            logoUrl = urlData.publicUrl;
-          } else { console.error("Upload error:", uploadError); }
-        } catch (e) { console.error("Logo upload failed:", e); }
-      }
-    } else { console.error("Logo generation failed:", logoResponse.status); }
-
-    // Step 3: Update project
+    // Step 2: Update project
     if (projectId) {
       try {
         const supabaseUrl = Deno.env.get("SUPABASE_URL")!;

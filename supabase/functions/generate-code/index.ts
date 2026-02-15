@@ -29,23 +29,26 @@ async function getUserApiConfig(req: Request, taskType = "general") {
   } catch { return null; }
 }
 
-async function aiRequest(url: string, headers: Record<string, string>, body: string, userApiConfig: any) {
-  if (userApiConfig) {
-    console.log(`Using user's ${userApiConfig.provider} API key as primary`);
-    const parsed = JSON.parse(body);
-    parsed.model = userApiConfig.model || "gpt-5";
-    const userEndpoint = userApiConfig.endpoint.endsWith("/chat/completions")
-      ? userApiConfig.endpoint : `${userApiConfig.endpoint}/chat/completions`;
-    const userResponse = await fetch(userEndpoint, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${userApiConfig.apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify(parsed),
-    });
-    if (userResponse.ok) return userResponse;
-    console.log(`User API failed (${userResponse.status}), falling back to Lovable AI`);
-    await userResponse.text();
+async function aiRequest(body: string, userApiConfig: any) {
+  if (!userApiConfig) {
+    throw new Error("No API key configured. Please add your own API key in Settings → AI Integrations.");
   }
-  return await fetch(url, { method: "POST", headers, body });
+  console.log(`Using user's ${userApiConfig.provider} API key`);
+  const parsed = JSON.parse(body);
+  parsed.model = userApiConfig.model || "gpt-5";
+  const userEndpoint = userApiConfig.endpoint.endsWith("/chat/completions")
+    ? userApiConfig.endpoint : `${userApiConfig.endpoint}/chat/completions`;
+  const response = await fetch(userEndpoint, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${userApiConfig.apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify(parsed),
+  });
+  if (!response.ok) {
+    const errText = await response.text();
+    console.error(`User API failed (${response.status}):`, errText);
+    throw new Error(`AI provider returned ${response.status}. Check your API key and quota.`);
+  }
+  return response;
 }
 
 const TEMPLATE_COMPONENTS = new Set([
@@ -88,9 +91,6 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
-
     const userApiConfig = await getUserApiConfig(req, "code_gen");
 
     const generatedFiles: { filename: string; pageName: string; route: string; code: string; isTemplate?: boolean }[] = [];
@@ -131,22 +131,7 @@ The component should be named "${page.name.replace(/[^a-zA-Z0-9]/g, "")}Page".`;
         ],
       });
 
-      const response = await aiRequest(
-        "https://ai.gateway.lovable.dev/v1/chat/completions",
-        { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-        requestBody,
-        userApiConfig
-      );
-
-      if (!response.ok) {
-        if (response.status === 429) { console.warn("Rate limited, returning partial results"); break; }
-        if (response.status === 402) {
-          return new Response(JSON.stringify({ error: "AI credits exhausted. Please configure your own API key in Settings → AI Integrations." }),
-            { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        }
-        console.error(`Failed for ${page.name}:`, response.status);
-        continue;
-      }
+      const response = await aiRequest(requestBody, userApiConfig);
 
       const data = await response.json();
       let code = data.choices?.[0]?.message?.content || "";
@@ -170,8 +155,10 @@ The component should be named "${page.name.replace(/[^a-zA-Z0-9]/g, "")}Page".`;
       { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
     console.error("Code generation error:", error);
-    return new Response(JSON.stringify({ success: false, error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const message = error instanceof Error ? error.message : "Unknown error";
+    const status = message.includes("No API key configured") ? 402 : 500;
+    return new Response(JSON.stringify({ success: false, error: message }),
+      { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
 
