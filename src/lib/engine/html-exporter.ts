@@ -190,9 +190,10 @@ textarea.input { min-height: 100px; resize: vertical; }
   .hero { padding: 48px 16px; }
 }
 
-/* Editor styles */
-[data-editable]:hover { outline: 2px dashed var(--primary); outline-offset: 2px; cursor: text; }
-[data-editable]:focus { outline: 2px solid var(--primary); outline-offset: 2px; background: rgba(99,102,241,0.05); }
+/* Editor styles — hidden by default, only visible when unlocked */
+[data-editable] { cursor: default; }
+body.editor-unlocked [data-editable]:hover { outline: 2px dashed var(--primary); outline-offset: 2px; cursor: text; }
+body.editor-unlocked [data-editable]:focus { outline: 2px solid var(--primary); outline-offset: 2px; background: rgba(99,102,241,0.05); }
 .editor-toolbar { position: fixed; top: 0; left: 0; right: 0; z-index: 9999; background: #1f2937; color: white; padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; font-family: var(--font); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
 .editor-toolbar button { background: var(--primary); color: white; border: none; padding: 6px 16px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
 .editor-toolbar button:hover { opacity: 0.9; }
@@ -203,35 +204,15 @@ body.editor-active { padding-top: 44px; }
 
 // ── Inline Editor JS ────────────────────────────────────────
 
-function generateEditorJS(password?: string): string {
-  const passwordCheck = password
-    ? `
-  // Password protection
-  var EDITOR_PASSWORD = '${password.replace(/'/g, "\\'")}';
-  var PASS_KEY = 'ryaancms_editor_unlocked';
-  var isUnlocked = sessionStorage.getItem(PASS_KEY) === 'true';
-
-  function promptPassword() {
-    var entered = prompt('🔒 Enter editor password to enable editing:');
-    if (entered === EDITOR_PASSWORD) {
-      sessionStorage.setItem(PASS_KEY, 'true');
-      isUnlocked = true;
-      initEditor();
-    } else if (entered !== null) {
-      alert('❌ Incorrect password. Editing is disabled.');
-    }
-  }
-`
-    : `
-  var isUnlocked = true;
-`;
-
-  return `// RyaanCMS Inline Editor — lightweight content editing
+function generateEditorJS(password: string): string {
+  return `// RyaanCMS Inline Editor — password-protected content editing
 (function() {
   'use strict';
   var STORAGE_KEY = 'ryaancms_edits';
+  var PASS_KEY = 'ryaancms_editor_unlocked';
+  var EDITOR_PASSWORD = '${password.replace(/'/g, "\\'")}';
   var edits = {};
-${passwordCheck}
+  var isUnlocked = sessionStorage.getItem(PASS_KEY) === 'true';
 
   // Load saved edits
   try {
@@ -252,17 +233,16 @@ ${passwordCheck}
     });
   }
 
-  // Make elements editable
+  // Activate editor — only called after successful password
   function initEditor() {
     document.body.classList.add('editor-active');
+    document.body.classList.add('editor-unlocked');
 
-    // Create toolbar
     var toolbar = document.createElement('div');
     toolbar.className = 'editor-toolbar';
-    toolbar.innerHTML = '<div class="flex items-center gap-3"><span style="font-weight:700;font-size:14px;">✏️ Live Editor</span><span class="editor-info">' + Object.keys(edits).length + ' edits</span></div><div class="flex items-center gap-2"><button onclick="window.__ryaanEditor.save()">💾 Save</button><button onclick="window.__ryaanEditor.download()" style="background:#374151;">⬇ Download</button><button onclick="window.__ryaanEditor.reset()" style="background:#ef4444;">↺ Reset</button></div>';
+    toolbar.innerHTML = '<div class="flex items-center gap-3"><span style="font-weight:700;font-size:14px;">✏️ Live Editor</span><span class="editor-info">' + Object.keys(edits).length + ' edits</span></div><div class="flex items-center gap-2"><button onclick="window.__ryaanEditor.save()">💾 Save</button><button onclick="window.__ryaanEditor.download()" style="background:#374151;">⬇ Download</button><button onclick="window.__ryaanEditor.reset()" style="background:#ef4444;">↺ Reset</button><button onclick="window.__ryaanEditor.lock()" style="background:#6b7280;">🔒 Lock</button></div>';
     document.body.prepend(toolbar);
 
-    // Enable contentEditable on text elements
     document.querySelectorAll('[data-editable]').forEach(function(el) {
       if (el.tagName !== 'IMG') {
         el.contentEditable = 'true';
@@ -276,7 +256,6 @@ ${passwordCheck}
       }
     });
 
-    // Enable image replacement
     document.querySelectorAll('img[data-editable]').forEach(function(img) {
       img.style.cursor = 'pointer';
       img.addEventListener('click', function() {
@@ -313,9 +292,7 @@ ${passwordCheck}
       alert('✅ Changes saved to browser storage!');
     },
     download: function() {
-      // Save current state to localStorage first
       localStorage.setItem(STORAGE_KEY, JSON.stringify(edits));
-      // Serialize current page HTML
       var html = '<!DOCTYPE html>' + document.documentElement.outerHTML;
       var blob = new Blob([html], { type: 'text/html' });
       var a = document.createElement('a');
@@ -330,22 +307,37 @@ ${passwordCheck}
         localStorage.removeItem(STORAGE_KEY);
         location.reload();
       }
+    },
+    lock: function() {
+      sessionStorage.removeItem(PASS_KEY);
+      location.reload();
+    },
+    unlock: function() {
+      var entered = prompt('🔒 Enter editor password:');
+      if (entered === EDITOR_PASSWORD) {
+        sessionStorage.setItem(PASS_KEY, 'true');
+        location.reload();
+      } else if (entered !== null) {
+        alert('❌ Incorrect password.');
+      }
     }
   };
+
+  // Keyboard shortcut: Ctrl+Shift+E to open password prompt
+  document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.shiftKey && e.key === 'E') {
+      e.preventDefault();
+      if (!isUnlocked) window.__ryaanEditor.unlock();
+    }
+  });
 
   // Init
   document.addEventListener('DOMContentLoaded', function() {
     applyEdits();
     if (isUnlocked) {
       initEditor();
-    }${password ? ` else {
-      // Show a lock button for password entry
-      var lockBtn = document.createElement('div');
-      lockBtn.className = 'editor-toolbar';
-      lockBtn.innerHTML = '<div class="flex items-center gap-3"><span style="font-weight:700;font-size:14px;">🔒 Editor Locked</span><span class="editor-info">Enter password to edit</span></div><div><button onclick="promptPassword()">🔑 Unlock Editor</button></div>';
-      document.body.prepend(lockBtn);
-      document.body.classList.add('editor-active');
-    }` : ''}
+    }
+    // No visible UI for visitors — editor is completely hidden
   });
 })();
 `;
@@ -701,9 +693,19 @@ export interface HTMLExportResult {
   imageCount: number;
 }
 
-export async function exportToHTML(config: AppConfig, onProgress?: (msg: string) => void, editorPassword?: string): Promise<HTMLExportResult> {
+function generatePassword(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+  const arr = new Uint8Array(12);
+  crypto.getRandomValues(arr);
+  return Array.from(arr, (b) => chars[b % chars.length]).join("");
+}
+
+export async function exportToHTML(config: AppConfig, onProgress?: (msg: string) => void): Promise<HTMLExportResult> {
   const zip = new JSZip();
   const slug = config.title?.toLowerCase().replace(/\s+/g, "-") || "project";
+
+  // Auto-generate a unique password for each download
+  const password = generatePassword();
 
   onProgress?.("Collecting images...");
   const imageUrls = collectImageUrls(config);
@@ -713,7 +715,35 @@ export async function exportToHTML(config: AppConfig, onProgress?: (msg: string)
   zip.file("css/styles.css", generateCSS(config));
 
   onProgress?.("Generating editor...");
-  zip.file("js/editor.js", generateEditorJS(editorPassword));
+  zip.file("js/editor.js", generateEditorJS(password));
+
+  // Store password in editor.txt for the owner
+  zip.file("editor.txt", `========================================
+  EDITOR PASSWORD — KEEP THIS PRIVATE
+========================================
+
+Project: ${config.title || "Untitled"}
+Generated: ${new Date().toISOString()}
+
+Password: ${password}
+
+========================================
+HOW TO USE:
+========================================
+1. Open any HTML page in your browser
+2. Press Ctrl+Shift+E to open the editor login
+3. Enter the password above
+4. The Live Editor toolbar will appear
+5. Click text to edit, click images to replace
+6. Use "Save" to persist, "Lock" to hide editor
+
+NOTE: The editor is completely hidden from
+visitors. Only you (the owner) can activate
+it using the keyboard shortcut + password.
+
+⚠️ Do NOT upload this file to your server!
+========================================
+`);
 
   // Add downloaded images
   onProgress?.(`Bundling ${imageMap.size} images...`);
@@ -732,30 +762,33 @@ export async function exportToHTML(config: AppConfig, onProgress?: (msg: string)
   }
 
   // Add a README
-  zip.file("README.md", `# ${config.title || "Project"}
-
-${config.description || ""}
-
-Generated by **RyaanCMS AI Builder**
-
-## Files
-- \`*.html\` — Page files (${pages.length} pages)
-- \`css/styles.css\` — All styles
-- \`js/editor.js\` — Inline content editor
-- \`images/\` — Downloaded images (${imageMap.size} files)
-
-## Usage
-1. Upload all files to your web server
-2. Open any HTML file in a browser
-3. The inline editor toolbar will appear at the top
-4. Click any text to edit, click images to replace
-5. Use "Save" to persist changes, "Download" to export updated page
-
-## Notes
-- All editing happens client-side (no server needed for editing)
-- Changes are saved to browser localStorage
-- Download updated pages to save permanently
-`);
+  zip.file("README.md", [
+    `# ${config.title || "Project"}`,
+    "",
+    config.description || "",
+    "",
+    "Generated by **RyaanCMS AI Builder**",
+    "",
+    "## Files",
+    `- \`*.html\` — Page files (${pages.length} pages)`,
+    "- `css/styles.css` — All styles",
+    "- `js/editor.js` — Inline content editor (password-protected)",
+    "- `editor.txt` — Editor password (DO NOT upload to server!)",
+    `- \`images/\` — Downloaded images (${imageMap.size} files)`,
+    "",
+    "## Editing",
+    "1. Upload all files **except editor.txt** to your web server",
+    "2. Open any HTML page in a browser",
+    "3. Press **Ctrl+Shift+E** to open the editor login prompt",
+    "4. Enter the password from `editor.txt`",
+    "5. Edit text, replace images, save changes",
+    "",
+    "## Notes",
+    "- The editor is completely hidden from visitors",
+    "- Only the owner with the password can activate the editor",
+    "- Changes are saved to browser localStorage",
+    '- Use "Lock" button to hide the editor again',
+  ].join("\n"));
 
   onProgress?.("Creating ZIP...");
   const blob = await zip.generateAsync({ type: "blob" });

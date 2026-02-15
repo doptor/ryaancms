@@ -2448,7 +2448,7 @@ export default function AIBuilderPage() {
                       a.download = result.filename;
                       a.click();
                       URL.revokeObjectURL(url);
-                      toast({ title: "🌐 HTML Downloaded!", description: `${result.pageCount} page(s) exported.` });
+                      toast({ title: "🌐 HTML Downloaded!", description: `${result.pageCount} page(s) exported. Password in editor.txt.` });
                     } catch (err: any) {
                       toast({ title: "Export failed", description: err.message, variant: "destructive" });
                     }
