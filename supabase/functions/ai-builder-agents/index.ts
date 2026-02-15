@@ -1078,19 +1078,9 @@ serve(async (req) => {
       console.log("Could not fetch user API configs (non-fatal):", e);
     }
 
-    // Fallback: if no user API configs found, use Lovable AI (LOVABLE_API_KEY)
+    // If no API configs found, return error — user must configure their own keys
     if (allApiConfigs.length === 0) {
-      const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-      if (lovableKey) {
-        allApiConfigs.push({
-          provider: "openai",
-          endpoint: "https://api.lovable.dev/v1",
-          apiKey: lovableKey,
-          model: "google/gemini-2.5-flash",
-          _useFor: ["general"],
-        } as any);
-        console.log("Using Lovable AI fallback for all agents");
-      }
+      console.error("No active AI integrations found. User must configure API keys in AI Integrations settings.");
     }
 
     const encoder = new TextEncoder();
