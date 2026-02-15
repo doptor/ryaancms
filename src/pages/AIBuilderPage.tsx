@@ -1968,20 +1968,6 @@ export default function AIBuilderPage() {
           </div>
         </div>
       ) : hasStarted ? renderMessages() : renderWelcome()}
-      {/* Activity sidebar */}
-      <BuildActivitySidebar
-        activities={buildActivities}
-        queue={promptQueue}
-        selectedActivityId={selectedActivityId}
-        onSelectActivity={(id) => {
-          setSelectedActivityId(id);
-          if (id) setActiveTab("activity-detail");
-        }}
-        onRemoveFromQueue={(id) => setPromptQueue(prev => prev.filter(q => q.id !== id))}
-        onClearQueue={clearQueue}
-        isBuilding={isBuilding}
-        buildElapsed={buildElapsed}
-      />
       {renderChatInput()}
     </div>
   );
