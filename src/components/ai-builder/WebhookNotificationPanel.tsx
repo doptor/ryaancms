@@ -132,7 +132,9 @@ export function WebhookNotificationPanel({ pipelineState, isBuilding, projectId 
 
   const handleAddWebhook = async () => {
     if (!newWebhook.name.trim() || !newWebhook.url.trim() || !user || !projectId) return;
-    const secret = `whsec_${Math.random().toString(36).slice(2, 14)}`;
+    const randomBytes = new Uint8Array(24);
+    crypto.getRandomValues(randomBytes);
+    const secret = `whsec_${Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('')}`;
     const { data, error } = await (supabase as any).from("webhooks").insert({
       user_id: user.id,
       project_id: projectId,
