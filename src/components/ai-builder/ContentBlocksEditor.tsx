@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { ImageUploadField } from "./ImageUploadField";
 import {
   Plus, Trash2, ChevronUp, ChevronDown, Type, ImageIcon, Link,
   Columns, GripVertical, Eye, EyeOff,
@@ -243,7 +244,12 @@ export function ContentBlocksEditor({ blocks, columns, position, onChange }: Con
                   {/* Image block settings */}
                   {block.type === "image" && (
                     <div className="space-y-1.5">
-                      <Input value={block.imageSrc || ""} onChange={(e) => updateBlock(block.id, { imageSrc: e.target.value })} placeholder="Image URL..." className="h-7 text-xs" />
+                      <ImageUploadField
+                        value={block.imageSrc || ""}
+                        onChange={(v) => updateBlock(block.id, { imageSrc: v })}
+                        placeholder="Image URL or upload..."
+                        compact
+                      />
                       <Input value={block.imageAlt || ""} onChange={(e) => updateBlock(block.id, { imageAlt: e.target.value })} placeholder="Alt text..." className="h-6 text-[10px]" />
                       <div className="flex items-center justify-between">
                         <label className="text-[9px] text-muted-foreground">Opacity</label>
