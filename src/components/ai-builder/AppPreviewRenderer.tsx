@@ -16,7 +16,7 @@ import {
   ShoppingCart, Eye, ArrowUpRight, Lock, Mail, Github,
   Check, X, Star, Upload, Image, Calendar, GripVertical,
   Clock, MapPin, CreditCard, Settings, FileText, Shield,
-  ChevronDown, Plus, MoreHorizontal, Edit, Trash2,
+  ChevronDown, Plus, MoreHorizontal, Edit, Trash2, Copy, ChevronUp,
   LayoutGrid, Code, ExternalLink, Zap, Globe, Heart,
   Package, Activity, ArrowRight, Play, Hash, Filter,
 } from "lucide-react";
@@ -24,6 +24,13 @@ import { cn } from "@/lib/utils";
 import type { AppConfig, PageConfig, ComponentConfig } from "@/lib/engine";
 import { useState, useRef, useCallback } from "react";
 import { EditableText, EditableImage, EditableLink } from "./InlineEditable";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 
 // Prop updater type threaded through components
 type PropUpdater = (key: string, value: any) => void;
@@ -40,9 +47,12 @@ interface AppPreviewRendererProps {
   onAddPage?: (name: string, route: string, layout: string) => void;
   onDeletePage?: (pageIndex: number) => void;
   onUpdateComponentProp?: (pageIndex: number, componentIndex: number, propKey: string, value: any) => void;
+  onDuplicateComponent?: (pageIndex: number, componentIndex: number) => void;
+  multiSelectedComponents?: Set<string>;
+  onMultiSelectComponent?: (pageIndex: number, componentIndex: number, add: boolean) => void;
 }
 
-export function AppPreviewRenderer({ config, selectedComponent, onSelectComponent, onReorderComponents, onDeleteComponent, onAddComponent, onAddPage, onDeletePage, onUpdateComponentProp }: AppPreviewRendererProps) {
+export function AppPreviewRenderer({ config, selectedComponent, onSelectComponent, onReorderComponents, onDeleteComponent, onAddComponent, onAddPage, onDeletePage, onUpdateComponentProp, onDuplicateComponent, multiSelectedComponents, onMultiSelectComponent }: AppPreviewRendererProps) {
   const [activePage, setActivePage] = useState(0);
   const [showAddComponent, setShowAddComponent] = useState(false);
   const currentPage = config.pages[activePage];
@@ -73,8 +83,11 @@ export function AppPreviewRenderer({ config, selectedComponent, onSelectComponen
               onSelectComponent={onSelectComponent}
               onReorderComponents={onReorderComponents}
               onDeleteComponent={onDeleteComponent}
+              onDuplicateComponent={onDuplicateComponent}
               onNavigate={navigateToPage}
               onUpdateComponentProp={onUpdateComponentProp}
+              multiSelectedComponents={multiSelectedComponents}
+              onMultiSelectComponent={onMultiSelectComponent}
             />
           )}
 
@@ -127,11 +140,14 @@ interface PageRendererProps {
   onSelectComponent?: (pageIndex: number, componentIndex: number) => void;
   onReorderComponents?: (pageIndex: number, fromIndex: number, toIndex: number) => void;
   onDeleteComponent?: (pageIndex: number, componentIndex: number) => void;
+  onDuplicateComponent?: (pageIndex: number, componentIndex: number) => void;
   onNavigate?: (pageRoute: string) => void;
   onUpdateComponentProp?: (pageIndex: number, componentIndex: number, propKey: string, value: any) => void;
+  multiSelectedComponents?: Set<string>;
+  onMultiSelectComponent?: (pageIndex: number, componentIndex: number, add: boolean) => void;
 }
 
-function PageRenderer({ page, config, pageIndex, selectedComponent, onSelectComponent, onReorderComponents, onDeleteComponent, onNavigate, onUpdateComponentProp }: PageRendererProps) {
+function PageRenderer({ page, config, pageIndex, selectedComponent, onSelectComponent, onReorderComponents, onDeleteComponent, onDuplicateComponent, onNavigate, onUpdateComponentProp, multiSelectedComponents, onMultiSelectComponent }: PageRendererProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
   const dragCounter = useRef(0);
@@ -172,55 +188,99 @@ function PageRenderer({ page, config, pageIndex, selectedComponent, onSelectComp
     const isSelected = selectedComponent?.pageIndex === pageIndex && selectedComponent?.componentIndex === i;
     const isDragging = dragIndex === i;
     const isDropTarget = dropIndex === i && dragIndex !== i;
+    const multiKey = `${pageIndex}-${i}`;
+    const isMultiSelected = multiSelectedComponents?.has(multiKey);
+
+    const handleClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (e.shiftKey && onMultiSelectComponent) {
+        onMultiSelectComponent(pageIndex, i, !isMultiSelected);
+      } else {
+        onSelectComponent?.(pageIndex, i);
+      }
+    };
 
     return (
-      <div key={i} className="relative group">
-        {isDropTarget && dragIndex !== null && dragIndex > i && (
-          <div className="absolute -top-1 left-0 right-0 h-0.5 bg-primary rounded-full z-20" />
-        )}
-        <div
-          draggable
-          onDragStart={(e) => handleDragStart(e, i)}
-          onDragEnd={handleDragEnd}
-          onDragOver={handleDragOver}
-          onDragEnter={() => handleDragEnterZone(i)}
-          onDrop={(e) => handleDrop(e, i)}
-          onClick={(e) => { e.stopPropagation(); onSelectComponent?.(pageIndex, i); }}
-          className={cn(
-            "relative cursor-pointer transition-all duration-200",
-            isDragging && "opacity-30 scale-[0.98]",
-            isSelected
-              ? "ring-2 ring-primary ring-offset-2 ring-offset-background rounded-xl"
-              : "hover:ring-1 hover:ring-primary/30 hover:ring-offset-1 hover:ring-offset-background rounded-xl"
-          )}
-        >
-          <div className={cn(
-            "absolute left-1 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-6 h-8 rounded bg-card/80 border border-border shadow-sm cursor-grab active:cursor-grabbing transition-opacity",
-            "opacity-0 group-hover:opacity-100"
-          )}>
-            <GripVertical className="w-3.5 h-3.5 text-muted-foreground" />
-          </div>
-          {isSelected && (
-            <div className="absolute -top-2.5 left-9 z-10 flex items-center gap-1">
-              <span className="px-1.5 py-0.5 rounded bg-primary text-primary-foreground text-[10px] font-medium shadow-sm">
-                {comp.type.replace(/_/g, " ")}
-              </span>
-              {onDeleteComponent && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onDeleteComponent(pageIndex, i); }}
-                  className="px-1.5 py-0.5 rounded bg-destructive text-destructive-foreground text-[10px] font-medium shadow-sm hover:opacity-90 transition-opacity"
-                >
-                  ✕
-                </button>
+      <ContextMenu key={i}>
+        <ContextMenuTrigger asChild>
+          <div className="relative group">
+            {isDropTarget && dragIndex !== null && dragIndex > i && (
+              <div className="absolute -top-1 left-0 right-0 h-0.5 bg-primary rounded-full z-20" />
+            )}
+            <div
+              draggable
+              onDragStart={(e) => handleDragStart(e, i)}
+              onDragEnd={handleDragEnd}
+              onDragOver={handleDragOver}
+              onDragEnter={() => handleDragEnterZone(i)}
+              onDrop={(e) => handleDrop(e, i)}
+              onClick={handleClick}
+              data-component-index={i}
+              className={cn(
+                "relative cursor-pointer transition-all duration-200",
+                isDragging && "opacity-30 scale-[0.98]",
+                isMultiSelected && "ring-2 ring-chart-2 ring-offset-2 ring-offset-background rounded-xl",
+                isSelected
+                  ? "ring-2 ring-primary ring-offset-2 ring-offset-background rounded-xl"
+                  : !isMultiSelected && "hover:ring-1 hover:ring-primary/30 hover:ring-offset-1 hover:ring-offset-background rounded-xl"
               )}
+            >
+              <div className={cn(
+                "absolute left-1 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-6 h-8 rounded bg-card/80 border border-border shadow-sm cursor-grab active:cursor-grabbing transition-opacity",
+                "opacity-0 group-hover:opacity-100"
+              )}>
+                <GripVertical className="w-3.5 h-3.5 text-muted-foreground" />
+              </div>
+              {(isSelected || isMultiSelected) && (
+                <div className="absolute -top-2.5 left-9 z-10 flex items-center gap-1">
+                  <span className={cn(
+                    "px-1.5 py-0.5 rounded text-[10px] font-medium shadow-sm",
+                    isMultiSelected && !isSelected ? "bg-chart-2 text-primary-foreground" : "bg-primary text-primary-foreground"
+                  )}>
+                    {comp.type.replace(/_/g, " ")}
+                  </span>
+                  {onDeleteComponent && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onDeleteComponent(pageIndex, i); }}
+                      className="px-1.5 py-0.5 rounded bg-destructive text-destructive-foreground text-[10px] font-medium shadow-sm hover:opacity-90 transition-opacity"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              )}
+              <ComponentRenderer component={comp} config={config} onNavigate={onNavigate} onUpdateProp={onUpdateComponentProp ? (key, val) => onUpdateComponentProp(pageIndex, i, key, val) : undefined} />
             </div>
-          )}
-          <ComponentRenderer component={comp} config={config} onNavigate={onNavigate} onUpdateProp={onUpdateComponentProp ? (key, val) => onUpdateComponentProp(pageIndex, i, key, val) : undefined} />
-        </div>
-        {isDropTarget && dragIndex !== null && dragIndex < i && (
-          <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary rounded-full z-20" />
-        )}
-      </div>
+            {isDropTarget && dragIndex !== null && dragIndex < i && (
+              <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary rounded-full z-20" />
+            )}
+          </div>
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem onClick={() => onDuplicateComponent?.(pageIndex, i)}>
+            <Copy className="w-3.5 h-3.5 mr-2" /> Duplicate
+          </ContextMenuItem>
+          <ContextMenuItem
+            onClick={() => i > 0 && onReorderComponents?.(pageIndex, i, i - 1)}
+            disabled={i === 0}
+          >
+            <ChevronUp className="w-3.5 h-3.5 mr-2" /> Move Up
+          </ContextMenuItem>
+          <ContextMenuItem
+            onClick={() => i < page.components.length - 1 && onReorderComponents?.(pageIndex, i, i + 1)}
+            disabled={i === page.components.length - 1}
+          >
+            <ChevronDown className="w-3.5 h-3.5 mr-2" /> Move Down
+          </ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuItem
+            onClick={() => onDeleteComponent?.(pageIndex, i)}
+            className="text-destructive focus:text-destructive"
+          >
+            <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
     );
   };
 
