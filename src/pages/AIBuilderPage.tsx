@@ -2432,8 +2432,8 @@ export default function AIBuilderPage() {
             {buildComplete && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="gap-1.5 text-xs text-muted-foreground hidden lg:flex">
-                    <Download className="w-3.5 h-3.5" /> Download
+                  <Button variant="ghost" size="sm" className="gap-1.5 text-xs text-muted-foreground">
+                    <Download className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Download</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
