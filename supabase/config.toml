@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.marketplace-api]
 verify_jwt = false
+
+[functions.ai-chat-qa]
+verify_jwt = false
