@@ -817,7 +817,8 @@ export default function AIBuilderPage() {
       setPipelineState(result);
 
       // Auto-save preview config to localStorage so Preview page works immediately
-      if (result.stage === "complete" && result.config) {
+      // Guard: don't overwrite a good config with an empty quick-update config
+      if (result.stage === "complete" && result.config && result.config.pages.length > 0) {
         try { localStorage.setItem("ai-builder-preview-config", JSON.stringify(result.config)); } catch {}
       }
 
