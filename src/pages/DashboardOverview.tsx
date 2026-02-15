@@ -181,7 +181,7 @@ export default function DashboardOverview() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       setPrompt("");
-      navigate("/dashboard/ai", { state: { prompt: data.prompt, projectId: data.id, isNew: true } });
+      navigate("/dashboard/ai", { state: { prompt: data.prompt, projectId: data.id, isNew: true, contentType: selectedContentType } });
     },
     onError: () => toast({ title: "Failed to save", variant: "destructive" }),
   });

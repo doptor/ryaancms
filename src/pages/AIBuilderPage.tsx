@@ -192,6 +192,7 @@ export default function AIBuilderPage() {
   const incomingPrompt = (location.state as any)?.prompt || "";
   const incomingProjectId = (location.state as any)?.projectId || null;
   const incomingIsNew = (location.state as any)?.isNew || false;
+  const incomingContentType = (location.state as any)?.contentType || null;
   const [input, setInput] = useState("");
   const [isRestoring, setIsRestoring] = useState(true);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -218,7 +219,7 @@ export default function AIBuilderPage() {
   const [originalPrompt, setOriginalPrompt] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [showContentType, setShowContentType] = useState(false);
-  const [selectedContentType, setSelectedContentType] = useState<string>("website");
+  const [selectedContentType, setSelectedContentType] = useState<string>(incomingContentType || "website");
   const [showColorPresets, setShowColorPresets] = useState(false);
   const [buildElapsed, setBuildElapsed] = useState(0);
   const [promptQueue, setPromptQueue] = useState<QueuedPrompt[]>([]);
@@ -1626,74 +1627,10 @@ export default function AIBuilderPage() {
 
   const renderChatInput = () => (
     <div className="border-t border-border bg-card p-2 sm:p-3 shrink-0">
-      <div className="max-w-3xl mx-auto space-y-1.5 sm:space-y-2">
-        {/* Top toolbar: content type + color presets */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Content Type Selector */}
-          <div className="relative">
-            <button
-              onClick={() => { setShowContentType(!showContentType); setShowColorPresets(false); }}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
-            >
-              {CONTENT_TYPES.find(c => c.value === selectedContentType)?.label || "🌐 Website"}
-              <ChevronDown className="w-3 h-3" />
-            </button>
-            {showContentType && (
-              <div className="absolute bottom-full left-0 mb-1 bg-popover border border-border rounded-lg shadow-lg p-1 z-50 min-w-[180px]">
-                {CONTENT_TYPES.map((ct) => (
-                  <button
-                    key={ct.value}
-                    onClick={() => { setSelectedContentType(ct.value); setShowContentType(false); }}
-                    className={cn(
-                      "flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-xs text-left transition-colors",
-                      selectedContentType === ct.value ? "bg-primary/10 text-primary" : "text-foreground hover:bg-accent"
-                    )}
-                  >
-                    <ct.icon className="w-3.5 h-3.5" />
-                    {ct.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Color Presets */}
-          <div className="relative">
-            <button
-              onClick={() => { setShowColorPresets(!showColorPresets); setShowContentType(false); }}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors"
-            >
-              <Palette className="w-3 h-3" /> Colors
-            </button>
-            {showColorPresets && (
-              <div className="absolute bottom-full left-0 mb-1 bg-popover border border-border rounded-lg shadow-lg p-2 z-50">
-                <div className="flex gap-1.5">
-                  {COLOR_PRESETS.map((cp) => (
-                    <button
-                      key={cp.name}
-                      onClick={() => {
-                        setInput((prev) => prev + ` Use ${cp.name.toLowerCase()} as primary color.`);
-                        setShowColorPresets(false);
-                      }}
-                      className="group flex flex-col items-center gap-1"
-                      title={cp.name}
-                    >
-                      <div
-                        className="w-6 h-6 rounded-full border-2 border-border group-hover:border-foreground/50 transition-colors"
-                        style={{ backgroundColor: cp.color }}
-                      />
-                      <span className="text-[9px] text-muted-foreground">{cp.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
+      <div className="max-w-3xl mx-auto space-y-0">
         {/* URL input for replication */}
         {showUrlInput && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mb-2">
             <input
               value={screenshotUrl}
               onChange={(e) => setScreenshotUrl(e.target.value)}
@@ -1717,67 +1654,145 @@ export default function AIBuilderPage() {
           onChange={handleScreenshotUpload}
           className="hidden"
         />
-        <div className="relative flex items-end gap-2 rounded-xl border border-input bg-background p-1.5 focus-within:ring-2 focus-within:ring-ring focus-within:border-transparent transition-all">
-          <div className="flex items-center gap-0.5 pl-1">
-            {/* Plus dropdown: Attachment + URL */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
-                  title="Add"
+
+        {/* Lovable-style single input container */}
+        <div className="rounded-2xl border border-input bg-background focus-within:ring-2 focus-within:ring-ring focus-within:border-transparent transition-all overflow-hidden">
+          {/* Textarea area */}
+          <div className="px-3 pt-3 pb-1">
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  sendMessage(input);
+                }
+              }}
+              placeholder={isBuilding ? "Queue another prompt..." : `Describe your ${selectedContentType}...`}
+              rows={1}
+              className="w-full resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none min-h-[36px] max-h-[300px]"
+            />
+          </div>
+
+          {/* Bottom toolbar inside the container */}
+          <div className="flex items-center justify-between px-2 pb-2 pt-1">
+            {/* Left side tools */}
+            <div className="flex items-center gap-0.5">
+              {/* Plus dropdown: Attachment + URL */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
+                    title="Add"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="min-w-[180px]">
+                  <DropdownMenuItem onClick={() => fileInputRef.current?.click()} className="gap-2">
+                    <Paperclip className="w-4 h-4" />
+                    Attachment
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowUrlInput(!showUrlInput)} className="gap-2">
+                    <Link2 className="w-4 h-4" />
+                    Website URL
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Mic button */}
+              <Button
+                variant="ghost" size="icon"
+                className={cn(
+                  "h-8 w-8 rounded-lg transition-colors",
+                  isRecording ? "text-destructive bg-destructive/10 hover:bg-destructive/20" : "text-muted-foreground hover:text-foreground"
+                )}
+                onClick={handleMicToggle}
+                title={isRecording ? "Stop recording" : "Voice input"}
+              >
+                {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              </Button>
+
+              {/* Divider */}
+              <div className="w-px h-5 bg-border mx-1" />
+
+              {/* Content Type Selector */}
+              <div className="relative">
+                <button
+                  onClick={() => { setShowContentType(!showContentType); setShowColorPresets(false); }}
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                 >
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="min-w-[180px]">
-                <DropdownMenuItem onClick={() => fileInputRef.current?.click()} className="gap-2">
-                  <Paperclip className="w-4 h-4" />
-                  Attachment
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowUrlInput(!showUrlInput)} className="gap-2">
-                  <Link2 className="w-4 h-4" />
-                  Website URL
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            {/* Mic button */}
+                  {CONTENT_TYPES.find(c => c.value === selectedContentType)?.label || "🌐 Website"}
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+                {showContentType && (
+                  <div className="absolute bottom-full left-0 mb-1 bg-popover border border-border rounded-lg shadow-lg p-1 z-50 min-w-[180px]">
+                    {CONTENT_TYPES.map((ct) => (
+                      <button
+                        key={ct.value}
+                        onClick={() => { setSelectedContentType(ct.value); setShowContentType(false); }}
+                        className={cn(
+                          "flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-xs text-left transition-colors",
+                          selectedContentType === ct.value ? "bg-primary/10 text-primary" : "text-foreground hover:bg-accent"
+                        )}
+                      >
+                        <ct.icon className="w-3.5 h-3.5" />
+                        {ct.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Color Presets */}
+              <div className="relative">
+                <button
+                  onClick={() => { setShowColorPresets(!showColorPresets); setShowContentType(false); }}
+                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                >
+                  <Palette className="w-3 h-3" />
+                  <span className="hidden sm:inline">Colors</span>
+                </button>
+                {showColorPresets && (
+                  <div className="absolute bottom-full left-0 mb-1 bg-popover border border-border rounded-lg shadow-lg p-2 z-50">
+                    <div className="flex gap-1.5">
+                      {COLOR_PRESETS.map((cp) => (
+                        <button
+                          key={cp.name}
+                          onClick={() => {
+                            setInput((prev) => prev + ` Use ${cp.name.toLowerCase()} as primary color.`);
+                            setShowColorPresets(false);
+                          }}
+                          className="group flex flex-col items-center gap-1"
+                          title={cp.name}
+                        >
+                          <div
+                            className="w-6 h-6 rounded-full border-2 border-border group-hover:border-foreground/50 transition-colors"
+                            style={{ backgroundColor: cp.color }}
+                          />
+                          <span className="text-[9px] text-muted-foreground">{cp.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Right side: send button */}
             <Button
-              variant="ghost" size="icon"
+              size="icon"
               className={cn(
-                "h-8 w-8 rounded-lg transition-colors",
-                isRecording ? "text-destructive bg-destructive/10 hover:bg-destructive/20" : "text-muted-foreground hover:text-foreground"
+                "h-8 w-8 rounded-lg shrink-0 transition-all",
+                input.trim() ? "opacity-100" : "opacity-50"
               )}
-              onClick={handleMicToggle}
-              title={isRecording ? "Stop recording" : "Voice input"}
+              onClick={() => sendMessage(input)}
+              disabled={!input.trim()}
             >
-              {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              {isBuilding ? <Plus className="w-4 h-4" /> : <ArrowUp className="w-4 h-4" />}
             </Button>
           </div>
-          <textarea
-            ref={textareaRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage(input);
-              }
-            }}
-            placeholder={isBuilding ? "Queue another prompt..." : `Describe your ${selectedContentType}...`}
-            rows={1}
-            className="flex-1 resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none min-h-[36px] max-h-[300px] py-2"
-          />
-          <Button
-            size="icon"
-            className={cn(
-              "h-8 w-8 rounded-lg shrink-0 transition-all",
-              input.trim() ? "opacity-100" : "opacity-50"
-            )}
-            onClick={() => sendMessage(input)}
-            disabled={!input.trim()}
-          >
-            {isBuilding ? <Plus className="w-4 h-4" /> : <ArrowUp className="w-4 h-4" />}
-          </Button>
         </div>
       </div>
     </div>
