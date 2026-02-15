@@ -163,6 +163,7 @@ export default function AIIntegrationPage() {
               <Brain className="w-6 h-6 text-primary" /> AI Integrations
             </h1>
             <p className="text-sm text-muted-foreground mt-1">Manage AI platform connections, models, and API keys.</p>
+            <p className="text-xs text-destructive/80 mt-1.5">⚠️ You must configure API keys for all agents to enable the full AI Builder pipeline. Without them, your content build will be incomplete.</p>
           </div>
           <Button variant="hero" onClick={openCreate}>
             <Plus className="w-4 h-4" /> Add Integration

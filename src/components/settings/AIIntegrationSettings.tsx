@@ -661,7 +661,13 @@ export default function AIIntegrationSettings() {
       </Accordion>
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">Manage AI platform connections, models, and API keys.</p>
+        <div>
+          <p className="text-sm text-muted-foreground">Manage AI platform connections, models, and API keys.</p>
+          <p className="text-xs text-destructive/80 mt-1.5 flex items-center gap-1.5">
+            <Info className="w-3.5 h-3.5 shrink-0" />
+            You must configure API keys for all 10 agents below to enable the full AI Builder pipeline. Without them, your content build will be incomplete.
+          </p>
+        </div>
         <Button variant="default" size="sm" onClick={openCreate}>
           <Plus className="w-4 h-4" /> Add Integration
         </Button>
