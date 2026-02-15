@@ -23,6 +23,10 @@ import {
 import { cn } from "@/lib/utils";
 import type { AppConfig, PageConfig, ComponentConfig } from "@/lib/engine";
 import { useState, useRef, useCallback } from "react";
+import { EditableText, EditableImage, EditableLink } from "./InlineEditable";
+
+// Prop updater type threaded through components
+type PropUpdater = (key: string, value: any) => void;
 
 // === Main Renderer ===
 
@@ -35,9 +39,10 @@ interface AppPreviewRendererProps {
   onAddComponent?: (pageIndex: number, type: string) => void;
   onAddPage?: (name: string, route: string, layout: string) => void;
   onDeletePage?: (pageIndex: number) => void;
+  onUpdateComponentProp?: (pageIndex: number, componentIndex: number, propKey: string, value: any) => void;
 }
 
-export function AppPreviewRenderer({ config, selectedComponent, onSelectComponent, onReorderComponents, onDeleteComponent, onAddComponent, onAddPage, onDeletePage }: AppPreviewRendererProps) {
+export function AppPreviewRenderer({ config, selectedComponent, onSelectComponent, onReorderComponents, onDeleteComponent, onAddComponent, onAddPage, onDeletePage, onUpdateComponentProp }: AppPreviewRendererProps) {
   const [activePage, setActivePage] = useState(0);
   const [showAddComponent, setShowAddComponent] = useState(false);
   const currentPage = config.pages[activePage];
@@ -69,6 +74,7 @@ export function AppPreviewRenderer({ config, selectedComponent, onSelectComponen
               onReorderComponents={onReorderComponents}
               onDeleteComponent={onDeleteComponent}
               onNavigate={navigateToPage}
+              onUpdateComponentProp={onUpdateComponentProp}
             />
           )}
 
@@ -122,9 +128,10 @@ interface PageRendererProps {
   onReorderComponents?: (pageIndex: number, fromIndex: number, toIndex: number) => void;
   onDeleteComponent?: (pageIndex: number, componentIndex: number) => void;
   onNavigate?: (pageRoute: string) => void;
+  onUpdateComponentProp?: (pageIndex: number, componentIndex: number, propKey: string, value: any) => void;
 }
 
-function PageRenderer({ page, config, pageIndex, selectedComponent, onSelectComponent, onReorderComponents, onDeleteComponent, onNavigate }: PageRendererProps) {
+function PageRenderer({ page, config, pageIndex, selectedComponent, onSelectComponent, onReorderComponents, onDeleteComponent, onNavigate, onUpdateComponentProp }: PageRendererProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
   const dragCounter = useRef(0);
@@ -208,7 +215,7 @@ function PageRenderer({ page, config, pageIndex, selectedComponent, onSelectComp
               )}
             </div>
           )}
-          <ComponentRenderer component={comp} config={config} onNavigate={onNavigate} />
+          <ComponentRenderer component={comp} config={config} onNavigate={onNavigate} onUpdateProp={onUpdateComponentProp ? (key, val) => onUpdateComponentProp(pageIndex, i, key, val) : undefined} />
         </div>
         {isDropTarget && dragIndex !== null && dragIndex < i && (
           <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary rounded-full z-20" />
@@ -323,19 +330,20 @@ function PageRenderer({ page, config, pageIndex, selectedComponent, onSelectComp
 
 // === Component Renderer ===
 
-function ComponentRenderer({ component, config, onNavigate }: { component: ComponentConfig; config: AppConfig; onNavigate?: (pageRoute: string) => void }) {
+function ComponentRenderer({ component, config, onNavigate, onUpdateProp }: { component: ComponentConfig; config: AppConfig; onNavigate?: (pageRoute: string) => void; onUpdateProp?: PropUpdater }) {
   const props = component.props || {};
+  const up = onUpdateProp;
 
   switch (component.type) {
-    case "hero": return <HeroPreview props={props} config={config} onNavigate={onNavigate} />;
-    case "navbar": return <NavbarPreview props={props} config={config} onNavigate={onNavigate} />;
-    case "footer": return <FooterPreview props={props} config={config} />;
+    case "hero": return <HeroPreview props={props} config={config} onNavigate={onNavigate} onUpdateProp={up} />;
+    case "navbar": return <NavbarPreview props={props} config={config} onNavigate={onNavigate} onUpdateProp={up} />;
+    case "footer": return <FooterPreview props={props} config={config} onUpdateProp={up} />;
     case "stats_row": return <StatsRowPreview props={props} config={config} />;
     case "crud_table": return <CrudTablePreview props={props} />;
     case "chart": return <ChartPreview props={props} />;
     case "card_grid": return <CardGridPreview props={props} config={config} />;
     case "auth_form": return <AuthFormPreview props={props} />;
-    case "pricing_table": return <PricingTablePreview props={props} />;
+    case "pricing_table": return <PricingTablePreview props={props} onUpdateProp={up} />;
     case "form": return <FormPreview props={props} config={config} />;
     case "search_bar": return <SearchBarPreview props={props} />;
     case "kanban_board": return <KanbanPreview props={props} />;
@@ -351,12 +359,12 @@ function ComponentRenderer({ component, config, onNavigate }: { component: Compo
     case "rich_text_editor": return <RichTextEditorPreview props={props} />;
     case "map": return <MapPreview props={props} />;
     case "trusted_by": return <TrustedByPreview props={props} />;
-    case "features_grid": return <FeaturesGridPreview props={props} />;
-    case "feature_split": return <FeatureSplitPreview props={props} />;
-    case "how_it_works": return <HowItWorksPreview props={props} />;
-    case "testimonials": return <TestimonialsPreview props={props} />;
-    case "faq": return <FaqPreview props={props} />;
-    case "final_cta": return <FinalCtaPreview props={props} />;
+    case "features_grid": return <FeaturesGridPreview props={props} onUpdateProp={up} />;
+    case "feature_split": return <FeatureSplitPreview props={props} onUpdateProp={up} />;
+    case "how_it_works": return <HowItWorksPreview props={props} onUpdateProp={up} />;
+    case "testimonials": return <TestimonialsPreview props={props} onUpdateProp={up} />;
+    case "faq": return <FaqPreview props={props} onUpdateProp={up} />;
+    case "final_cta": return <FinalCtaPreview props={props} onUpdateProp={up} />;
     // Dynamic sections
     case "stats_banner": return <StatsBannerPreview props={props} />;
     case "video_section": return <VideoSectionPreview props={props} />;
@@ -388,7 +396,7 @@ function ComponentRenderer({ component, config, onNavigate }: { component: Compo
 
 // === Individual Component Previews ===
 
-function NavbarPreview({ props, config, onNavigate }: { props: Record<string, any>; config: AppConfig; onNavigate?: (pageRoute: string) => void }) {
+function NavbarPreview({ props, config, onNavigate, onUpdateProp }: { props: Record<string, any>; config: AppConfig; onNavigate?: (pageRoute: string) => void; onUpdateProp?: PropUpdater }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const navItems = config.pages.length > 1
     ? config.pages.filter(p => p.layout !== "dashboard").map(p => p.name)
@@ -402,7 +410,11 @@ function NavbarPreview({ props, config, onNavigate }: { props: Record<string, an
             <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center shadow-sm">
               <Zap className="w-4 h-4 text-primary-foreground" />
             </div>
-            <span className="font-bold text-sm text-foreground tracking-tight">{props.logo_text || config.title}</span>
+            {onUpdateProp ? (
+              <EditableText value={props.logo_text || config.title} onSave={(v) => onUpdateProp("logo_text", v)} as="span" className="font-bold text-sm text-foreground tracking-tight" />
+            ) : (
+              <span className="font-bold text-sm text-foreground tracking-tight">{props.logo_text || config.title}</span>
+            )}
           </div>
           <nav className="hidden sm:flex items-center gap-1">
             {navItems.map((item, i) => (
@@ -461,7 +473,7 @@ function NavbarPreview({ props, config, onNavigate }: { props: Record<string, an
   );
 }
 
-function HeroPreview({ props, config, onNavigate }: { props: Record<string, any>; config: AppConfig; onNavigate?: (pageRoute: string) => void }) {
+function HeroPreview({ props, config, onNavigate, onUpdateProp }: { props: Record<string, any>; config: AppConfig; onNavigate?: (pageRoute: string) => void; onUpdateProp?: PropUpdater }) {
   const alignment = props.alignment || "center";
   const isPortfolio = /portfolio|personal|resume|cv|freelanc/i.test(config.project_type + " " + (config.description || "") + " " + (config.title || ""));
   
@@ -533,19 +545,43 @@ function HeroPreview({ props, config, onNavigate }: { props: Record<string, any>
       <div className="absolute bottom-10 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
       
       <div className="relative max-w-2xl mx-auto space-y-6">
-        <Badge variant="secondary" className="text-xs px-3 py-1 gap-1.5 font-medium">
-          <Sparkles className="w-3 h-3" /> {props.badge_text || "New Release"}
-        </Badge>
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground leading-tight tracking-tight">
-          {props.headline || config.title || "Build Something Amazing"}
-        </h1>
-        <p className="text-muted-foreground text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
-          {props.subtitle || config.description || "The modern platform for building applications faster than ever before."}
-        </p>
+        {onUpdateProp ? (
+          <EditableText value={props.badge_text || "New Release"} onSave={(v) => onUpdateProp("badge_text", v)} as="span">
+            <Badge variant="secondary" className="text-xs px-3 py-1 gap-1.5 font-medium">
+              <Sparkles className="w-3 h-3" /> {props.badge_text || "New Release"}
+            </Badge>
+          </EditableText>
+        ) : (
+          <Badge variant="secondary" className="text-xs px-3 py-1 gap-1.5 font-medium">
+            <Sparkles className="w-3 h-3" /> {props.badge_text || "New Release"}
+          </Badge>
+        )}
+        {onUpdateProp ? (
+          <EditableText value={props.headline || config.title || "Build Something Amazing"} onSave={(v) => onUpdateProp("headline", v)} as="h1" className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground leading-tight tracking-tight" />
+        ) : (
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground leading-tight tracking-tight">
+            {props.headline || config.title || "Build Something Amazing"}
+          </h1>
+        )}
+        {onUpdateProp ? (
+          <EditableText value={props.subtitle || config.description || "The modern platform for building applications faster than ever before."} onSave={(v) => onUpdateProp("subtitle", v)} as="p" className="text-muted-foreground text-sm sm:text-base max-w-lg mx-auto leading-relaxed" />
+        ) : (
+          <p className="text-muted-foreground text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
+            {props.subtitle || config.description || "The modern platform for building applications faster than ever before."}
+          </p>
+        )}
         <div className={cn("flex gap-3 pt-2", alignment === "center" ? "justify-center" : "")}>
-          <Button size="lg" className="text-sm gap-2 shadow-primary-lg">
-            {props.cta_text || "Get Started"} <ArrowUpRight className="w-4 h-4" />
-          </Button>
+          {onUpdateProp ? (
+            <EditableLink label={props.cta_text || "Get Started"} onSaveLabel={(v) => onUpdateProp("cta_text", v)}>
+              <Button size="lg" className="text-sm gap-2 shadow-primary-lg">
+                {props.cta_text || "Get Started"} <ArrowUpRight className="w-4 h-4" />
+              </Button>
+            </EditableLink>
+          ) : (
+            <Button size="lg" className="text-sm gap-2 shadow-primary-lg">
+              {props.cta_text || "Get Started"} <ArrowUpRight className="w-4 h-4" />
+            </Button>
+          )}
           <Button variant="outline" size="lg" className="text-sm gap-2">
             <Play className="w-4 h-4" /> Watch Demo
           </Button>
@@ -930,7 +966,7 @@ function AuthFormPreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function PricingTablePreview({ props }: { props: Record<string, any> }) {
+function PricingTablePreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   const plans = props.plans || [
     { name: "Starter", price: "$0", features: ["1 project", "Basic analytics", "1GB storage", "Community support"] },
     { name: "Pro", price: "$29", features: ["Unlimited projects", "Advanced analytics", "100GB storage", "Priority support", "Custom domain", "API access"] },
@@ -1648,7 +1684,7 @@ function TrustedByPreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function FeaturesGridPreview({ props }: { props: Record<string, any> }) {
+function FeaturesGridPreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   const cols = props.columns || 3;
   const defaultFeatures = [
     { title: "Lightning Fast", description: "Optimized for speed with sub-second load times and instant interactions.", icon: Zap },
@@ -1666,12 +1702,20 @@ function FeaturesGridPreview({ props }: { props: Record<string, any> }) {
           <Badge variant="secondary" className="text-xs px-3 py-1 gap-1.5 font-medium">
             <Sparkles className="w-3 h-3" /> Features
           </Badge>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight leading-tight">
-            {props.headline || "Everything you need to succeed"}
-          </h2>
-          <p className="text-base text-muted-foreground max-w-xl mx-auto leading-relaxed">
-            {props.subtitle || "Powerful features designed to help you build, launch, and scale faster than ever."}
-          </p>
+          {onUpdateProp ? (
+            <EditableText value={props.headline || "Everything you need to succeed"} onSave={(v) => onUpdateProp("headline", v)} as="h2" className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight leading-tight" />
+          ) : (
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight leading-tight">
+              {props.headline || "Everything you need to succeed"}
+            </h2>
+          )}
+          {onUpdateProp ? (
+            <EditableText value={props.subtitle || "Powerful features designed to help you build, launch, and scale faster than ever."} onSave={(v) => onUpdateProp("subtitle", v)} as="p" className="text-base text-muted-foreground max-w-xl mx-auto leading-relaxed" />
+          ) : (
+            <p className="text-base text-muted-foreground max-w-xl mx-auto leading-relaxed">
+              {props.subtitle || "Powerful features designed to help you build, launch, and scale faster than ever."}
+            </p>
+          )}
         </div>
         <div className={cn("grid gap-6", `grid-cols-1 sm:grid-cols-2 lg:grid-cols-${Math.min(cols, 3)}`)}>
           {defaultFeatures.slice(0, cols * 2).map((feature, i) => {
@@ -1692,7 +1736,7 @@ function FeaturesGridPreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function FeatureSplitPreview({ props }: { props: Record<string, any> }) {
+function FeatureSplitPreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   const imageSide = props.image_side || "right";
   const defaultFeatures = [
     "Real-time collaboration with your entire team",
@@ -1782,7 +1826,7 @@ function FeatureSplitPreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function HowItWorksPreview({ props }: { props: Record<string, any> }) {
+function HowItWorksPreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   const defaultSteps = [
     { title: "Create your account", description: "Sign up in seconds with just your email. No credit card required to get started." },
     { title: "Configure your workspace", description: "Set up your team, customize your dashboard, and connect your favorite tools." },
@@ -1821,7 +1865,7 @@ function HowItWorksPreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function TestimonialsPreview({ props }: { props: Record<string, any> }) {
+function TestimonialsPreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   const defaultTestimonials = [
     { quote: "This platform completely transformed how we manage our business. The analytics alone saved us 20 hours per week.", name: "Sarah Johnson", role: "CEO at TechFlow", avatar: "S" },
     { quote: "Best investment we've made this year. The team collaboration features are incredibly intuitive and powerful.", name: "Michael Chen", role: "CTO at ScaleUp", avatar: "M" },
@@ -1834,12 +1878,20 @@ function TestimonialsPreview({ props }: { props: Record<string, any> }) {
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-14 space-y-3">
           <Badge variant="secondary" className="text-xs px-3 py-1 font-medium">Testimonials</Badge>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
-            {props.headline || "Loved by thousands of teams"}
-          </h2>
-          <p className="text-base text-muted-foreground max-w-lg mx-auto leading-relaxed">
-            {props.subtitle || "See why leading companies choose us to power their business."}
-          </p>
+          {onUpdateProp ? (
+            <EditableText value={props.headline || "Loved by thousands of teams"} onSave={(v) => onUpdateProp("headline", v)} as="h2" className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight" />
+          ) : (
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
+              {props.headline || "Loved by thousands of teams"}
+            </h2>
+          )}
+          {onUpdateProp ? (
+            <EditableText value={props.subtitle || "See why leading companies choose us to power their business."} onSave={(v) => onUpdateProp("subtitle", v)} as="p" className="text-base text-muted-foreground max-w-lg mx-auto leading-relaxed" />
+          ) : (
+            <p className="text-base text-muted-foreground max-w-lg mx-auto leading-relaxed">
+              {props.subtitle || "See why leading companies choose us to power their business."}
+            </p>
+          )}
         </div>
         <div className={cn("grid gap-6", `grid-cols-1 md:grid-cols-${Math.min(props.columns || 3, 3)}`)}>
           {testimonials.map((t: any, i: number) => (
@@ -1867,7 +1919,7 @@ function TestimonialsPreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function FaqPreview({ props }: { props: Record<string, any> }) {
+function FaqPreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   const defaultFaqs = [
     { question: "How do I get started?", answer: "Simply create a free account and follow the guided setup wizard. You'll be up and running in under 5 minutes." },
     { question: "Is there a free trial?", answer: "Yes! We offer a 14-day free trial with full access to all features. No credit card required." },
@@ -1909,7 +1961,7 @@ function FaqPreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function FinalCtaPreview({ props }: { props: Record<string, any> }) {
+function FinalCtaPreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   return (
     <div className="px-6 py-20">
       <div className="max-w-3xl mx-auto">
@@ -1917,12 +1969,20 @@ function FinalCtaPreview({ props }: { props: Record<string, any> }) {
           <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-primary/80" />
           <div className="absolute top-0 right-0 w-96 h-96 bg-primary-foreground/5 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl" />
           <div className="relative text-center py-16 px-8 space-y-6">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-primary-foreground tracking-tight leading-tight">
-              {props.headline || "Ready to transform your business?"}
-            </h2>
-            <p className="text-base text-primary-foreground/80 max-w-lg mx-auto leading-relaxed">
-              {props.subtitle || "Join thousands of companies already using our platform to grow faster and work smarter."}
-            </p>
+            {onUpdateProp ? (
+              <EditableText value={props.headline || "Ready to transform your business?"} onSave={(v) => onUpdateProp("headline", v)} as="h2" className="text-3xl sm:text-4xl font-extrabold text-primary-foreground tracking-tight leading-tight" />
+            ) : (
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-primary-foreground tracking-tight leading-tight">
+                {props.headline || "Ready to transform your business?"}
+              </h2>
+            )}
+            {onUpdateProp ? (
+              <EditableText value={props.subtitle || "Join thousands of companies already using our platform to grow faster and work smarter."} onSave={(v) => onUpdateProp("subtitle", v)} as="p" className="text-base text-primary-foreground/80 max-w-lg mx-auto leading-relaxed" />
+            ) : (
+              <p className="text-base text-primary-foreground/80 max-w-lg mx-auto leading-relaxed">
+                {props.subtitle || "Join thousands of companies already using our platform to grow faster and work smarter."}
+              </p>
+            )}
             <div className="flex flex-wrap gap-3 justify-center pt-2">
               <Button size="lg" className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 text-sm font-semibold gap-2 shadow-lg">
                 {props.primary_cta || "Get Started Free"} <ArrowRight className="w-4 h-4" />
@@ -1939,7 +1999,7 @@ function FinalCtaPreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function FooterPreview({ props, config }: { props: Record<string, any>; config?: AppConfig }) {
+function FooterPreview({ props, config, onUpdateProp }: { props: Record<string, any>; config?: AppConfig; onUpdateProp?: PropUpdater }) {
   const isPortfolio = config && /portfolio|personal|resume|cv|freelanc/i.test(config.project_type + " " + (config.description || "") + " " + (config.title || ""));
 
   if (isPortfolio) {

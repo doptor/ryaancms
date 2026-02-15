@@ -2125,6 +2125,20 @@ export default function AIBuilderPage() {
                     setPipelineState(updated);
                     setSelectedComponent(null);
                   }}
+                  onUpdateComponentProp={(pi, ci, propKey, value) => {
+                    if (!pipelineState?.config) return;
+                    const updated = { ...pipelineState };
+                    const cfg = { ...updated.config! };
+                    const pages = [...cfg.pages];
+                    const page = { ...pages[pi] };
+                    const components = [...page.components];
+                    components[ci] = { ...components[ci], props: { ...components[ci].props, [propKey]: value } };
+                    page.components = components;
+                    pages[pi] = page;
+                    cfg.pages = pages;
+                    updated.config = cfg;
+                    setPipelineState(updated);
+                  }}
                 />
               </div>
               {selectedComponent && selectedComp && (
