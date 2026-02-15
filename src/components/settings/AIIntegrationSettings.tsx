@@ -24,15 +24,25 @@ import {
 
 type AIStatus = "active" | "inactive" | "error";
 type AIProvider = "openai" | "gemini" | "anthropic" | "mistral" | "cohere" | "meta" | "deepseek" | "groq" | "perplexity" | "xai" | "custom";
-type AITaskType = "app_builder" | "code_gen" | "speech_to_text" | "branding" | "content" | "general";
+type AITaskType = "app_builder" | "code_gen" | "speech_to_text" | "branding" | "content" | "general" | "agent_1" | "agent_2" | "agent_3" | "agent_4" | "agent_5" | "agent_6" | "agent_7" | "agent_8" | "agent_9" | "agent_10";
 
-const TASK_LABELS: Record<AITaskType, { label: string; description: string }> = {
-  app_builder: { label: "App Builder", description: "AI Builder prompt → config generation" },
-  code_gen: { label: "Code Generation", description: "Page code & component generation" },
-  speech_to_text: { label: "Speech-to-Text", description: "Voice input transcription" },
-  branding: { label: "Branding", description: "Brand name & logo generation" },
-  content: { label: "Content Writing", description: "Text, SEO, copywriting" },
-  general: { label: "General / Fallback", description: "Default for all other AI tasks" },
+const TASK_LABELS: Record<AITaskType, { label: string; description: string; group: "task" | "agent" }> = {
+  app_builder: { label: "App Builder", description: "AI Builder prompt → config generation", group: "task" },
+  code_gen: { label: "Code Generation", description: "Page code & component generation", group: "task" },
+  speech_to_text: { label: "Speech-to-Text", description: "Voice input transcription", group: "task" },
+  branding: { label: "Branding", description: "Brand name & logo generation", group: "task" },
+  content: { label: "Content Writing", description: "Text, SEO, copywriting", group: "task" },
+  general: { label: "General / Fallback", description: "Default for all other AI tasks", group: "task" },
+  agent_1: { label: "Agent 1 — Requirement Analyst", description: "Generates SRS/FRS from prompts", group: "agent" },
+  agent_2: { label: "Agent 2 — Product Manager", description: "Defines modules & workflows", group: "agent" },
+  agent_3: { label: "Agent 3 — Task Planner", description: "Plans tasks & dependencies", group: "agent" },
+  agent_4: { label: "Agent 4 — System Architect", description: "Designs folders & API structure", group: "agent" },
+  agent_5: { label: "Agent 5 — Database Agent", description: "Generates Prisma/SQL schemas", group: "agent" },
+  agent_6: { label: "Agent 6 — Backend Agent", description: "Creates Express/RBAC backend", group: "agent" },
+  agent_7: { label: "Agent 7 — UI/UX Designer", description: "Designs layouts & components", group: "agent" },
+  agent_8: { label: "Agent 8 — Testing Agent", description: "Creates test scenarios", group: "agent" },
+  agent_9: { label: "Agent 9 — Debugger Agent", description: "Auto-fixes errors", group: "agent" },
+  agent_10: { label: "Agent 10 — Quality Reviewer", description: "Final validation & scoring", group: "agent" },
 };
 
 interface AIIntegration {
@@ -826,36 +836,43 @@ export default function AIIntegrationSettings() {
             </div>
 
             {/* Use For (Task Assignment) */}
-            <div className="grid gap-2">
+            <div className="grid gap-3">
               <Label>Use For (assign tasks to this API)</Label>
-              <div className="flex flex-wrap gap-2">
-                {(Object.entries(TASK_LABELS) as [AITaskType, { label: string; description: string }][]).map(([key, { label, description }]) => {
-                  const selected = form.useFor?.includes(key) || false;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => {
-                        setForm((prev) => {
-                          const current = prev.useFor || [];
-                          const next = selected ? current.filter((t) => t !== key) : [...current, key];
-                          return { ...prev, useFor: next };
-                        });
-                      }}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                        selected
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-muted text-muted-foreground border-border hover:border-primary/50"
-                      }`}
-                      title={description}
-                    >
-                      {selected && <Check className="w-3 h-3" />}
-                      {label}
-                    </button>
-                  );
-                })}
+              <div className="space-y-3">
+                <div>
+                  <p className="text-[11px] font-medium text-muted-foreground mb-1.5 uppercase tracking-wider">Tasks</p>
+                  <div className="flex flex-wrap gap-2">
+                    {(Object.entries(TASK_LABELS) as [AITaskType, { label: string; description: string; group: string }][])
+                      .filter(([, v]) => v.group === "task")
+                      .map(([key, { label, description }]) => {
+                        const selected = form.useFor?.includes(key) || false;
+                        return (
+                          <button key={key} type="button" onClick={() => { setForm((prev) => { const current = prev.useFor || []; const next = selected ? current.filter((t) => t !== key) : [...current, key]; return { ...prev, useFor: next }; }); }} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${selected ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-border hover:border-primary/50"}`} title={description}>
+                            {selected && <Check className="w-3 h-3" />}
+                            {label}
+                          </button>
+                        );
+                      })}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[11px] font-medium text-muted-foreground mb-1.5 uppercase tracking-wider">Agents</p>
+                  <div className="flex flex-wrap gap-2">
+                    {(Object.entries(TASK_LABELS) as [AITaskType, { label: string; description: string; group: string }][])
+                      .filter(([, v]) => v.group === "agent")
+                      .map(([key, { label, description }]) => {
+                        const selected = form.useFor?.includes(key) || false;
+                        return (
+                          <button key={key} type="button" onClick={() => { setForm((prev) => { const current = prev.useFor || []; const next = selected ? current.filter((t) => t !== key) : [...current, key]; return { ...prev, useFor: next }; }); }} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${selected ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-border hover:border-primary/50"}`} title={description}>
+                            {selected && <Check className="w-3 h-3" />}
+                            {label}
+                          </button>
+                        );
+                      })}
+                  </div>
+                </div>
               </div>
-              <p className="text-[11px] text-muted-foreground">Select which tasks should use this API. The system picks the best matching integration per task.</p>
+              <p className="text-[11px] text-muted-foreground">Select tasks & agents to assign to this API. One API key per provider covers all assigned agents.</p>
             </div>
 
             {/* Instructions accordion */}
