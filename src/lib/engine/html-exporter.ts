@@ -1263,7 +1263,7 @@ function renderComponent(comp: ComponentConfig, config: AppConfig, imageMap: Map
 
 // ── Page → HTML ─────────────────────────────────────────────
 
-function generatePageHTML(page: PageConfig, config: AppConfig, imageMap: Map<string, { blob: Blob; localPath: string }>, pages: PageConfig[], cssPath: string, jsPath: string): string {
+function generatePageHTML(page: PageConfig, config: AppConfig, imageMap: Map<string, { blob: Blob; localPath: string }>, pages: PageConfig[], cssPath: string, editorJS: string): string {
   editCounter = 0;
   const components = page.components.map(c => renderComponent(c, config, imageMap, pages)).join("\n\n");
   
@@ -1281,7 +1281,7 @@ function generatePageHTML(page: PageConfig, config: AppConfig, imageMap: Map<str
 </head>
 <body>
 ${components}
-<script src="${jsPath}"><\/script>
+<script>${editorJS}<\/script>
 </body>
 </html>`;
 }
@@ -1514,7 +1514,7 @@ export async function exportToHTML(config: AppConfig, onProgress?: (msg: string)
 </head>
 <body class="bg-background text-foreground min-h-screen" style="font-family: ${font};">
 ${finalHTML}
-<script src="js/editor.js"><\/script>
+<script>${generateEditorJS(password)}<\/script>
 </body>
 </html>`;
 
@@ -1533,19 +1533,19 @@ ${finalHTML}
       zip.file(localPath, blob);
     }
 
+    const editorJS = generateEditorJS(password);
     const pages = config.pages.filter(p => p.layout !== "dashboard" || config.pages.length === 1);
     onProgress?.(`Generating ${pages.length} page(s)...`);
 
     for (const page of pages) {
       const filename = page.route === "/" ? "index.html" : `${page.route.replace(/^\//, "").replace(/\//g, "-")}.html`;
-      const html = generatePageHTML(page, config, imageMap, pages, "css/styles.css", "js/editor.js");
+      const html = generatePageHTML(page, config, imageMap, pages, "css/styles.css", editorJS);
       zip.file(filename, html);
     }
   }
 
-  // Always include editor JS and CSS
+  // Always include editor CSS
   zip.file("css/styles.css", generateCSS(config));
-  zip.file("js/editor.js", generateEditorJS(password));
 
   // Store password in editor.txt
   zip.file("editor.txt", `========================================
