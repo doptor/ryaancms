@@ -424,15 +424,17 @@ export default function DashboardOverview() {
                   <FolderOpen className="w-4 h-4 text-primary" />
                   Projects ({filtered.length})
                 </h2>
-                <div className="relative w-full sm:w-64">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                  <Input
-                    value={searchQuery}
-                    onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                    placeholder="Search projects..."
-                    className="h-8 text-xs pl-8"
-                  />
-                </div>
+                {allProjects.length >= 20 && (
+                  <div className="relative w-full sm:w-64">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                    <Input
+                      value={searchQuery}
+                      onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                      placeholder="Search projects..."
+                      className="h-8 text-xs pl-8"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Card Grid */}
