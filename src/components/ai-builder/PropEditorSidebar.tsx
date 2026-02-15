@@ -2,11 +2,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { X, RotateCcw, Paintbrush, Pipette, ImageIcon } from "lucide-react";
+import { X, RotateCcw, Paintbrush, Pipette, ImageIcon, Columns } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ComponentConfig, ComponentType } from "@/lib/engine";
 import { getComponentMeta } from "@/lib/engine";
 import { useState, useEffect } from "react";
+import { ContentBlocksEditor, type ContentBlock } from "./ContentBlocksEditor";
 
 // Preset color swatches
 const COLOR_PRESETS = [
@@ -425,6 +426,24 @@ export function PropEditorSidebar({ component, componentIndex, pageIndex, onClos
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Content Blocks */}
+          <div className="pt-2 border-t border-border space-y-2">
+            <div className="flex items-center gap-1.5">
+              <Columns className="w-3 h-3 text-primary" />
+              <label className="text-xs font-semibold text-foreground">Content Blocks</label>
+            </div>
+            <ContentBlocksEditor
+              blocks={(editedProps._content_blocks as ContentBlock[]) || []}
+              columns={(editedProps._content_columns as number) || 1}
+              position={(editedProps._content_position as "above" | "below") || "below"}
+              onChange={(blocks, columns, position) => {
+                const next = { ...editedProps, _content_blocks: blocks, _content_columns: columns, _content_position: position };
+                setEditedProps(next);
+                onUpdate(pageIndex, componentIndex, next);
+              }}
+            />
           </div>
 
           {/* Category info */}
