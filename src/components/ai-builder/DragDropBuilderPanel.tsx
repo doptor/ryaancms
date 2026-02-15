@@ -729,6 +729,7 @@ export function DragDropBuilderPanel({
             component={selectedComp}
             componentIndex={selectedComponent.componentIndex}
             pageIndex={selectedComponent.pageIndex}
+            config={config || undefined}
             onClose={onClearSelection}
             onUpdate={onPropUpdate}
           />

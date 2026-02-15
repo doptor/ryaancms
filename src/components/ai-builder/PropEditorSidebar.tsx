@@ -2,13 +2,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { X, RotateCcw, Paintbrush, Pipette, ImageIcon, Columns } from "lucide-react";
+import { X, RotateCcw, Paintbrush, Pipette, ImageIcon, Columns, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { ComponentConfig, ComponentType } from "@/lib/engine";
+import type { ComponentConfig, ComponentType, AppConfig } from "@/lib/engine";
 import { getComponentMeta } from "@/lib/engine";
 import { useState, useEffect } from "react";
 import { ContentBlocksEditor, type ContentBlock } from "./ContentBlocksEditor";
 import { ImageUploadField } from "./ImageUploadField";
+import { NavItemsEditor, type NavItem } from "./NavItemsEditor";
 
 // Preset color swatches
 const COLOR_PRESETS = [
@@ -48,11 +49,12 @@ interface PropEditorSidebarProps {
   component: ComponentConfig | null;
   componentIndex: number;
   pageIndex: number;
+  config?: AppConfig;
   onClose: () => void;
   onUpdate: (pageIndex: number, componentIndex: number, newProps: Record<string, any>) => void;
 }
 
-export function PropEditorSidebar({ component, componentIndex, pageIndex, onClose, onUpdate }: PropEditorSidebarProps) {
+export function PropEditorSidebar({ component, componentIndex, pageIndex, config, onClose, onUpdate }: PropEditorSidebarProps) {
   const [editedProps, setEditedProps] = useState<Record<string, any>>({});
 
   useEffect(() => {
@@ -447,6 +449,25 @@ export function PropEditorSidebar({ component, componentIndex, pageIndex, onClos
               </div>
             )}
           </div>
+
+          {/* Nav Items (navbar only) */}
+          {component.type === "navbar" && config && (
+            <div className="pt-2 border-t border-border space-y-2">
+              <div className="flex items-center gap-1.5">
+                <Menu className="w-3 h-3 text-primary" />
+                <label className="text-xs font-semibold text-foreground">Menu Links</label>
+              </div>
+              <NavItemsEditor
+                items={(editedProps._nav_items as NavItem[]) || []}
+                config={config}
+                onChange={(items) => {
+                  const next = { ...editedProps, _nav_items: items };
+                  setEditedProps(next);
+                  onUpdate(pageIndex, componentIndex, next);
+                }}
+              />
+            </div>
+          )}
 
           {/* Content Blocks */}
           <div className="pt-2 border-t border-border space-y-2">

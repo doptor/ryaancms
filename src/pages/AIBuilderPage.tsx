@@ -2230,6 +2230,7 @@ export default function AIBuilderPage() {
                   component={selectedComp}
                   componentIndex={selectedComponent.componentIndex}
                   pageIndex={selectedComponent.pageIndex}
+                  config={config || undefined}
                   onClose={() => setSelectedComponent(null)}
                   onUpdate={handlePropUpdate}
                 />
