@@ -62,7 +62,7 @@ import { EnvironmentManagerPanel } from "@/components/ai-builder/EnvironmentMana
 import { WebhookNotificationPanel } from "@/components/ai-builder/WebhookNotificationPanel";
 import { ProjectBranchingPanel } from "@/components/ai-builder/ProjectBranchingPanel";
 import { DragDropBuilderPanel } from "@/components/ai-builder/DragDropBuilderPanel";
-import { AIChatAssistantPanel } from "@/components/ai-builder/AIChatAssistantPanel";
+// AIChatAssistantPanel removed
 import { BuildActivitySidebar, ActivityDetailView, type BuildActivity, type QueuedPrompt } from "@/components/ai-builder/BuildActivitySidebar";
 import { DatabaseDesignerPanel } from "@/components/ai-builder/DatabaseDesignerPanel";
 import { I18nGeneratorPanel } from "@/components/ai-builder/I18nGeneratorPanel";
@@ -2415,9 +2415,6 @@ export default function AIBuilderPage() {
                           <TabsTrigger value="quality" className={tabTriggerClass}>
                             <TrendingUp className="w-3.5 h-3.5" /> Quality
                           </TabsTrigger>
-                          <TabsTrigger value="ai-assistant" className={tabTriggerClass}>
-                            <MessageSquare className="w-3.5 h-3.5" /> Assistant
-                          </TabsTrigger>
                         </TabsList>
                       </div>
                     </Tabs>
@@ -2438,17 +2435,6 @@ export default function AIBuilderPage() {
                         onSelectComponent={(pi, ci) => setSelectedComponent({ pageIndex: pi, componentIndex: ci })}
                         onClearSelection={() => setSelectedComponent(null)}
                         onPropUpdate={handlePropUpdate}
-                      />
-                    )}
-                    {desktopRightTab === "ai-assistant" && (
-                      <AIChatAssistantPanel
-                        config={pipelineState?.config || null}
-                        onConfigUpdate={(newConfig) => {
-                          if (!pipelineState) return;
-                          setPipelineState({ ...pipelineState, config: newConfig });
-                        }}
-                        onSendToBuild={(prompt) => sendMessage(prompt)}
-                        isBuilding={isBuilding}
                       />
                     )}
                     {desktopRightTab === "db-designer" && (
@@ -2675,7 +2661,6 @@ export default function AIBuilderPage() {
                         { value: "deploy", icon: Rocket, label: "Deploy" },
                         { value: "db-designer", icon: Database, label: "Database" },
                         { value: "quality", icon: TrendingUp, label: "Quality" },
-                        { value: "ai-assistant", icon: MessageSquare, label: "Assistant" },
                       ].map((tab) => (
                         <DropdownMenuItem
                           key={tab.value}
@@ -2707,17 +2692,6 @@ export default function AIBuilderPage() {
                   onSelectComponent={(pi, ci) => setSelectedComponent({ pageIndex: pi, componentIndex: ci })}
                   onClearSelection={() => setSelectedComponent(null)}
                   onPropUpdate={handlePropUpdate}
-                />
-              )}
-              {effectiveTab === "ai-assistant" && (
-                <AIChatAssistantPanel
-                  config={pipelineState?.config || null}
-                  onConfigUpdate={(newConfig) => {
-                    if (!pipelineState) return;
-                    setPipelineState({ ...pipelineState, config: newConfig });
-                  }}
-                  onSendToBuild={(prompt) => sendMessage(prompt)}
-                  isBuilding={isBuilding}
                 />
               )}
               {effectiveTab === "db-designer" && (
