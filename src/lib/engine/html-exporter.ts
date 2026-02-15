@@ -290,19 +290,38 @@ function generateEditorShortcutJS(password: string): string {
     if (ev.ctrlKey && ev.shiftKey && (ev.key === 'E' || ev.key === 'e' || ev.keyCode === 69)) {
       ev.preventDefault();
       if (sessionStorage.getItem(PASS_KEY) === 'true') {
-        if (window.__ryaanEditor) return; // main editor active
+        if (window.__ryaanEditor) return;
         alert('Editor session is active but toolbar failed to load. Try refreshing the page.');
         return;
       }
-      // If main editor loaded, use its unlock (has security question support)
       if (window.__ryaanEditor && typeof window.__ryaanEditor.unlock === 'function') {
         window.__ryaanEditor.unlock();
         return;
       }
-      // Fallback standalone login
       doLogin();
     }
   });
+
+  // Mobile: floating edit button (touch devices only)
+  var isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  if (isTouchDevice && sessionStorage.getItem(PASS_KEY) !== 'true') {
+    var fab = document.createElement('button');
+    fab.textContent = '✏️';
+    fab.title = 'Open Editor';
+    fab.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:99999;width:48px;height:48px;border-radius:50%;border:none;background:#6366f1;color:white;font-size:20px;box-shadow:0 4px 12px rgba(0,0,0,0.3);cursor:pointer;display:flex;align-items:center;justify-content:center;';
+    fab.addEventListener('click', function() {
+      if (sessionStorage.getItem(PASS_KEY) === 'true') {
+        location.reload();
+        return;
+      }
+      if (window.__ryaanEditor && typeof window.__ryaanEditor.unlock === 'function') {
+        window.__ryaanEditor.unlock();
+        return;
+      }
+      doLogin();
+    });
+    document.body.appendChild(fab);
+  }
 })();`;
 }
 
