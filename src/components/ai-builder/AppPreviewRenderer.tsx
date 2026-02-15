@@ -35,6 +35,23 @@ import {
 // Prop updater type threaded through components
 type PropUpdater = (key: string, value: any) => void;
 
+// === Inline Editing Helpers (reduce boilerplate) ===
+
+function ET({ value, propKey, up, as: Tag = "span", className, children }: { value: string; propKey: string; up?: PropUpdater; as?: "h1" | "h2" | "h3" | "p" | "span" | "div"; className?: string; children?: React.ReactNode }) {
+  if (up) return <EditableText value={value} onSave={(v) => up(propKey, v)} as={Tag} className={className}>{children}</EditableText>;
+  return <Tag className={className}>{children || value}</Tag>;
+}
+
+function EL({ label, url, labelKey, urlKey, up, children }: { label?: string; url?: string; labelKey?: string; urlKey?: string; up?: PropUpdater; children: React.ReactNode }) {
+  if (up) return <EditableLink label={label} url={url} onSaveLabel={labelKey ? (v) => up(labelKey, v) : undefined} onSaveUrl={urlKey ? (v) => up(urlKey, v) : undefined}>{children}</EditableLink>;
+  return <>{children}</>;
+}
+
+function EI({ src, propKey, up, className, children }: { src?: string; propKey: string; up?: PropUpdater; className?: string; children: React.ReactNode }) {
+  if (up) return <EditableImage src={src} onSave={(v) => up(propKey, v)} className={className}>{children}</EditableImage>;
+  return <>{children}</>;
+}
+
 // === Main Renderer ===
 
 interface AppPreviewRendererProps {
@@ -398,27 +415,27 @@ function ComponentRenderer({ component, config, onNavigate, onUpdateProp }: { co
     case "hero": return <HeroPreview props={props} config={config} onNavigate={onNavigate} onUpdateProp={up} />;
     case "navbar": return <NavbarPreview props={props} config={config} onNavigate={onNavigate} onUpdateProp={up} />;
     case "footer": return <FooterPreview props={props} config={config} onUpdateProp={up} />;
-    case "stats_row": return <StatsRowPreview props={props} config={config} />;
-    case "crud_table": return <CrudTablePreview props={props} />;
-    case "chart": return <ChartPreview props={props} />;
-    case "card_grid": return <CardGridPreview props={props} config={config} />;
-    case "auth_form": return <AuthFormPreview props={props} />;
+    case "stats_row": return <StatsRowPreview props={props} config={config} onUpdateProp={up} />;
+    case "crud_table": return <CrudTablePreview props={props} onUpdateProp={up} />;
+    case "chart": return <ChartPreview props={props} onUpdateProp={up} />;
+    case "card_grid": return <CardGridPreview props={props} config={config} onUpdateProp={up} />;
+    case "auth_form": return <AuthFormPreview props={props} onUpdateProp={up} />;
     case "pricing_table": return <PricingTablePreview props={props} onUpdateProp={up} />;
-    case "form": return <FormPreview props={props} config={config} />;
-    case "search_bar": return <SearchBarPreview props={props} />;
-    case "kanban_board": return <KanbanPreview props={props} />;
-    case "calendar": return <CalendarPreview props={props} />;
+    case "form": return <FormPreview props={props} config={config} onUpdateProp={up} />;
+    case "search_bar": return <SearchBarPreview props={props} onUpdateProp={up} />;
+    case "kanban_board": return <KanbanPreview props={props} onUpdateProp={up} />;
+    case "calendar": return <CalendarPreview props={props} onUpdateProp={up} />;
     case "media_gallery": return <MediaGalleryPreview props={props} config={config} onUpdateProp={up} />;
-    case "notification_center": return <NotificationPreview props={props} />;
-    case "timeline": return <TimelinePreview props={props} />;
-    case "file_upload": return <FileUploadPreview props={props} />;
-    case "role_manager": return <RoleManagerPreview props={props} />;
-    case "payment_page": return <PaymentPagePreview props={props} />;
-    case "settings_panel": return <SettingsPanelPreview props={props} />;
-    case "api_docs": return <ApiDocsPreview props={props} />;
-    case "rich_text_editor": return <RichTextEditorPreview props={props} />;
-    case "map": return <MapPreview props={props} />;
-    case "trusted_by": return <TrustedByPreview props={props} />;
+    case "notification_center": return <NotificationPreview props={props} onUpdateProp={up} />;
+    case "timeline": return <TimelinePreview props={props} onUpdateProp={up} />;
+    case "file_upload": return <FileUploadPreview props={props} onUpdateProp={up} />;
+    case "role_manager": return <RoleManagerPreview props={props} onUpdateProp={up} />;
+    case "payment_page": return <PaymentPagePreview props={props} onUpdateProp={up} />;
+    case "settings_panel": return <SettingsPanelPreview props={props} onUpdateProp={up} />;
+    case "api_docs": return <ApiDocsPreview props={props} onUpdateProp={up} />;
+    case "rich_text_editor": return <RichTextEditorPreview props={props} onUpdateProp={up} />;
+    case "map": return <MapPreview props={props} onUpdateProp={up} />;
+    case "trusted_by": return <TrustedByPreview props={props} onUpdateProp={up} />;
     case "features_grid": return <FeaturesGridPreview props={props} onUpdateProp={up} />;
     case "feature_split": return <FeatureSplitPreview props={props} onUpdateProp={up} />;
     case "how_it_works": return <HowItWorksPreview props={props} onUpdateProp={up} />;
@@ -426,18 +443,18 @@ function ComponentRenderer({ component, config, onNavigate, onUpdateProp }: { co
     case "faq": return <FaqPreview props={props} onUpdateProp={up} />;
     case "final_cta": return <FinalCtaPreview props={props} onUpdateProp={up} />;
     // Dynamic sections
-    case "stats_banner": return <StatsBannerPreview props={props} />;
-    case "video_section": return <VideoSectionPreview props={props} />;
-    case "comparison_table": return <ComparisonTablePreview props={props} />;
-    case "integrations_grid": return <IntegrationsGridPreview props={props} />;
-    case "contact_form": return <ContactFormPreview props={props} />;
-    case "newsletter_cta": return <NewsletterCtaPreview props={props} />;
-    case "blog_preview": return <BlogPreviewPreview props={props} />;
-    case "use_cases": return <UseCasesPreview props={props} />;
-    case "team_section": return <TeamSectionPreview props={props} />;
-    case "cta_with_image": return <CtaWithImagePreview props={props} />;
-    case "logo_carousel": return <LogoCarouselPreview props={props} />;
-    case "data_import": return <DataImportPreview props={props} />;
+    case "stats_banner": return <StatsBannerPreview props={props} onUpdateProp={up} />;
+    case "video_section": return <VideoSectionPreview props={props} onUpdateProp={up} />;
+    case "comparison_table": return <ComparisonTablePreview props={props} onUpdateProp={up} />;
+    case "integrations_grid": return <IntegrationsGridPreview props={props} onUpdateProp={up} />;
+    case "contact_form": return <ContactFormPreview props={props} onUpdateProp={up} />;
+    case "newsletter_cta": return <NewsletterCtaPreview props={props} onUpdateProp={up} />;
+    case "blog_preview": return <BlogPreviewPreview props={props} onUpdateProp={up} />;
+    case "use_cases": return <UseCasesPreview props={props} onUpdateProp={up} />;
+    case "team_section": return <TeamSectionPreview props={props} onUpdateProp={up} />;
+    case "cta_with_image": return <CtaWithImagePreview props={props} onUpdateProp={up} />;
+    case "logo_carousel": return <LogoCarouselPreview props={props} onUpdateProp={up} />;
+    case "data_import": return <DataImportPreview props={props} onUpdateProp={up} />;
     case "sidebar": return null;
     case "dashboard_layout": return null;
     default:
@@ -668,7 +685,7 @@ function HeroPreview({ props, config, onNavigate, onUpdateProp }: { props: Recor
   );
 }
 
-function StatsRowPreview({ props, config }: { props: Record<string, any>; config: AppConfig }) {
+function StatsRowPreview({ props, config, onUpdateProp }: { props: Record<string, any>; config: AppConfig; onUpdateProp?: PropUpdater }) {
   const isPortfolio = /portfolio|personal|resume|cv|freelanc/i.test(config.project_type + " " + (config.description || "") + " " + (config.title || ""));
   
   if (isPortfolio) {
@@ -725,7 +742,7 @@ function StatsRowPreview({ props, config }: { props: Record<string, any>; config
   );
 }
 
-function CrudTablePreview({ props }: { props: Record<string, any> }) {
+function CrudTablePreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   const collection = props.collection || "items";
   const sampleData = [
     { id: 1, name: "Sarah Johnson", status: "Active", date: "Jan 15, 2024", email: "sarah@example.com" },
@@ -832,7 +849,7 @@ function CrudTablePreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function ChartPreview({ props }: { props: Record<string, any> }) {
+function ChartPreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   const type = props.chart_type || "bar";
   const bars = [45, 65, 40, 85, 55, 70, 90, 45, 75, 60, 80, 95];
 
@@ -877,7 +894,7 @@ function ChartPreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function CardGridPreview({ props, config }: { props: Record<string, any>; config: AppConfig }) {
+function CardGridPreview({ props, config, onUpdateProp }: { props: Record<string, any>; config: AppConfig; onUpdateProp?: PropUpdater }) {
   const cols = props.columns || 3;
   const isPortfolio = /portfolio|personal|resume|cv|freelanc/i.test(config.project_type + " " + (config.description || "") + " " + (config.title || ""));
 
@@ -968,7 +985,7 @@ function CardGridPreview({ props, config }: { props: Record<string, any>; config
   );
 }
 
-function AuthFormPreview({ props }: { props: Record<string, any> }) {
+function AuthFormPreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   const mode = props.mode || "both";
   return (
     <div className="flex items-center justify-center py-16 px-6">
@@ -1081,7 +1098,7 @@ function PricingTablePreview({ props, onUpdateProp }: { props: Record<string, an
   );
 }
 
-function FormPreview({ props, config }: { props: Record<string, any>; config: AppConfig }) {
+function FormPreview({ props, config, onUpdateProp }: { props: Record<string, any>; config: AppConfig; onUpdateProp?: PropUpdater }) {
   const isPortfolio = /portfolio|personal|resume|cv|freelanc|contact/i.test(config.project_type + " " + (config.description || "") + " " + (props.collection || ""));
 
   if (isPortfolio) {
@@ -1177,7 +1194,7 @@ function FormPreview({ props, config }: { props: Record<string, any>; config: Ap
   );
 }
 
-function SearchBarPreview({ props }: { props: Record<string, any> }) {
+function SearchBarPreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   return (
     <div className="max-w-lg">
       <div className="relative">
@@ -1189,7 +1206,7 @@ function SearchBarPreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function KanbanPreview({ props }: { props: Record<string, any> }) {
+function KanbanPreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   const columns = [
     { name: "To Do", color: "bg-muted-foreground", items: [{ t: "Design homepage", p: "High", tag: "Design" }, { t: "Write documentation", p: "Medium", tag: "Docs" }] },
     { name: "In Progress", color: "bg-primary", items: [{ t: "Build REST API", p: "High", tag: "Backend" }, { t: "Add authentication", p: "High", tag: "Auth" }] },
@@ -1235,7 +1252,7 @@ function KanbanPreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function CalendarPreview({ props }: { props: Record<string, any> }) {
+function CalendarPreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   const days = Array.from({ length: 35 }, (_, i) => {
     const day = i - 3;
     return { day: day > 0 && day <= 31 ? day : null, hasEvent: [5, 12, 18, 25].includes(day), isToday: day === 15 };
@@ -1352,7 +1369,7 @@ function MediaGalleryPreview({ props, config, onUpdateProp }: { props: Record<st
   );
 }
 
-function NotificationPreview({ props }: { props: Record<string, any> }) {
+function NotificationPreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   const items = [
     { title: "New user registered", time: "2 min ago", read: false, icon: Users },
     { title: "Order #1234 completed", time: "1 hour ago", read: false, icon: ShoppingCart },
@@ -1393,7 +1410,7 @@ function NotificationPreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function TimelinePreview({ props }: { props: Record<string, any> }) {
+function TimelinePreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   const events = [
     { title: "Project created", time: "Jan 1, 2024", desc: "Initial setup and configuration completed", icon: Zap },
     { title: "First release", time: "Jan 15, 2024", desc: "v1.0.0 deployed to production environment", icon: Package },
@@ -1426,7 +1443,7 @@ function TimelinePreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function FileUploadPreview({ props }: { props: Record<string, any> }) {
+function FileUploadPreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   return (
     <div className="rounded-2xl border-2 border-dashed border-border bg-muted/20 p-10 hover:border-primary/30 hover:bg-primary/5 transition-all duration-300 cursor-pointer">
       <div className="text-center space-y-3">
@@ -1447,7 +1464,7 @@ function FileUploadPreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function RichTextEditorPreview({ props }: { props: Record<string, any> }) {
+function RichTextEditorPreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   const toolbar = props.toolbar || "standard";
   const toolbarItems: Record<string, string[]> = {
     minimal: ["B", "I", "U", "Link"],
@@ -1494,7 +1511,7 @@ function RichTextEditorPreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function MapPreview({ props }: { props: Record<string, any> }) {
+function MapPreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   const provider = props.provider || "leaflet";
   const zoom = props.zoom || 10;
   const markers = [
@@ -1546,7 +1563,7 @@ function MapPreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function RoleManagerPreview({ props }: { props: Record<string, any> }) {
+function RoleManagerPreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   const roles = [
     { name: "Admin", users: 3, perms: ["Full Access", "Manage Users", "Billing", "Settings"], color: "bg-destructive/10 text-destructive" },
     { name: "Editor", users: 8, perms: ["Create Content", "Edit Content", "View Analytics"], color: "bg-primary/10 text-primary" },
@@ -1594,7 +1611,7 @@ function RoleManagerPreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function PaymentPagePreview({ props }: { props: Record<string, any> }) {
+function PaymentPagePreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   return (
     <div className="max-w-lg mx-auto py-10 px-4 space-y-5">
       <div>
@@ -1649,7 +1666,7 @@ function PaymentPagePreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function SettingsPanelPreview({ props }: { props: Record<string, any> }) {
+function SettingsPanelPreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   const sections = props.sections || [
     { title: "General", fields: ["Site Name", "Description", "Language"] },
     { title: "Notifications", fields: ["Email Alerts", "Push Notifications", "Weekly Digest"] },
@@ -1686,7 +1703,7 @@ function SettingsPanelPreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function ApiDocsPreview({ props }: { props: Record<string, any> }) {
+function ApiDocsPreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   const endpoints = [
     { method: "GET", path: "/api/users", desc: "List all users", status: "200" },
     { method: "POST", path: "/api/users", desc: "Create a user", status: "201" },
@@ -1730,7 +1747,7 @@ function ApiDocsPreview({ props }: { props: Record<string, any> }) {
 
 // === New Landing Page Section Previews ===
 
-function TrustedByPreview({ props }: { props: Record<string, any> }) {
+function TrustedByPreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   const brands = props.logos || ["Vercel", "Stripe", "Notion", "Linear", "Figma", "Supabase"];
   return (
     <div className="px-6 py-14 border-y border-border/50 bg-muted/20">
@@ -2152,7 +2169,7 @@ function FooterPreview({ props, config, onUpdateProp }: { props: Record<string, 
 
 // === Dynamic Section Previews ===
 
-function StatsBannerPreview({ props }: { props: Record<string, any> }) {
+function StatsBannerPreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   const stats = props.stats || [
     { label: "Users", value: "10K+", suffix: "" },
     { label: "Uptime", value: "99.9", suffix: "%" },
@@ -2162,7 +2179,7 @@ function StatsBannerPreview({ props }: { props: Record<string, any> }) {
   return (
     <div className="py-20 bg-gradient-to-r from-primary/10 via-background to-primary/5">
       <div className="max-w-5xl mx-auto px-6 text-center space-y-10">
-        <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">{props.headline || "Our Impact in Numbers"}</h2>
+        <ET value={props.headline || "Our Impact in Numbers"} propKey="headline" up={onUpdateProp} as="h2" className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {stats.map((s: any, i: number) => (
             <div key={i} className="space-y-1">
@@ -2176,13 +2193,13 @@ function StatsBannerPreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function VideoSectionPreview({ props }: { props: Record<string, any> }) {
+function VideoSectionPreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   return (
     <div className="py-20 bg-background">
       <div className="max-w-5xl mx-auto px-6 text-center space-y-10">
         <div className="space-y-3">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">{props.headline || "See it in action"}</h2>
-          <p className="text-base text-muted-foreground max-w-xl mx-auto">{props.subtitle || "Watch a quick demo"}</p>
+          <ET value={props.headline || "See it in action"} propKey="headline" up={onUpdateProp} as="h2" className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight" />
+          <ET value={props.subtitle || "Watch a quick demo"} propKey="subtitle" up={onUpdateProp} as="p" className="text-base text-muted-foreground max-w-xl mx-auto" />
         </div>
         <div className="relative aspect-video rounded-2xl border border-border bg-card overflow-hidden shadow-lg group cursor-pointer">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center">
@@ -2200,7 +2217,7 @@ function VideoSectionPreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function ComparisonTablePreview({ props }: { props: Record<string, any> }) {
+function ComparisonTablePreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   const columns = props.columns || ["Us", "Competitor A", "Competitor B"];
   const rows = props.rows || [
     { feature: "AI Builder", values: [true, false, false] },
@@ -2211,7 +2228,7 @@ function ComparisonTablePreview({ props }: { props: Record<string, any> }) {
   return (
     <div className="py-20 bg-background">
       <div className="max-w-5xl mx-auto px-6 space-y-10">
-        <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight text-center">{props.headline || "How we compare"}</h2>
+        <ET value={props.headline || "How we compare"} propKey="headline" up={onUpdateProp} as="h2" className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight text-center" />
         <div className="rounded-2xl border border-border bg-card overflow-hidden">
           <div className="overflow-x-auto"><table className="w-full text-sm">
             <thead><tr className="border-b border-border bg-muted/50">
@@ -2239,14 +2256,14 @@ function ComparisonTablePreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function IntegrationsGridPreview({ props }: { props: Record<string, any> }) {
+function IntegrationsGridPreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   const integrations = props.integrations || ["Slack", "GitHub", "Stripe", "Notion", "Figma", "Jira", "AWS", "Vercel"];
   return (
     <div className="py-20 bg-background">
       <div className="max-w-5xl mx-auto px-6 text-center space-y-10">
         <div className="space-y-3">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">{props.headline || "Integrates with your tools"}</h2>
-          <p className="text-base text-muted-foreground max-w-xl mx-auto">{props.subtitle || "Connect with the tools you already use"}</p>
+          <ET value={props.headline || "Integrates with your tools"} propKey="headline" up={onUpdateProp} as="h2" className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight" />
+          <ET value={props.subtitle || "Connect with the tools you already use"} propKey="subtitle" up={onUpdateProp} as="p" className="text-base text-muted-foreground max-w-xl mx-auto" />
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {integrations.map((name: string, i: number) => (
@@ -2263,14 +2280,14 @@ function IntegrationsGridPreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function ContactFormPreview({ props }: { props: Record<string, any> }) {
+function ContactFormPreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   return (
     <div className="py-20 bg-background">
       <div className="max-w-5xl mx-auto px-6">
         <div className="grid md:grid-cols-2 gap-12">
           <div className="space-y-6">
-            <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">{props.headline || "Get in touch"}</h2>
-            <p className="text-base text-muted-foreground leading-relaxed">{props.subtitle || "We'd love to hear from you"}</p>
+            <ET value={props.headline || "Get in touch"} propKey="headline" up={onUpdateProp} as="h2" className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight" />
+            <ET value={props.subtitle || "We'd love to hear from you"} propKey="subtitle" up={onUpdateProp} as="p" className="text-base text-muted-foreground leading-relaxed" />
             <div className="space-y-4">
               {[{ icon: Mail, text: "hello@example.com" }, { icon: MapPin, text: "San Francisco, CA" }].map((item, i) => (
                 <div key={i} className="flex items-center gap-3">
@@ -2301,12 +2318,12 @@ function ContactFormPreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function NewsletterCtaPreview({ props }: { props: Record<string, any> }) {
+function NewsletterCtaPreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   return (
     <div className="py-20 bg-gradient-to-r from-primary/5 via-background to-primary/5">
       <div className="max-w-3xl mx-auto px-6 text-center space-y-6">
-        <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">{props.headline || "Stay in the loop"}</h2>
-        <p className="text-base text-muted-foreground">{props.subtitle || "Get the latest updates delivered to your inbox"}</p>
+        <ET value={props.headline || "Stay in the loop"} propKey="headline" up={onUpdateProp} as="h2" className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight" />
+        <ET value={props.subtitle || "Get the latest updates delivered to your inbox"} propKey="subtitle" up={onUpdateProp} as="p" className="text-base text-muted-foreground" />
         <div className="flex gap-3 max-w-md mx-auto">
           <Input placeholder={props.placeholder || "Enter your email"} className="flex-1 rounded-xl" />
           <Button className="rounded-xl px-6">{props.button_text || "Subscribe"}</Button>
@@ -2317,7 +2334,7 @@ function NewsletterCtaPreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function BlogPreviewPreview({ props }: { props: Record<string, any> }) {
+function BlogPreviewPreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   const posts = props.posts || [
     { title: "Getting Started Guide", excerpt: "Learn how to set up your project in minutes", date: "Dec 10, 2024", category: "Tutorial" },
     { title: "Best Practices for Scaling", excerpt: "Tips to grow your application effectively", date: "Dec 8, 2024", category: "Engineering" },
@@ -2327,8 +2344,8 @@ function BlogPreviewPreview({ props }: { props: Record<string, any> }) {
     <div className="py-20 bg-background">
       <div className="max-w-5xl mx-auto px-6 space-y-10">
         <div className="text-center space-y-3">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">{props.headline || "Latest from our blog"}</h2>
-          <p className="text-base text-muted-foreground max-w-xl mx-auto">{props.subtitle || "Insights and updates"}</p>
+          <ET value={props.headline || "Latest from our blog"} propKey="headline" up={onUpdateProp} as="h2" className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight" />
+          <ET value={props.subtitle || "Insights and updates"} propKey="subtitle" up={onUpdateProp} as="p" className="text-base text-muted-foreground max-w-xl mx-auto" />
         </div>
         <div className="grid md:grid-cols-3 gap-6">
           {posts.map((post: any, i: number) => (
@@ -2348,7 +2365,7 @@ function BlogPreviewPreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function UseCasesPreview({ props }: { props: Record<string, any> }) {
+function UseCasesPreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   const cases = props.cases || [
     { title: "Startups", description: "Launch your MVP in hours, not months", icon: "🚀" },
     { title: "Agencies", description: "Deliver client projects faster than ever", icon: "🏢" },
@@ -2358,8 +2375,8 @@ function UseCasesPreview({ props }: { props: Record<string, any> }) {
     <div className="py-20 bg-background">
       <div className="max-w-5xl mx-auto px-6 text-center space-y-10">
         <div className="space-y-3">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">{props.headline || "Built for every team"}</h2>
-          <p className="text-base text-muted-foreground max-w-xl mx-auto">{props.subtitle || "See how teams use our platform"}</p>
+          <ET value={props.headline || "Built for every team"} propKey="headline" up={onUpdateProp} as="h2" className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight" />
+          <ET value={props.subtitle || "See how teams use our platform"} propKey="subtitle" up={onUpdateProp} as="p" className="text-base text-muted-foreground max-w-xl mx-auto" />
         </div>
         <div className="grid md:grid-cols-3 gap-6">
           {cases.map((c: any, i: number) => (
@@ -2376,7 +2393,7 @@ function UseCasesPreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function TeamSectionPreview({ props }: { props: Record<string, any> }) {
+function TeamSectionPreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   const members = props.members || [
     { name: "Alex Chen", role: "CEO & Founder", initials: "AC" },
     { name: "Sarah Kim", role: "CTO", initials: "SK" },
@@ -2387,8 +2404,8 @@ function TeamSectionPreview({ props }: { props: Record<string, any> }) {
     <div className="py-20 bg-background">
       <div className="max-w-5xl mx-auto px-6 text-center space-y-10">
         <div className="space-y-3">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">{props.headline || "Meet our team"}</h2>
-          <p className="text-base text-muted-foreground max-w-xl mx-auto">{props.subtitle || "The people behind the product"}</p>
+          <ET value={props.headline || "Meet our team"} propKey="headline" up={onUpdateProp} as="h2" className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight" />
+          <ET value={props.subtitle || "The people behind the product"} propKey="subtitle" up={onUpdateProp} as="p" className="text-base text-muted-foreground max-w-xl mx-auto" />
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {members.map((m: any, i: number) => (
@@ -2408,15 +2425,17 @@ function TeamSectionPreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function CtaWithImagePreview({ props }: { props: Record<string, any> }) {
+function CtaWithImagePreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   const imageRight = props.image_side !== "left";
   return (
     <div className="py-20 bg-background">
       <div className={cn("max-w-5xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center", !imageRight && "direction-rtl")}>
         <div className="space-y-6">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">{props.headline || "Ready to transform your workflow?"}</h2>
-          <p className="text-base text-muted-foreground leading-relaxed">{props.description || "Start building powerful applications today with our AI-powered platform."}</p>
-          <Button size="lg" className="rounded-xl shadow-sm">{props.cta_text || "Get Started"} <ArrowRight className="w-4 h-4 ml-2" /></Button>
+          <ET value={props.headline || "Ready to transform your workflow?"} propKey="headline" up={onUpdateProp} as="h2" className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight" />
+          <ET value={props.description || "Start building powerful applications today with our AI-powered platform."} propKey="description" up={onUpdateProp} as="p" className="text-base text-muted-foreground leading-relaxed" />
+          <EL label={props.cta_text || "Get Started"} url={props.cta_url || "#"} labelKey="cta_text" urlKey="cta_url" up={onUpdateProp}>
+            <Button size="lg" className="rounded-xl shadow-sm">{props.cta_text || "Get Started"} <ArrowRight className="w-4 h-4 ml-2" /></Button>
+          </EL>
         </div>
         <div className="rounded-2xl border border-border bg-card aspect-[4/3] flex items-center justify-center bg-gradient-to-br from-primary/5 to-primary/10">
           <div className="text-center space-y-2">
@@ -2429,7 +2448,7 @@ function CtaWithImagePreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function LogoCarouselPreview({ props }: { props: Record<string, any> }) {
+function LogoCarouselPreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   const logos = props.logos || ["Stripe", "Notion", "Linear", "Vercel", "Figma", "GitHub", "Slack", "Discord"];
   return (
     <div className="py-16 bg-muted/30 overflow-hidden">
@@ -2450,7 +2469,7 @@ function LogoCarouselPreview({ props }: { props: Record<string, any> }) {
   );
 }
 
-function DataImportPreview({ props }: { props: Record<string, any> }) {
+function DataImportPreview({ props, onUpdateProp }: { props: Record<string, any>; onUpdateProp?: PropUpdater }) {
   return (
     <div className="rounded-xl border border-border bg-card p-6 space-y-4">
       <div className="flex items-center justify-between">
