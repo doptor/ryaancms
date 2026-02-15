@@ -275,6 +275,7 @@ function PageRenderer({ page, config, pageIndex, selectedComponent, onSelectComp
                     comp.props?._bg_mode === "gradient" ? comp.props?._bg_gradient :
                     comp.props?._bg_mode === "custom" ? comp.props?._bg_custom :
                     undefined,
+                  opacity: comp.props?._bg_mode === "solid" ? (comp.props?._bg_color_opacity ?? 1) : undefined,
                 }}
               >
                 {comp.props?._bg_mode === "image" && comp.props?._bg_image && (
