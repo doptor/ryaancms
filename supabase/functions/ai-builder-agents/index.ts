@@ -819,11 +819,27 @@ function pickApiConfig(agentKey: string, allConfigs: UserApiConfig[]): UserApiCo
   return allConfigs[0];
 }
 
+// Recursively strip "additionalProperties" from a schema object (Gemini doesn't support it)
+function stripAdditionalProperties(obj: any): any {
+  if (Array.isArray(obj)) return obj.map(stripAdditionalProperties);
+  if (obj && typeof obj === "object") {
+    const result: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (key === "additionalProperties") continue;
+      result[key] = stripAdditionalProperties(value);
+    }
+    return result;
+  }
+  return obj;
+}
+
 async function callGemini(apiKey: string, model: string, systemPrompt: string, userPrompt: string, tool: any): Promise<Response> {
-  // Gemini uses its own REST API format
   const geminiModel = model.startsWith("gemini-") ? model : "gemini-2.5-flash";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`;
   
+  // Gemini does not support "additionalProperties" in function declarations — strip them
+  const cleanParams = stripAdditionalProperties(tool.parameters);
+
   const body = {
     systemInstruction: { parts: [{ text: systemPrompt }] },
     contents: [{ role: "user", parts: [{ text: userPrompt }] }],
@@ -831,7 +847,7 @@ async function callGemini(apiKey: string, model: string, systemPrompt: string, u
       functionDeclarations: [{
         name: tool.name,
         description: tool.description,
-        parameters: tool.parameters,
+        parameters: cleanParams,
       }],
     }],
     toolConfig: { functionCallingConfig: { mode: "ANY", allowedFunctionNames: [tool.name] } },
