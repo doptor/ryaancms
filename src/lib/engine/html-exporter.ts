@@ -654,31 +654,30 @@ function generateEditorJS(password: string): string {
       location.reload();
     },
     unlock: function() {
-      var entered = prompt('🔒 Enter editor password:\\n\\nForgot password? Type RESET to recover access');
+      var msg = '🔒 Enter editor password:' + '\\n\\n' + 'Forgot password? Type RESET to recover access';
+      var entered = prompt(msg);
       if (entered === null) return;
       if (entered === 'RESET') {
-        // Rate limit: max 3 reset attempts per hour
         var attempts = JSON.parse(localStorage.getItem(RESET_ATTEMPTS_KEY) || '[]');
         var oneHourAgo = Date.now() - 3600000;
         attempts = attempts.filter(function(t) { return t > oneHourAgo; });
         if (attempts.length >= 3) {
-          alert('🚫 Too many reset attempts. Please try again later (max 3 per hour).');
+          alert('Too many reset attempts. Try again later (max 3 per hour).');
           return;
         }
         var savedAnswer = localStorage.getItem(SECURITY_Q_KEY);
         if (savedAnswer) {
-          var userAnswer = prompt('🔐 Security Question:\\n\\nWhat is your recovery answer?\\n(Set during your first login)');
+          var userAnswer = prompt('Security Question: What is your recovery answer?');
           if (userAnswer === null) return;
           if (userAnswer.trim().toLowerCase() !== savedAnswer.toLowerCase()) {
             attempts.push(Date.now());
             localStorage.setItem(RESET_ATTEMPTS_KEY, JSON.stringify(attempts));
-            alert('❌ Incorrect security answer.\\n\\nAttempts remaining: ' + (3 - attempts.length) + ' this hour.');
+            alert('Incorrect security answer. Attempts remaining: ' + (3 - attempts.length));
             return;
           }
         } else {
-          if (!confirm('⚠️ No security question was set.\\n\\nThis will reset your password.\\nAnyone with access to this browser can do this.\\n\\nContinue?')) return;
+          if (!confirm('No security question was set. This will reset your password. Continue?')) return;
         }
-        // Generate new password
         localStorage.removeItem(CUSTOM_PASS_KEY);
         var chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
         var newPass = '';
@@ -686,22 +685,21 @@ function generateEditorJS(password: string): string {
         EDITOR_PASSWORD = newPass;
         localStorage.setItem(CUSTOM_PASS_KEY, newPass);
         sessionStorage.setItem(PASS_KEY, 'true');
-        alert('✅ Password recovered!\\n\\n🔑 Your NEW password is:\\n\\n' + newPass + '\\n\\n⚠️ SAVE THIS PASSWORD! Write it down now.\\nThe editor is now unlocked.');
+        alert('Password recovered! Your NEW password is: ' + newPass + ' -- SAVE THIS PASSWORD!');
         location.reload();
         return;
       }
       if (entered === EDITOR_PASSWORD) {
         sessionStorage.setItem(PASS_KEY, 'true');
-        // Prompt security question setup on first successful login if not set
         if (!localStorage.getItem(SECURITY_Q_KEY)) {
-          var answer = prompt('🔐 Set a Security Recovery Answer\\n\\nThis will be used to verify your identity if you forget your password.\\n\\nEnter a secret answer (e.g. your pet name, favorite word):');
+          var answer = prompt('Set a Security Recovery Answer (used if you forget your password):');
           if (answer && answer.trim().length >= 2) {
             localStorage.setItem(SECURITY_Q_KEY, answer.trim().toLowerCase());
           }
         }
         location.reload();
       } else {
-        alert('❌ Incorrect password.\\n\\n💡 Forgot? Type RESET to recover access');
+        alert('Incorrect password. Tip: Type RESET to recover access.');
       }
     },
     togglePanel: function() {
