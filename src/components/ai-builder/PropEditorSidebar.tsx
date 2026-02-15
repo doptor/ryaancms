@@ -261,6 +261,25 @@ export function PropEditorSidebar({ component, componentIndex, pageIndex, onClos
                     className="h-7 text-xs flex-1"
                   />
                 </div>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-medium text-foreground">Opacity</label>
+                    <span className="text-[10px] text-muted-foreground">{Math.round((editedProps._bg_color_opacity ?? 1) * 100)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={editedProps._bg_color_opacity ?? 1}
+                    onChange={(e) => handleChange("_bg_color_opacity", parseFloat(e.target.value))}
+                    className="w-full h-1.5 rounded-full appearance-none bg-border accent-primary cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[9px] text-muted-foreground">
+                    <span>Transparent</span>
+                    <span>Solid</span>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -405,6 +424,7 @@ export function PropEditorSidebar({ component, componentIndex, pageIndex, onClos
                       editedProps._bg_mode === "gradient" ? editedProps._bg_gradient :
                       editedProps._bg_mode === "custom" ? editedProps._bg_custom :
                       undefined,
+                    opacity: editedProps._bg_mode === "solid" ? (editedProps._bg_color_opacity ?? 1) : undefined,
                   }}
                 >
                   {editedProps._bg_mode === "image" && editedProps._bg_image && (
