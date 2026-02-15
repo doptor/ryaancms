@@ -219,7 +219,7 @@ function PageRenderer({ page, config, pageIndex, selectedComponent, onSelectComp
 
   if (page.layout === "dashboard") {
     return (
-      <div className="flex min-h-[600px]">
+      <div className="flex flex-col sm:flex-row min-h-[600px]">
         {/* Enhanced Sidebar */}
         <div className="w-60 border-r border-border bg-card p-0 shrink-0 hidden sm:flex flex-col">
           <div className="flex items-center gap-2.5 px-5 h-14 border-b border-border">
@@ -264,10 +264,14 @@ function PageRenderer({ page, config, pageIndex, selectedComponent, onSelectComp
         {/* Main Content */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Top Bar */}
-          <div className="flex items-center justify-between px-6 h-14 border-b border-border bg-card shrink-0">
+          <div className="flex items-center justify-between px-4 sm:px-6 h-14 border-b border-border bg-card shrink-0">
             <div className="flex items-center gap-3">
-              <h2 className="text-base font-bold text-foreground">{page.name}</h2>
-              <Badge variant="secondary" className="text-[10px] h-5 font-normal">
+              {/* Mobile sidebar icon */}
+              <div className="sm:hidden w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center shadow-sm">
+                <Sparkles className="w-4 h-4 text-primary-foreground" />
+              </div>
+              <h2 className="text-sm sm:text-base font-bold text-foreground">{page.name}</h2>
+              <Badge variant="secondary" className="text-[10px] h-5 font-normal hidden sm:inline-flex">
                 {page.components.length} components
               </Badge>
             </div>
@@ -285,7 +289,24 @@ function PageRenderer({ page, config, pageIndex, selectedComponent, onSelectComp
               </div>
             </div>
           </div>
-          <div className="flex-1 p-5 space-y-5 overflow-auto">
+          {/* Mobile page tabs */}
+          <div className="sm:hidden flex items-center gap-1 px-4 py-2 border-b border-border overflow-x-auto">
+            {config.pages.filter(p => p.layout === "dashboard").map((p) => (
+              <button
+                key={p.route}
+                onClick={(e) => { e.stopPropagation(); onNavigate?.(p.route); }}
+                className={cn(
+                  "px-3 py-1.5 rounded-md text-[11px] font-medium whitespace-nowrap transition-colors",
+                  p.route === page.route
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-accent"
+                )}
+              >
+                {p.name}
+              </button>
+            ))}
+          </div>
+          <div className="flex-1 p-3 sm:p-5 space-y-4 sm:space-y-5 overflow-auto">
             {page.components.map((comp, i) => wrapComponent(comp, i))}
           </div>
         </div>
@@ -368,41 +389,72 @@ function ComponentRenderer({ component, config, onNavigate }: { component: Compo
 // === Individual Component Previews ===
 
 function NavbarPreview({ props, config, onNavigate }: { props: Record<string, any>; config: AppConfig; onNavigate?: (pageRoute: string) => void }) {
-  // Use config pages for nav links if available, else fallback
+  const [mobileOpen, setMobileOpen] = useState(false);
   const navItems = config.pages.length > 1
     ? config.pages.filter(p => p.layout !== "dashboard").map(p => p.name)
     : ["Home", "Features", "Pricing", "About"];
 
   return (
-    <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-10">
-      <div className="flex items-center gap-4 sm:gap-8">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center shadow-sm">
-            <Zap className="w-4 h-4 text-primary-foreground" />
+    <div className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-10">
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3">
+        <div className="flex items-center gap-4 sm:gap-8">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center shadow-sm">
+              <Zap className="w-4 h-4 text-primary-foreground" />
+            </div>
+            <span className="font-bold text-sm text-foreground tracking-tight">{props.logo_text || config.title}</span>
           </div>
-          <span className="font-bold text-sm text-foreground tracking-tight">{props.logo_text || config.title}</span>
+          <nav className="hidden sm:flex items-center gap-1">
+            {navItems.map((item, i) => (
+              <button
+                key={item}
+                onClick={(e) => { e.stopPropagation(); onNavigate?.(item); }}
+                className={cn(
+                  "px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer",
+                  i === 0 ? "text-foreground bg-accent" : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                )}
+              >
+                {item}
+              </button>
+            ))}
+          </nav>
         </div>
-        <nav className="hidden sm:flex items-center gap-1">
+        <div className="flex items-center gap-2">
+          {props.show_auth_buttons !== false && (
+            <div className="hidden sm:flex items-center gap-2">
+              <Button variant="ghost" size="sm" className="text-xs h-8">Sign In</Button>
+              <Button size="sm" className="text-xs h-8 shadow-sm">
+                Get Started <ArrowRight className="w-3 h-3 ml-1" />
+              </Button>
+            </div>
+          )}
+          <button
+            onClick={(e) => { e.stopPropagation(); setMobileOpen(!mobileOpen); }}
+            className="sm:hidden p-1.5 rounded-md hover:bg-accent transition-colors"
+          >
+            <Menu className="w-5 h-5 text-foreground" />
+          </button>
+        </div>
+      </div>
+      {mobileOpen && (
+        <div className="sm:hidden border-t border-border px-4 py-3 space-y-1 bg-card">
           {navItems.map((item, i) => (
             <button
               key={item}
-              onClick={(e) => { e.stopPropagation(); onNavigate?.(item); }}
-              className={cn(
-                "px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer",
-                i === 0 ? "text-foreground bg-accent" : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-              )}
+              onClick={(e) => { e.stopPropagation(); onNavigate?.(item); setMobileOpen(false); }}
+              className="block w-full text-left px-3 py-2 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
             >
               {item}
             </button>
           ))}
-        </nav>
-      </div>
-      {props.show_auth_buttons !== false && (
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="text-xs h-8">Sign In</Button>
-          <Button size="sm" className="text-xs h-8 shadow-sm">
-            Get Started <ArrowRight className="w-3 h-3 ml-1" />
-          </Button>
+          {props.show_auth_buttons !== false && (
+            <div className="flex flex-col gap-2 pt-2 border-t border-border mt-2">
+              <Button variant="ghost" size="sm" className="text-xs h-8 w-full justify-start">Sign In</Button>
+              <Button size="sm" className="text-xs h-8 w-full shadow-sm">
+                Get Started <ArrowRight className="w-3 h-3 ml-1" />
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -589,12 +641,19 @@ function CrudTablePreview({ props }: { props: Record<string, any> }) {
 
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-3.5 border-b border-border">
-        <div className="flex items-center gap-3">
-          <h3 className="text-sm font-bold text-foreground capitalize">{collection}</h3>
-          <Badge variant="secondary" className="text-[10px] h-5 font-normal">{sampleData.length} records</Badge>
+      <div className="px-4 sm:px-5 py-3.5 border-b border-border space-y-3 sm:space-y-0">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h3 className="text-sm font-bold text-foreground capitalize">{collection}</h3>
+            <Badge variant="secondary" className="text-[10px] h-5 font-normal">{sampleData.length} records</Badge>
+          </div>
+          <div className="flex items-center gap-2 sm:hidden">
+            <Button size="sm" className="h-8 text-xs gap-1.5 shadow-sm">
+              <Plus className="w-3 h-3" /> Add
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="hidden sm:flex items-center justify-end gap-2">
           {props.searchable !== false && (
             <div className="relative">
               <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -662,7 +721,7 @@ function CrudTablePreview({ props }: { props: Record<string, any> }) {
         </table>
       </div>
       {props.paginated !== false && (
-        <div className="flex items-center justify-between px-5 py-3 border-t border-border bg-muted/20">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 px-4 sm:px-5 py-3 border-t border-border bg-muted/20">
           <span className="text-xs text-muted-foreground">Showing 1-5 of 24 results</span>
           <div className="flex items-center gap-1">
             <Button variant="outline" size="sm" className="h-7 text-xs px-2.5">← Prev</Button>
@@ -886,7 +945,7 @@ function PricingTablePreview({ props }: { props: Record<string, any> }) {
         <h2 className="text-2xl font-extrabold text-foreground tracking-tight">Simple, transparent pricing</h2>
         <p className="text-sm text-muted-foreground max-w-md mx-auto">Choose the plan that's right for you. Upgrade or downgrade anytime.</p>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-3xl mx-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-3xl mx-auto">
         {plans.map((plan: any) => (
           <div key={plan.name} className={cn(
             "rounded-2xl border p-5 space-y-4 relative transition-all duration-300",
@@ -2009,7 +2068,7 @@ function ComparisonTablePreview({ props }: { props: Record<string, any> }) {
       <div className="max-w-5xl mx-auto px-6 space-y-10">
         <h2 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight text-center">{props.headline || "How we compare"}</h2>
         <div className="rounded-2xl border border-border bg-card overflow-hidden">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto"><table className="w-full text-sm">
             <thead><tr className="border-b border-border bg-muted/50">
               <th className="text-left px-6 py-4 font-medium text-muted-foreground">Feature</th>
               {columns.map((col: string, i: number) => (
@@ -2029,7 +2088,7 @@ function ComparisonTablePreview({ props }: { props: Record<string, any> }) {
               ))}
             </tbody>
           </table>
-        </div>
+        </div></div>
       </div>
     </div>
   );
