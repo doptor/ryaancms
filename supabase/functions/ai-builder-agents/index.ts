@@ -837,29 +837,22 @@ async function runAgent(
   }
 
   try {
-    // Try user's own API key FIRST if available
-    let response: Response;
-    if (userApiConfig) {
-      console.log(`Using user's ${userApiConfig.provider} API key as primary for agent: ${agent.name}`);
-      const userBody = JSON.stringify({
-        ...JSON.parse(requestBody),
-        model: userApiConfig.model || "gpt-5",
-      });
-      response = await callAI(
-        userApiConfig.endpoint.endsWith("/chat/completions")
-          ? userApiConfig.endpoint
-          : `${userApiConfig.endpoint}/chat/completions`,
-        userApiConfig.apiKey,
-        userBody
-      );
-      if (!response.ok) {
-        console.log(`User API failed (${response.status}), falling back to Lovable AI`);
-        await response.text();
-        response = await callAI("https://ai.gateway.lovable.dev/v1/chat/completions", apiKey, requestBody);
-      }
-    } else {
-      response = await callAI("https://ai.gateway.lovable.dev/v1/chat/completions", apiKey, requestBody);
+    if (!userApiConfig) {
+      return { success: false, error: "No API key configured. Please add your own API key in Settings → AI Integrations.", agentName: agent.name };
     }
+
+    console.log(`Using user's ${userApiConfig.provider} API key for agent: ${agent.name}`);
+    const userBody = JSON.stringify({
+      ...JSON.parse(requestBody),
+      model: userApiConfig.model || "gpt-5",
+    });
+    const response = await callAI(
+      userApiConfig.endpoint.endsWith("/chat/completions")
+        ? userApiConfig.endpoint
+        : `${userApiConfig.endpoint}/chat/completions`,
+      userApiConfig.apiKey,
+      userBody
+    );
 
     if (!response.ok) {
       if (response.status === 429) return { success: false, error: "Rate limit exceeded. Please try again shortly.", agentName: agent.name };
@@ -906,8 +899,7 @@ serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    // Lovable AI Gateway removed — only user's own API keys are used
 
     // Fetch user's own API keys from site_settings for fallback (task: app_builder)
     let userApiConfig: UserApiConfig | null = null;
@@ -969,7 +961,7 @@ serve(async (req) => {
 
           send("agent_start", { agent: agent.name, step, total: totalAgents });
 
-          const result = await runAgent(key, prompt, context, LOVABLE_API_KEY, userApiConfig);
+          const result = await runAgent(key, prompt, context, "", userApiConfig);
           agentLog.push({ agent: key, ...result });
 
           if (!result.success) {

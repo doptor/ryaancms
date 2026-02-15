@@ -19,7 +19,6 @@ async function getUserApiConfig(req: Request, taskType = "general") {
     if (!res.ok) return null;
     const rows = await res.json();
     const items = rows?.[0]?.value?.items?.filter((i: any) => i.status === "active" && i.apiKey?.length > 5) || [];
-    // Find best match: first by task type, then "general", then any active
     const byTask = items.find((i: any) => i.useFor?.includes(taskType));
     if (byTask) return { provider: byTask.provider, endpoint: byTask.apiEndpoint, apiKey: byTask.apiKey, model: byTask.model };
     const general = items.find((i: any) => i.useFor?.includes("general"));
@@ -30,25 +29,26 @@ async function getUserApiConfig(req: Request, taskType = "general") {
   } catch { return null; }
 }
 
-async function aiRequest(url: string, headers: Record<string, string>, body: string, userApiConfig: any) {
-  // Try user's own API key FIRST if available
-  if (userApiConfig) {
-    console.log(`Using user's ${userApiConfig.provider} API key as primary`);
-    const parsed = JSON.parse(body);
-    parsed.model = userApiConfig.model || "gpt-5";
-    const userEndpoint = userApiConfig.endpoint.endsWith("/chat/completions")
-      ? userApiConfig.endpoint : `${userApiConfig.endpoint}/chat/completions`;
-    const userResponse = await fetch(userEndpoint, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${userApiConfig.apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify(parsed),
-    });
-    if (userResponse.ok) return userResponse;
-    console.log(`User API failed (${userResponse.status}), falling back to Lovable AI`);
-    await userResponse.text(); // consume body
+async function aiRequest(body: string, userApiConfig: any) {
+  if (!userApiConfig) {
+    throw new Error("No API key configured. Please add your own API key in Settings → AI Integrations.");
   }
-  // Fallback to Lovable AI Gateway
-  return await fetch(url, { method: "POST", headers, body });
+  console.log(`Using user's ${userApiConfig.provider} API key`);
+  const parsed = JSON.parse(body);
+  parsed.model = userApiConfig.model || "gpt-5";
+  const userEndpoint = userApiConfig.endpoint.endsWith("/chat/completions")
+    ? userApiConfig.endpoint : `${userApiConfig.endpoint}/chat/completions`;
+  const response = await fetch(userEndpoint, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${userApiConfig.apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify(parsed),
+  });
+  if (!response.ok) {
+    const errText = await response.text();
+    console.error(`User API failed (${response.status}):`, errText);
+    throw new Error(`AI provider returned ${response.status}. Check your API key and quota.`);
+  }
+  return response;
 }
 
 const SYSTEM_PROMPT = `You are RyaanCMS AI Builder — a structured Application Generation Engine.
@@ -81,11 +81,6 @@ serve(async (req) => {
         JSON.stringify({ error: "Prompt is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
-    }
-
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
     }
 
     const userApiConfig = await getUserApiConfig(req, "app_builder");
@@ -197,26 +192,7 @@ serve(async (req) => {
       tool_choice: { type: "function", function: { name: "generate_app_config" } },
     });
 
-    const response = await aiRequest(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
-      { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-      requestBody,
-      userApiConfig
-    );
-
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Please configure your own API key in Settings → AI Integrations." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      throw new Error(`AI gateway error: ${response.status}`);
-    }
+    const response = await aiRequest(requestBody, userApiConfig);
 
     const data = await response.json();
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
@@ -228,7 +204,9 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
     console.error("AI Builder error:", error);
-    return new Response(JSON.stringify({ success: false, error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const message = error instanceof Error ? error.message : "Unknown error";
+    const status = message.includes("No API key configured") ? 402 : 500;
+    return new Response(JSON.stringify({ success: false, error: message }),
+      { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
