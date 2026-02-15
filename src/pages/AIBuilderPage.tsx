@@ -879,10 +879,23 @@ export default function AIBuilderPage() {
       const duration = Date.now() - startTime;
       setPipelineState(result);
 
-      // Auto-save preview config to localStorage so Preview page works immediately
+      // Auto-save preview config to localStorage AND database so Preview page works immediately
       // Guard: don't overwrite a good config with an empty quick-update config
       if (result.stage === "complete" && result.config && result.config.pages.length > 0) {
         try { localStorage.setItem("ai-builder-preview-config", JSON.stringify(result.config)); } catch {}
+        // Also persist to published_previews so prop edits and build results are in the same place
+        if (user) {
+          (async () => {
+            try {
+              const { data: existing } = await supabase.from("published_previews").select("id").eq("user_id", user.id).maybeSingle();
+              if (existing) {
+                await supabase.from("published_previews").update({ config: result.config as any, project_title: result.config!.title || "Untitled", updated_at: new Date().toISOString() }).eq("id", existing.id);
+              } else {
+                await supabase.from("published_previews").insert({ user_id: user.id, config: result.config as any, project_title: result.config!.title || "Untitled" });
+              }
+            } catch {}
+          })();
+        }
       }
 
       if (result.stage === "complete" && result.config) {
