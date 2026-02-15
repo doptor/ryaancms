@@ -275,13 +275,14 @@ function generateEditorShortcutJS(password: string): string {
       return;
     }
     var expected = getPassword();
-    console.log('[RyaanCMS Debug] Expected password length:', expected.length, 'Entered length:', pwd.length);
-    if (pwd === expected) {
+    var trimmedPwd = pwd.trim();
+    console.log('[RyaanCMS Debug] Expected first 3:', expected.substring(0,3), 'Entered first 3:', trimmedPwd.substring(0,3));
+    if (trimmedPwd === expected || pwd === expected) {
       sessionStorage.setItem(PASS_KEY, 'true');
       alert('✅ Editor unlocked! Reloading...');
       location.reload();
     } else {
-      alert('❌ Incorrect password. Tip: Type RESET to recover access.\\nExpected ' + expected.length + ' chars, you entered ' + pwd.length + ' chars.');
+      alert('❌ Incorrect password.\\nHint: Password starts with "' + expected.substring(0,3) + '..."\\nYou entered: "' + trimmedPwd.substring(0,3) + '..."\\nType RESET to recover access.');
     }
   }
 
