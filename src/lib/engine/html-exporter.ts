@@ -148,7 +148,8 @@ h3 { font-size: 1.125rem; font-weight: 600; }
 /* FAQ */
 .faq-item { border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 8px; overflow: hidden; }
 .faq-question { width: 100%; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 600; background: none; border: none; cursor: pointer; text-align: left; color: var(--text); }
-.faq-answer { padding: 0 20px 16px; font-size: 0.8rem; color: var(--text-muted); line-height: 1.7; }
+.faq-answer { padding: 0 20px 16px; font-size: 0.8rem; color: var(--text-muted); line-height: 1.7; display: none; }
+.faq-item.open .faq-answer { display: block; }
 
 /* Features */
 .feature-card { padding: 24px; border: 1px solid var(--border); border-radius: var(--radius); transition: all 0.2s; }
@@ -359,9 +360,9 @@ function renderNavbar(comp: ComponentConfig, config: AppConfig, imageMap: Map<st
     ? navItems.map((item: any) => {
         const href = item.link_type === "external" ? item.target : (item.link_type === "section" ? `#${item.target?.replace(/^#/, "")}` : `${item.target || "#"}.html`);
         const target = item.link_type === "external" && item.open_new_tab ? ' target="_blank"' : "";
-        return `<a href="${href}" class="nav-link"${target}>${item.label}</a>`;
+        return `<a href="${href}" class="nav-link" data-editable data-edit-id="${eid()}"${target}>${item.label}</a>`;
       })
-    : pages.filter(pg => pg.layout !== "dashboard").map((pg, i) => `<a href="${pg.route === "/" ? "index" : pg.route.replace(/^\//, "")}.html" class="nav-link${i === 0 ? " active" : ""}">${pg.name}</a>`);
+    : pages.filter(pg => pg.layout !== "dashboard").map((pg, i) => `<a href="${pg.route === "/" ? "index" : pg.route.replace(/^\//, "")}.html" class="nav-link${i === 0 ? " active" : ""}" data-editable data-edit-id="${eid()}">${pg.name}</a>`);
 
   return `<nav class="navbar">
   <div class="nav-logo">
@@ -370,8 +371,8 @@ function renderNavbar(comp: ComponentConfig, config: AppConfig, imageMap: Map<st
   </div>
   <div class="nav-links">${links.join("\n    ")}</div>
   <div class="flex items-center gap-2">
-    <a href="#" class="btn btn-outline" style="padding:6px 14px;font-size:0.8rem;">Sign In</a>
-    <a href="#" class="btn btn-primary" style="padding:6px 14px;font-size:0.8rem;">Get Started →</a>
+    ${ed("a", "Sign In", "btn btn-outline")}
+    ${ed("a", "Get Started →", "btn btn-primary")}
   </div>
 </nav>`;
 }
@@ -380,12 +381,12 @@ function renderHero(comp: ComponentConfig, config: AppConfig): string {
   const p = comp.props || {};
   return `<section class="hero">
   <div class="container" style="max-width:640px;">
-    <div class="badge" style="margin-bottom:16px;">✨ ${p.badge_text || "New Release"}</div>
+    ${ed("div", `✨ ${p.badge_text || "New Release"}`, "badge")}
     ${ed("h1", p.headline || config.title || "Build Something Amazing")}
     ${ed("p", p.subtitle || config.description || "The modern platform for building applications faster than ever.", "text-muted")}
     <div class="hero-actions">
-      <a href="${p.cta_link || "#"}" class="btn btn-primary">${p.cta_text || "Get Started"} →</a>
-      <a href="#" class="btn btn-outline">▶ Watch Demo</a>
+      ${ed("a", `${p.cta_text || "Get Started"} →`, "btn btn-primary")}
+      ${ed("a", "▶ Watch Demo", "btn btn-outline")}
     </div>
   </div>
 </section>`;
@@ -402,11 +403,11 @@ function renderFooter(comp: ComponentConfig, config: AppConfig): string {
   return `<footer class="footer">
   <div class="footer-grid">
     ${cols.map(c => `<div class="footer-col">
-      <h4>${c.title}</h4>
-      ${c.links.map(l => `<a href="#">${l}</a>`).join("\n      ")}
+      ${ed("h4", c.title)}
+      ${c.links.map(l => `<a href="#" data-editable data-edit-id="${eid()}">${l}</a>`).join("\n      ")}
     </div>`).join("\n    ")}
   </div>
-  <div class="footer-bottom">© ${new Date().getFullYear()} ${config.title || "Site"}. All rights reserved.</div>
+  ${ed("div", `© ${new Date().getFullYear()} ${config.title || "Site"}. All rights reserved.`, "footer-bottom")}
 </footer>`;
 }
 
@@ -421,7 +422,7 @@ function renderStatsRow(comp: ComponentConfig): string {
   <div class="stats-grid">
     ${metrics.map(m => `<div class="stat-card">
       ${ed("div", m.value, "stat-value")}
-      <div class="stat-label">${m.label}</div>
+      ${ed("div", m.label, "stat-label")}
     </div>`).join("\n    ")}
   </div>
 </div></section>`;
@@ -461,18 +462,18 @@ function renderPricingTable(comp: ComponentConfig): string {
   ];
   return `<section class="section"><div class="container">
   <div class="text-center" style="margin-bottom:40px;">
-    <div class="badge">Pricing</div>
+    ${ed("div", "Pricing", "badge")}
     ${ed("h2", "Simple, Transparent Pricing")}
     ${ed("p", "Choose the plan that's right for you.", "text-muted")}
   </div>
   <div class="pricing-grid">
     ${plans.map(p => `<div class="price-card${p.featured ? " featured" : ""}">
-      <h3>${p.name}</h3>
-      <div style="margin:20px 0;"><span class="price-amount">${p.price}</span><span class="price-period">${p.period}</span></div>
+      ${ed("h3", p.name)}
+      <div style="margin:20px 0;">${ed("span", p.price, "price-amount")}${ed("span", p.period, "price-period")}</div>
       <ul class="price-features">
-        ${p.features.map(f => `<li>${f}</li>`).join("\n        ")}
+        ${p.features.map(f => `<li data-editable data-edit-id="${eid()}">${f}</li>`).join("\n        ")}
       </ul>
-      <a href="#" class="btn ${p.featured ? "btn-primary" : "btn-outline"} w-full justify-center">Get Started</a>
+      ${ed("a", "Get Started", `btn ${p.featured ? "btn-primary" : "btn-outline"} w-full justify-center`)}
     </div>`).join("\n    ")}
   </div>
 </div></section>`;
@@ -486,18 +487,18 @@ function renderTestimonials(comp: ComponentConfig): string {
   ];
   return `<section class="section" style="background:var(--bg-card);"><div class="container">
   <div class="text-center" style="margin-bottom:40px;">
-    <div class="badge">Testimonials</div>
+    ${ed("div", "Testimonials", "badge")}
     ${ed("h2", "Loved by Teams Worldwide")}
   </div>
   <div class="grid grid-3" style="gap:20px;">
     ${items.map(t => `<div class="testimonial-card">
-      <div class="testimonial-stars">★★★★★</div>
+      ${ed("div", "★★★★★", "testimonial-stars")}
       ${ed("p", t.text, "text-sm")}
       <div class="testimonial-author">
         <div class="testimonial-avatar">${t.name.charAt(0)}</div>
         <div>
-          <div class="font-medium text-sm">${t.name}</div>
-          <div class="text-xs text-muted">${t.role}</div>
+          ${ed("div", t.name, "font-medium text-sm")}
+          ${ed("div", t.role, "text-xs text-muted")}
         </div>
       </div>
     </div>`).join("\n    ")}
@@ -514,15 +515,15 @@ function renderFAQ(comp: ComponentConfig): string {
   ];
   return `<section class="section"><div class="container" style="max-width:700px;">
   <div class="text-center" style="margin-bottom:40px;">
-    <div class="badge">FAQ</div>
+    ${ed("div", "FAQ", "badge")}
     ${ed("h2", "Frequently Asked Questions")}
   </div>
   ${items.map(item => `<div class="faq-item">
     <button class="faq-question" onclick="this.parentElement.classList.toggle('open');this.nextElementSibling.style.display=this.nextElementSibling.style.display==='block'?'none':'block';">
-      ${item.q}
+      <span data-editable data-edit-id="${eid()}">${item.q}</span>
       <span>+</span>
     </button>
-    <div class="faq-answer" style="display:none;">${item.a}</div>
+    ${ed("div", item.a, "faq-answer")}
   </div>`).join("\n  ")}
 </div></section>`;
 }
@@ -532,25 +533,25 @@ function renderFinalCTA(comp: ComponentConfig): string {
   return `<section style="padding:40px 24px;"><div class="cta-section">
   ${ed("h2", p.headline || "Ready to Get Started?")}
   ${ed("p", p.subtitle || "Join thousands of teams already building with our platform.")}
-  <a href="#" class="btn" style="background:white;color:var(--primary);font-weight:700;">${p.cta_text || "Start Free Trial"} →</a>
+  ${ed("a", `${p.cta_text || "Start Free Trial"} →`, "btn")}
 </div></section>`;
 }
 
 function renderContactForm(comp: ComponentConfig): string {
   return `<section class="section"><div class="container" style="max-width:600px;">
   <div class="text-center" style="margin-bottom:32px;">
-    <div class="badge">Contact</div>
+    ${ed("div", "Contact", "badge")}
     ${ed("h2", "Get in Touch")}
     ${ed("p", "We'd love to hear from you. Send us a message!", "text-muted")}
   </div>
   <form class="contact-form mx-auto" onsubmit="event.preventDefault();alert('Message sent!');">
     <div class="grid grid-2" style="gap:16px;">
-      <div class="form-group"><label class="form-label">Name</label><input class="input" placeholder="Your name" /></div>
-      <div class="form-group"><label class="form-label">Email</label><input class="input" type="email" placeholder="you@example.com" /></div>
+      <div class="form-group">${ed("label", "Name", "form-label")}<input class="input" placeholder="Your name" /></div>
+      <div class="form-group">${ed("label", "Email", "form-label")}<input class="input" type="email" placeholder="you@example.com" /></div>
     </div>
-    <div class="form-group"><label class="form-label">Subject</label><input class="input" placeholder="How can we help?" /></div>
-    <div class="form-group"><label class="form-label">Message</label><textarea class="input" rows="4" placeholder="Your message..."></textarea></div>
-    <button type="submit" class="btn btn-primary w-full justify-center">Send Message</button>
+    <div class="form-group">${ed("label", "Subject", "form-label")}<input class="input" placeholder="How can we help?" /></div>
+    <div class="form-group">${ed("label", "Message", "form-label")}<textarea class="input" rows="4" placeholder="Your message..."></textarea></div>
+    ${ed("button", "Send Message", "btn btn-primary w-full justify-center")}
   </form>
 </div></section>`;
 }
@@ -562,7 +563,7 @@ function renderNewsletterCTA(comp: ComponentConfig): string {
   ${ed("p", p.subtitle || "Subscribe to our newsletter for the latest updates.", "text-muted")}
   <form onsubmit="event.preventDefault();alert('Subscribed!');" class="flex gap-2 justify-center" style="margin-top:20px;">
     <input class="input" style="max-width:300px;" placeholder="Enter your email" type="email" />
-    <button class="btn btn-primary">Subscribe</button>
+    ${ed("button", "Subscribe", "btn btn-primary")}
   </form>
 </div></section>`;
 }
@@ -578,7 +579,7 @@ function renderCardGrid(comp: ComponentConfig): string {
     ${cards.map(c => `<div class="card">
       ${ed("h3", c.title)}
       ${ed("p", c.desc, "text-sm text-muted")}
-      <a href="#" class="btn btn-outline" style="margin-top:16px;font-size:0.8rem;">Learn More →</a>
+      ${ed("a", "Learn More →", "btn btn-outline")}
     </div>`).join("\n    ")}
   </div>
 </div></section>`;
@@ -593,14 +594,14 @@ function renderTeamSection(comp: ComponentConfig): string {
   ];
   return `<section class="section"><div class="container">
   <div class="text-center" style="margin-bottom:40px;">
-    <div class="badge">Team</div>
+    ${ed("div", "Team", "badge")}
     ${ed("h2", "Meet Our Team")}
   </div>
   <div class="grid grid-4" style="gap:24px;">
     ${members.map(m => `<div class="text-center">
       <div class="testimonial-avatar mx-auto" style="width:64px;height:64px;font-size:1.25rem;margin-bottom:12px;">${m.name.charAt(0)}</div>
       ${ed("h3", m.name, "text-sm")}
-      <div class="text-xs text-muted">${m.role}</div>
+      ${ed("div", m.role, "text-xs text-muted")}
     </div>`).join("\n    ")}
   </div>
 </div></section>`;
@@ -614,15 +615,15 @@ function renderBlogPreview(comp: ComponentConfig): string {
   ];
   return `<section class="section"><div class="container">
   <div class="text-center" style="margin-bottom:40px;">
-    <div class="badge">Blog</div>
+    ${ed("div", "Blog", "badge")}
     ${ed("h2", "Latest Articles")}
   </div>
   <div class="grid grid-3" style="gap:20px;">
     ${posts.map(p => `<div class="card">
-      <div class="text-xs text-muted" style="margin-bottom:8px;">${p.date}</div>
+      ${ed("div", p.date, "text-xs text-muted")}
       ${ed("h3", p.title)}
       ${ed("p", p.excerpt, "text-sm text-muted")}
-      <a href="#" style="font-size:0.8rem;font-weight:600;margin-top:12px;display:inline-block;">Read More →</a>
+      ${ed("a", "Read More →", "")}
     </div>`).join("\n    ")}
   </div>
 </div></section>`;
@@ -631,8 +632,8 @@ function renderBlogPreview(comp: ComponentConfig): string {
 function renderGenericComponent(comp: ComponentConfig): string {
   return `<section class="section"><div class="container">
   <div class="card text-center">
-    <h3 style="text-transform:capitalize;">${comp.type.replace(/_/g, " ")}</h3>
-    <p class="text-sm text-muted" style="margin-top:8px;">This component is rendered as a placeholder in the static export.</p>
+    ${ed("h3", comp.type.replace(/_/g, " "))}
+    ${ed("p", "This component is rendered as a placeholder in the static export.", "text-sm text-muted")}
   </div>
 </div></section>`;
 }
