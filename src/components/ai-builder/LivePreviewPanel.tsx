@@ -180,7 +180,19 @@ function buildPreviewHtml(files: GeneratedFile[]): string {
       console.log("✅ All components rendered successfully");
     } catch (err) {
       console.error("❌ Preview render failed:", err.message);
-      document.getElementById("root").innerHTML = '<div class="preview-error"><h2>⚠️ Preview Error</h2><p>' + err.message + '</p></div>';
+      var root = document.getElementById("root");
+      if (root) {
+        var errorDiv = document.createElement('div');
+        errorDiv.className = 'preview-error';
+        var h2 = document.createElement('h2');
+        h2.textContent = '⚠️ Preview Error';
+        var p = document.createElement('p');
+        p.textContent = err.message;
+        errorDiv.appendChild(h2);
+        errorDiv.appendChild(p);
+        root.innerHTML = '';
+        root.appendChild(errorDiv);
+      }
     }
   <\/script>
 </body>
