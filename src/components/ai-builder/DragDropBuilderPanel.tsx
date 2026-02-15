@@ -25,6 +25,7 @@ import { PropEditorSidebar } from "./PropEditorSidebar";
 import { LayerPanel } from "./LayerPanel";
 import { PageManagerPanel } from "./PageManagerPanel";
 import { useUndoRedo } from "@/hooks/useUndoRedo";
+import { CollaborationCursors } from "./CollaborationCursors";
 
 interface DragDropBuilderPanelProps {
   config: AppConfig | null;
@@ -33,6 +34,7 @@ interface DragDropBuilderPanelProps {
   onSelectComponent: (pageIndex: number, componentIndex: number) => void;
   onClearSelection: () => void;
   onPropUpdate: (pageIndex: number, componentIndex: number, newProps: Record<string, any>) => void;
+  projectId?: string;
 }
 
 type ViewportSize = "desktop" | "tablet" | "mobile";
@@ -124,6 +126,7 @@ export function DragDropBuilderPanel({
   onSelectComponent,
   onClearSelection,
   onPropUpdate,
+  projectId,
 }: DragDropBuilderPanelProps) {
   const [paletteSearch, setPaletteSearch] = useState("");
   const [expandedCategory, setExpandedCategory] = useState<string | null>("Layout");
@@ -135,6 +138,8 @@ export function DragDropBuilderPanel({
   const [leftPanel, setLeftPanel] = useState<LeftPanel>("components");
   const [zoom, setZoom] = useState(100);
   const canvasRef = useRef<HTMLDivElement>(null);
+  const [multiSelected, setMultiSelected] = useState<Set<string>>(new Set());
+  const [showGrid, setShowGrid] = useState(false);
 
   // Undo/redo
   const undoRedo = useUndoRedo<AppConfig>(config);
@@ -166,22 +171,39 @@ export function DragDropBuilderPanel({
         undoRedo.redo();
       }
       if (e.key === "Delete" || e.key === "Backspace") {
-        if (selectedComponent && document.activeElement === document.body) {
+        if (document.activeElement === document.body) {
           e.preventDefault();
-          handleDeleteComponent(selectedComponent.pageIndex, selectedComponent.componentIndex);
+          if (multiSelected.size > 0) {
+            handleBulkDelete();
+          } else if (selectedComponent) {
+            handleDeleteComponent(selectedComponent.pageIndex, selectedComponent.componentIndex);
+          }
         }
       }
-      if (isMeta && e.key === "d" && selectedComponent) {
+      if (isMeta && e.key === "d") {
         e.preventDefault();
-        handleDuplicateComponent(selectedComponent.pageIndex, selectedComponent.componentIndex);
+        if (multiSelected.size > 0) {
+          handleBulkDuplicate();
+        } else if (selectedComponent) {
+          handleDuplicateComponent(selectedComponent.pageIndex, selectedComponent.componentIndex);
+        }
       }
       if (e.key === "Escape") {
+        setMultiSelected(new Set());
         onClearSelection();
+      }
+      if (isMeta && e.key === "a" && config) {
+        e.preventDefault();
+        const page = config.pages[activePage];
+        if (page) {
+          const all = new Set(page.components.map((_, i) => `${activePage}-${i}`));
+          setMultiSelected(all);
+        }
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [selectedComponent, undoRedo]);
+  }, [selectedComponent, undoRedo, multiSelected, activePage, config]);
 
   if (!config) {
     return (
@@ -338,6 +360,57 @@ export function DragDropBuilderPanel({
     updated.pages = pages;
     onConfigUpdate(updated);
   };
+
+  const handleMultiSelect = useCallback((pi: number, ci: number, add: boolean) => {
+    setMultiSelected(prev => {
+      const next = new Set(prev);
+      const key = `${pi}-${ci}`;
+      if (add) next.add(key); else next.delete(key);
+      return next;
+    });
+  }, []);
+
+  const handleBulkDelete = useCallback(() => {
+    if (!config || multiSelected.size === 0) return;
+    const updated = JSON.parse(JSON.stringify(config));
+    const grouped = new Map<number, number[]>();
+    multiSelected.forEach(key => {
+      const [pi, ci] = key.split("-").map(Number);
+      if (!grouped.has(pi)) grouped.set(pi, []);
+      grouped.get(pi)!.push(ci);
+    });
+    grouped.forEach((indices, pi) => {
+      indices.sort((a, b) => b - a);
+      indices.forEach(ci => {
+        updated.pages[pi].components.splice(ci, 1);
+      });
+    });
+    onConfigUpdate(updated);
+    setMultiSelected(new Set());
+    onClearSelection();
+  }, [config, multiSelected, onConfigUpdate, onClearSelection]);
+
+  const handleBulkDuplicate = useCallback(() => {
+    if (!config || multiSelected.size === 0) return;
+    const updated = JSON.parse(JSON.stringify(config));
+    const grouped = new Map<number, number[]>();
+    multiSelected.forEach(key => {
+      const [pi, ci] = key.split("-").map(Number);
+      if (!grouped.has(pi)) grouped.set(pi, []);
+      grouped.get(pi)!.push(ci);
+    });
+    grouped.forEach((indices, pi) => {
+      indices.sort((a, b) => a - b);
+      let offset = 0;
+      indices.forEach(ci => {
+        const clone = JSON.parse(JSON.stringify(updated.pages[pi].components[ci + offset]));
+        updated.pages[pi].components.splice(ci + offset + 1, 0, clone);
+        offset++;
+      });
+    });
+    onConfigUpdate(updated);
+    setMultiSelected(new Set());
+  }, [config, multiSelected, onConfigUpdate]);
 
   const zoomIn = () => setZoom((z) => Math.min(150, z + 25));
   const zoomOut = () => setZoom((z) => Math.max(50, z - 25));
@@ -545,6 +618,22 @@ export function DragDropBuilderPanel({
                   </Tooltip>
                 );
               })}
+
+              <div className="w-px h-4 bg-border mx-1" />
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={showGrid ? "default" : "ghost"}
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    onClick={() => setShowGrid(!showGrid)}
+                  >
+                    <LayoutGrid className="w-3 h-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Toggle Grid</TooltipContent>
+              </Tooltip>
             </div>
           </div>
 
@@ -552,7 +641,7 @@ export function DragDropBuilderPanel({
           <div
             ref={canvasRef}
             className={cn(
-              "flex-1 min-h-0 bg-muted/30 overflow-auto flex justify-center p-4",
+              "flex-1 min-h-0 bg-muted/30 overflow-auto flex justify-center p-4 relative",
               dropTargetPage !== null && "ring-2 ring-primary/30 ring-inset"
             )}
             onDragOver={handleCanvasDragOver}
@@ -560,7 +649,7 @@ export function DragDropBuilderPanel({
             onDrop={handleCanvasDrop}
           >
             <div
-              className="bg-background rounded-lg border border-border shadow-sm overflow-hidden transition-all duration-300 origin-top"
+              className="relative bg-background rounded-lg border border-border shadow-sm overflow-hidden transition-all duration-300 origin-top"
               style={{
                 width: VIEWPORTS[viewport].width,
                 maxWidth: "100%",
@@ -575,6 +664,9 @@ export function DragDropBuilderPanel({
                 onSelectComponent={onSelectComponent}
                 onReorderComponents={handleReorderComponents}
                 onDeleteComponent={handleDeleteComponent}
+                onDuplicateComponent={handleDuplicateComponent}
+                multiSelectedComponents={multiSelected}
+                onMultiSelectComponent={handleMultiSelect}
                 onAddComponent={(pi, type) => {
                   const updated = { ...config };
                   const pages = [...updated.pages];
@@ -595,7 +687,39 @@ export function DragDropBuilderPanel({
                   <p className="text-sm text-primary/70 font-medium">Drop component here</p>
                 </div>
               )}
+
+              {/* Grid overlay */}
+              {showGrid && (
+                <div
+                  className="absolute inset-0 pointer-events-none z-10"
+                  style={{
+                    backgroundImage: "linear-gradient(hsl(var(--border) / 0.3) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--border) / 0.3) 1px, transparent 1px)",
+                    backgroundSize: "20px 20px",
+                  }}
+                />
+              )}
             </div>
+
+            {/* Collaboration cursors */}
+            <CollaborationCursors projectId={projectId} containerRef={canvasRef} />
+
+            {/* Bulk actions floating bar */}
+            {multiSelected.size > 0 && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-4 py-2 rounded-xl bg-card border border-border shadow-lg">
+                <Badge variant="secondary" className="text-xs">
+                  {multiSelected.size} selected
+                </Badge>
+                <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={handleBulkDuplicate}>
+                  <Copy className="w-3 h-3 mr-1" /> Duplicate
+                </Button>
+                <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={handleBulkDelete}>
+                  <Trash2 className="w-3 h-3 mr-1" /> Delete
+                </Button>
+                <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setMultiSelected(new Set())}>
+                  <X className="w-3 h-3 mr-1" /> Clear
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 
