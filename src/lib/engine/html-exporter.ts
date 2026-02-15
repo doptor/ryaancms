@@ -302,13 +302,18 @@ function generateEditorShortcutJS(password: string): string {
     }
   });
 
-  // Mobile: floating edit button (touch devices only)
-  var isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-  if (isTouchDevice && sessionStorage.getItem(PASS_KEY) !== 'true') {
+  // Mobile: floating edit button (touch devices & small screens)
+  function addMobileFab() {
+    if (document.getElementById('ryaan-mobile-fab')) return;
+    var isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    var isSmallScreen = window.innerWidth <= 1024;
+    if (!isTouchDevice && !isSmallScreen) return;
+    if (sessionStorage.getItem(PASS_KEY) === 'true') return;
     var fab = document.createElement('button');
-    fab.textContent = '✏️';
+    fab.id = 'ryaan-mobile-fab';
+    fab.innerHTML = '&#9998;';
     fab.title = 'Open Editor';
-    fab.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:99999;width:48px;height:48px;border-radius:50%;border:none;background:#6366f1;color:white;font-size:20px;box-shadow:0 4px 12px rgba(0,0,0,0.3);cursor:pointer;display:flex;align-items:center;justify-content:center;';
+    fab.setAttribute('style', 'position:fixed !important;bottom:24px !important;right:24px !important;z-index:99999 !important;width:56px !important;height:56px !important;border-radius:50% !important;border:none !important;background:#6366f1 !important;color:#fff !important;font-size:24px !important;box-shadow:0 4px 16px rgba(0,0,0,0.35) !important;cursor:pointer !important;display:flex !important;align-items:center !important;justify-content:center !important;opacity:1 !important;visibility:visible !important;pointer-events:auto !important;');
     fab.addEventListener('click', function() {
       if (sessionStorage.getItem(PASS_KEY) === 'true') {
         location.reload();
@@ -320,8 +325,16 @@ function generateEditorShortcutJS(password: string): string {
       }
       doLogin();
     });
-    document.body.appendChild(fab);
+    (document.body || document.documentElement).appendChild(fab);
   }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', addMobileFab);
+  } else {
+    addMobileFab();
+  }
+  // Retry after a short delay in case body wasn't ready
+  setTimeout(addMobileFab, 500);
+  setTimeout(addMobileFab, 2000);
 })();`;
 }
 
