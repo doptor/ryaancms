@@ -654,8 +654,7 @@ function generateEditorJS(password: string): string {
       location.reload();
     },
     unlock: function() {
-      var msg = '🔒 Enter editor password:' + '\\n\\n' + 'Forgot password? Type RESET to recover access';
-      var entered = prompt(msg);
+      var entered = prompt('Enter editor password (type RESET to recover):');
       if (entered === null) return;
       if (entered === 'RESET') {
         var attempts = JSON.parse(localStorage.getItem(RESET_ATTEMPTS_KEY) || '[]');
