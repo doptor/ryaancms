@@ -37,7 +37,7 @@ export function DeployPanel({ config, sql, onExportJSON, onExportSQL }: DeployPa
   const [isSubmittingApproval, setIsSubmittingApproval] = useState(false);
   const [isExportingHTML, setIsExportingHTML] = useState(false);
   const [htmlExportProgress, setHtmlExportProgress] = useState("");
-  const [editorPassword, setEditorPassword] = useState("");
+  
 
   if (!config) {
     return (
@@ -288,21 +288,6 @@ export function DeployPanel({ config, sql, onExportJSON, onExportSQL }: DeployPa
             </h4>
             <p className="text-xs text-muted-foreground">Choose a format to download your project.</p>
 
-            {/* Editor Password */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-foreground">Editor Password (optional)</label>
-              <Input
-                type="password"
-                placeholder="Set a password to protect the inline editor"
-                value={editorPassword}
-                onChange={(e) => setEditorPassword(e.target.value)}
-                className="h-8 text-xs"
-              />
-              <p className="text-[10px] text-muted-foreground">
-                {editorPassword ? "🔒 Editor will be locked — password required to edit." : "No password — anyone can edit the HTML."}
-              </p>
-            </div>
-
             {/* HTML */}
             <button
               onClick={async () => {
@@ -310,7 +295,7 @@ export function DeployPanel({ config, sql, onExportJSON, onExportSQL }: DeployPa
                 setIsExportingHTML(true);
                 setHtmlExportProgress("");
                 try {
-                  const result = await exportToHTML(config, setHtmlExportProgress, editorPassword || undefined);
+                  const result = await exportToHTML(config, setHtmlExportProgress);
                   const url = URL.createObjectURL(result.blob);
                   const a = document.createElement("a");
                   a.href = url;
@@ -319,7 +304,7 @@ export function DeployPanel({ config, sql, onExportJSON, onExportSQL }: DeployPa
                   URL.revokeObjectURL(url);
                   toast({
                     title: "🌐 HTML Downloaded!",
-                    description: `${result.pageCount} page(s), ${result.imageCount} image(s) with inline editor.${editorPassword ? " Editor is password-protected." : ""}`,
+                    description: `${result.pageCount} page(s), ${result.imageCount} image(s). Password in editor.txt.`,
                   });
                 } catch (err: any) {
                   toast({ title: "Export failed", description: err.message, variant: "destructive" });
@@ -337,7 +322,7 @@ export function DeployPanel({ config, sql, onExportJSON, onExportSQL }: DeployPa
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-foreground">HTML</span>
-                  <Badge variant="secondary" className="text-[10px] h-4">{editorPassword ? "🔒 Protected" : "+ Editor"}</Badge>
+                  <Badge variant="secondary" className="text-[10px] h-4">🔒 Protected</Badge>
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {isExportingHTML && htmlExportProgress ? htmlExportProgress : "Static HTML pages with images & live inline editor. Upload to any server."}
