@@ -371,6 +371,30 @@ Rules:
 AGENT ROLE: You are the Frontend Engineer & UI/UX Designer (Agent 7/10).
 You MUST call the "design_ui" tool.
 
+=== CRITICAL: UNIQUE DESIGN PER PROJECT ===
+Every project MUST have a visually unique design. NEVER repeat the same layout, color scheme, or content across builds.
+- RANDOMIZE primary colors: pick from a wide palette (blue, indigo, emerald, rose, amber, violet, cyan, teal, orange, fuchsia, sky, lime, pink, slate)
+- VARY section order: don't always use the same formula. Mix and match sections creatively.
+- VARY layout patterns: alternate between left-right splits, centered layouts, asymmetric grids, overlapping elements
+- GENERATE unique content: different company names, taglines, feature descriptions, testimonial quotes for EVERY build
+- VARY card layouts: sometimes 2 columns, sometimes 3, sometimes 4. Mix card styles (minimal, bordered, gradient, glassmorphism)
+- VARY hero styles: centered text, left-aligned with right image, split-screen, video background, gradient overlay, animated
+- NEVER use the same placeholder brand name twice. Invent creative brand names relevant to the project type.
+
+=== CRITICAL: RESPONSIVE DESIGN (MANDATORY) ===
+ALL generated UIs MUST be fully responsive. Every component MUST work on mobile, tablet, and desktop.
+- Grid columns: use responsive breakpoints (grid-cols-1 sm:grid-cols-2 lg:grid-cols-3)
+- Typography: use responsive sizes (text-2xl md:text-4xl lg:text-6xl)
+- Padding: use responsive padding (px-4 md:px-6 lg:px-8, py-12 md:py-16 lg:py-20)
+- Navigation: mobile hamburger menu, desktop horizontal nav
+- Tables: horizontal scroll wrapper on mobile, or card layout for small screens
+- Images: responsive widths, proper aspect ratios, lazy loading
+- Forms: full-width inputs on mobile, side-by-side on desktop
+- Sidebar layouts: collapsible/drawer on mobile, fixed on desktop
+- Hide non-essential elements on mobile (hidden md:block)
+- Touch targets: minimum 44px height for mobile buttons
+- Every page layout component MUST include responsive_classes in its props
+
 === DESIGN SYSTEM LOCK (MANDATORY) ===
 All generated UIs MUST follow these hard rules. No exceptions:
 
@@ -1018,7 +1042,7 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt } = await req.json();
+    const { prompt, scope } = await req.json();
 
     if (!prompt) {
       return new Response(JSON.stringify({ error: "Prompt is required" }), {
@@ -1063,7 +1087,16 @@ serve(async (req) => {
 
         const agentLog: unknown[] = [];
         const context: Record<string, unknown> = {};
-        const totalAgents = PIPELINE.length;
+        // Needs-based agent skipping: simple websites don't need all 12 agents
+        const SKIP_FOR_MODERATE: Set<string> = new Set(["backend", "testing", "debugger"]);
+        const SKIP_FOR_LIGHT: Set<string> = new Set(["product_manager", "architect", "backend", "testing", "debugger", "ui_reviewer"]);
+        
+        const skipSet = scope === "light" ? SKIP_FOR_LIGHT
+          : scope === "moderate" ? SKIP_FOR_MODERATE
+          : new Set<string>();
+
+        const effectivePipeline = PIPELINE.filter(p => !skipSet.has(p.key));
+        const totalAgents = effectivePipeline.length;
 
         const CONTEXT_KEYS: Record<string, string> = {
           requirements: "requirements",
@@ -1080,8 +1113,8 @@ serve(async (req) => {
           reviewer: "quality_review",
         };
 
-        for (let i = 0; i < PIPELINE.length; i++) {
-          const { key, fatal } = PIPELINE[i];
+        for (let i = 0; i < effectivePipeline.length; i++) {
+          const { key, fatal } = effectivePipeline[i];
           const agent = AGENT_CONFIGS[key];
           const step = i + 1;
 
@@ -1103,7 +1136,7 @@ serve(async (req) => {
             send("agent_done", { agent: agent.name, step, data: result.data });
           }
 
-          if (i < PIPELINE.length - 1) {
+          if (i < effectivePipeline.length - 1) {
             await new Promise(r => setTimeout(r, 250));
           }
         }
