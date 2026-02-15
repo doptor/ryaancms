@@ -975,10 +975,13 @@ export default function SettingsPage() {
           })}
         </div>
 
-        {/* Active section content */}
-        {activeSection === "ai-integrations" ? (
+        {/* AI Integrations - always mounted, hidden when not active */}
+        <div className={activeSection === "ai-integrations" ? "" : "hidden"}>
           <AIIntegrationSettings />
-        ) : (
+        </div>
+
+        {/* Other sections */}
+        {activeSection !== "ai-integrations" && (
           <Card>
             <CardContent className="pt-4 sm:pt-6 px-4 sm:px-6">
               {ActiveComponent && (
@@ -987,7 +990,6 @@ export default function SettingsPage() {
                   onChange={handleFieldChange}
                 />
               )}
-              {/* Per-tab save button */}
               <div className="mt-6 pt-4 border-t border-border flex justify-end">
                 <Button
                   variant="default"
