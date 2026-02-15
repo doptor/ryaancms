@@ -2161,7 +2161,7 @@ export default function AIBuilderPage() {
         <div className="flex-1 min-h-0 overflow-auto">
           {previewMode === "visual" ? (
             <div className="flex h-full min-h-0">
-              <div className="flex-1 min-w-0 overflow-auto">
+              <div className="flex-1 min-w-0 overflow-auto" data-preview-container>
                 <AppPreviewRenderer
                   config={config}
                   selectedComponent={selectedComponent}
