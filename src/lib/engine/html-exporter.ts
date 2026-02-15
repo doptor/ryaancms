@@ -258,6 +258,8 @@ function generateEditorJS(password: string): string {
   var THEME_KEY = 'ryaancms_theme';
   var PASS_KEY = 'ryaancms_editor_unlocked';
   var CUSTOM_PASS_KEY = 'ryaancms_custom_password';
+  var SECURITY_Q_KEY = 'ryaancms_security_answer';
+  var RESET_ATTEMPTS_KEY = 'ryaancms_reset_attempts';
   var DEFAULT_PASSWORD = '${password.replace(/'/g, "\\'")}';
   var EDITOR_PASSWORD = localStorage.getItem(CUSTOM_PASS_KEY) || DEFAULT_PASSWORD;
   var edits = {};
@@ -655,26 +657,51 @@ function generateEditorJS(password: string): string {
       var entered = prompt('🔒 Enter editor password:\\n\\nForgot password? Type RESET to recover access');
       if (entered === null) return;
       if (entered === 'RESET') {
-        if (confirm('⚠️ This will reset your password and unlock the editor immediately.\\n\\nYou will be asked to set a new password.\\n\\nContinue?')) {
-          localStorage.removeItem(CUSTOM_PASS_KEY);
-          EDITOR_PASSWORD = DEFAULT_PASSWORD;
-          sessionStorage.setItem(PASS_KEY, 'true');
-          // Generate new random password
-          var chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-          var newPass = '';
-          for (var i = 0; i < 10; i++) newPass += chars.charAt(Math.floor(Math.random() * chars.length));
-          EDITOR_PASSWORD = newPass;
-          localStorage.setItem(CUSTOM_PASS_KEY, newPass);
-          alert('✅ Password recovered!\\n\\n🔑 Your NEW password is:\\n\\n' + newPass + '\\n\\n⚠️ SAVE THIS PASSWORD! Write it down now.\\nThe editor is now unlocked.');
-          location.reload();
+        // Rate limit: max 3 reset attempts per hour
+        var attempts = JSON.parse(localStorage.getItem(RESET_ATTEMPTS_KEY) || '[]');
+        var oneHourAgo = Date.now() - 3600000;
+        attempts = attempts.filter(function(t) { return t > oneHourAgo; });
+        if (attempts.length >= 3) {
+          alert('🚫 Too many reset attempts. Please try again later (max 3 per hour).');
+          return;
         }
+        var savedAnswer = localStorage.getItem(SECURITY_Q_KEY);
+        if (savedAnswer) {
+          var userAnswer = prompt('🔐 Security Question:\\n\\nWhat is your recovery answer?\\n(Set during your first login)');
+          if (userAnswer === null) return;
+          if (userAnswer.trim().toLowerCase() !== savedAnswer.toLowerCase()) {
+            attempts.push(Date.now());
+            localStorage.setItem(RESET_ATTEMPTS_KEY, JSON.stringify(attempts));
+            alert('❌ Incorrect security answer.\\n\\nAttempts remaining: ' + (3 - attempts.length) + ' this hour.');
+            return;
+          }
+        } else {
+          if (!confirm('⚠️ No security question was set.\\n\\nThis will reset your password.\\nAnyone with access to this browser can do this.\\n\\nContinue?')) return;
+        }
+        // Generate new password
+        localStorage.removeItem(CUSTOM_PASS_KEY);
+        var chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+        var newPass = '';
+        for (var i = 0; i < 10; i++) newPass += chars.charAt(Math.floor(Math.random() * chars.length));
+        EDITOR_PASSWORD = newPass;
+        localStorage.setItem(CUSTOM_PASS_KEY, newPass);
+        sessionStorage.setItem(PASS_KEY, 'true');
+        alert('✅ Password recovered!\\n\\n🔑 Your NEW password is:\\n\\n' + newPass + '\\n\\n⚠️ SAVE THIS PASSWORD! Write it down now.\\nThe editor is now unlocked.');
+        location.reload();
         return;
       }
       if (entered === EDITOR_PASSWORD) {
         sessionStorage.setItem(PASS_KEY, 'true');
+        // Prompt security question setup on first successful login if not set
+        if (!localStorage.getItem(SECURITY_Q_KEY)) {
+          var answer = prompt('🔐 Set a Security Recovery Answer\\n\\nThis will be used to verify your identity if you forget your password.\\n\\nEnter a secret answer (e.g. your pet name, favorite word):');
+          if (answer && answer.trim().length >= 2) {
+            localStorage.setItem(SECURITY_Q_KEY, answer.trim().toLowerCase());
+          }
+        }
         location.reload();
       } else {
-        alert('❌ Incorrect password.\\n\\n💡 Forgot? Type RESET to generate a new password');
+        alert('❌ Incorrect password.\\n\\n💡 Forgot? Type RESET to recover access');
       }
     },
     togglePanel: function() {
