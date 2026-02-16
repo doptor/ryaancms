@@ -1117,7 +1117,7 @@ try {
       EDITOR_PASSWORD = newPass;
       localStorage.setItem(CUSTOM_PASS_KEY, newPass);
       alert('✅ Password changed successfully! Use your new password next time you unlock the editor.');
-    }
+    },
     // Called by shortcut handler after login — no reload needed
     activateEditor: function() {
       if (isUnlocked) return;
