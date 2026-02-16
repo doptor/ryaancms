@@ -450,7 +450,15 @@ try {
       var el = document.querySelector('[data-edit-id="' + id + '"]');
       if (el) {
         if (el.tagName === 'IMG') el.src = edits[id];
-        else el.innerHTML = edits[id];
+        else {
+          var tmp = document.createElement('div');
+          tmp.textContent = '';
+          var sanitized = edits[id]
+            .replace(/<script[^>]*>[\\s\\S]*?<\\/script>/gi, '')
+            .replace(/on\\w+\\s*=\\s*["'][^"']*["']/gi, '')
+            .replace(/javascript\\s*:/gi, '');
+          el.innerHTML = sanitized;
+        }
       }
     });
   }
