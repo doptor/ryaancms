@@ -253,8 +253,29 @@ function generateEditorShortcutJS(password: string): string {
   const escapedPass = password.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
   return `(function(){
   var PASS_KEY = 'ryaancms_editor_unlocked';
+  var PASS_TS_KEY = 'ryaancms_editor_unlocked_ts';
+  var SESSION_TTL = 30 * 60 * 1000; // 30 minutes
   var CUSTOM_PASS_KEY = 'ryaancms_custom_password';
   var DEFAULT_PASSWORD = '${escapedPass}';
+
+  function isSessionActive() {
+    if (localStorage.getItem(PASS_KEY) !== 'true') return false;
+    var ts = parseInt(localStorage.getItem(PASS_TS_KEY) || '0', 10);
+    if (Date.now() - ts > SESSION_TTL) {
+      localStorage.removeItem(PASS_KEY);
+      localStorage.removeItem(PASS_TS_KEY);
+      return false;
+    }
+    return true;
+  }
+  function setSession() {
+    localStorage.setItem(PASS_KEY, 'true');
+    localStorage.setItem(PASS_TS_KEY, String(Date.now()));
+  }
+  function clearSession() {
+    localStorage.removeItem(PASS_KEY);
+    localStorage.removeItem(PASS_TS_KEY);
+  }
 
   function getPassword() {
     return localStorage.getItem(CUSTOM_PASS_KEY) || DEFAULT_PASSWORD;
@@ -308,7 +329,7 @@ function generateEditorShortcutJS(password: string): string {
       if (!pwd) return;
       if (pwd === 'RESET') {
         localStorage.removeItem(CUSTOM_PASS_KEY);
-        sessionStorage.setItem(PASS_KEY, 'true');
+        setSession();
         closeModal();
         location.reload();
         return;
@@ -316,7 +337,7 @@ function generateEditorShortcutJS(password: string): string {
       var expected = getPassword();
       var trimmedPwd = pwd.trim();
       if (trimmedPwd === expected || pwd === expected) {
-        sessionStorage.setItem(PASS_KEY, 'true');
+        setSession();
         closeModal();
         location.reload();
       } else {
@@ -332,7 +353,7 @@ function generateEditorShortcutJS(password: string): string {
   document.addEventListener('keydown', function(ev) {
     if (ev.ctrlKey && ev.shiftKey && (ev.key === 'E' || ev.key === 'e' || ev.keyCode === 69)) {
       ev.preventDefault();
-      if (sessionStorage.getItem(PASS_KEY) === 'true') {
+      if (isSessionActive()) {
         if (window.__ryaanEditor) return;
         location.reload();
         return;
@@ -351,14 +372,14 @@ function generateEditorShortcutJS(password: string): string {
     var isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     var isSmallScreen = window.innerWidth <= 1024;
     if (!isTouchDevice && !isSmallScreen) return;
-    if (sessionStorage.getItem(PASS_KEY) === 'true') return;
+    if (isSessionActive()) return;
     var fab = document.createElement('button');
     fab.id = 'ryaan-mobile-fab';
     fab.innerHTML = '&#9998;';
     fab.title = 'Open Editor';
     fab.setAttribute('style', 'position:fixed !important;bottom:24px !important;right:24px !important;z-index:99999 !important;width:56px !important;height:56px !important;border-radius:50% !important;border:none !important;background:#6366f1 !important;color:#fff !important;font-size:24px !important;box-shadow:0 4px 16px rgba(0,0,0,0.35) !important;cursor:pointer !important;display:flex !important;align-items:center !important;justify-content:center !important;opacity:1 !important;visibility:visible !important;pointer-events:auto !important;');
     fab.addEventListener('click', function() {
-      if (sessionStorage.getItem(PASS_KEY) === 'true') {
+      if (isSessionActive()) {
         location.reload();
         return;
       }
@@ -392,14 +413,35 @@ try {
   var STRUCTURE_KEY = 'ryaancms_structure';
   var THEME_KEY = 'ryaancms_theme';
   var PASS_KEY = 'ryaancms_editor_unlocked';
+  var PASS_TS_KEY = 'ryaancms_editor_unlocked_ts';
+  var SESSION_TTL = 30 * 60 * 1000; // 30 minutes
   var CUSTOM_PASS_KEY = 'ryaancms_custom_password';
   var SECURITY_Q_KEY = 'ryaancms_security_answer';
   var RESET_ATTEMPTS_KEY = 'ryaancms_reset_attempts';
   var DEFAULT_PASSWORD = '${password.replace(/'/g, "\\'")}';
   var EDITOR_PASSWORD = localStorage.getItem(CUSTOM_PASS_KEY) || DEFAULT_PASSWORD;
   var edits = {};
-  var isUnlocked = sessionStorage.getItem(PASS_KEY) === 'true';
   var panelOpen = false;
+
+  function isSessionActive() {
+    if (localStorage.getItem(PASS_KEY) !== 'true') return false;
+    var ts = parseInt(localStorage.getItem(PASS_TS_KEY) || '0', 10);
+    if (Date.now() - ts > SESSION_TTL) {
+      localStorage.removeItem(PASS_KEY);
+      localStorage.removeItem(PASS_TS_KEY);
+      return false;
+    }
+    return true;
+  }
+  function setSession() {
+    localStorage.setItem(PASS_KEY, 'true');
+    localStorage.setItem(PASS_TS_KEY, String(Date.now()));
+  }
+  function clearSession() {
+    localStorage.removeItem(PASS_KEY);
+    localStorage.removeItem(PASS_TS_KEY);
+  }
+  var isUnlocked = isSessionActive();
 
   try { edits = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) {}
 
@@ -793,7 +835,7 @@ try {
       }
     },
     lock: function() {
-      sessionStorage.removeItem(PASS_KEY);
+      clearSession();
       location.reload();
     },
     unlock: function() {
@@ -826,13 +868,13 @@ try {
         for (var i = 0; i < 10; i++) newPass += chars.charAt(Math.floor(Math.random() * chars.length));
         EDITOR_PASSWORD = newPass;
         localStorage.setItem(CUSTOM_PASS_KEY, newPass);
-        sessionStorage.setItem(PASS_KEY, 'true');
+        setSession();
         alert('Password recovered! Your NEW password is: ' + newPass + ' -- SAVE THIS PASSWORD!');
         location.reload();
         return;
       }
       if (entered === EDITOR_PASSWORD) {
-        sessionStorage.setItem(PASS_KEY, 'true');
+        setSession();
         if (!localStorage.getItem(SECURITY_Q_KEY)) {
           var answer = prompt('Set a Security Recovery Answer (used if you forget your password):');
           if (answer && answer.trim().length >= 2) {
