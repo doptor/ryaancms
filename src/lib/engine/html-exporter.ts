@@ -262,28 +262,71 @@ function generateEditorShortcutJS(password: string): string {
 
   function doLogin() {
     var hasCustom = !!localStorage.getItem(CUSTOM_PASS_KEY);
-    var promptMsg = hasCustom
-      ? '🔑 Enter your CUSTOM password (a previous RESET changed it).\nType RESET to restore the original password from editor.txt:'
-      : '🔑 Enter editor password (from editor.txt). Type RESET to recover:';
-    var pwd = prompt(promptMsg);
-    if (pwd === null) return;
-    if (pwd === 'RESET') {
-      localStorage.removeItem(CUSTOM_PASS_KEY);
-      sessionStorage.setItem(PASS_KEY, 'true');
-      alert('✅ Password restored to the original from editor.txt! Reloading...');
-      location.reload();
-      return;
+    // Use a custom HTML modal instead of prompt() for mobile compatibility
+    var overlay = document.createElement('div');
+    overlay.id = 'ryaan-login-overlay';
+    overlay.setAttribute('style', 'position:fixed !important;inset:0 !important;z-index:999999 !important;background:rgba(0,0,0,0.6) !important;display:flex !important;align-items:center !important;justify-content:center !important;');
+    var box = document.createElement('div');
+    box.setAttribute('style', 'background:#fff !important;border-radius:16px !important;padding:24px !important;width:90% !important;max-width:340px !important;box-shadow:0 8px 32px rgba(0,0,0,0.3) !important;font-family:-apple-system,BlinkMacSystemFont,sans-serif !important;');
+    var title = document.createElement('h3');
+    title.textContent = '🔑 Editor Login';
+    title.setAttribute('style', 'margin:0 0 8px !important;font-size:18px !important;color:#111 !important;');
+    var hint = document.createElement('p');
+    hint.textContent = hasCustom ? 'Enter your custom password or type RESET to restore.' : 'Enter password from editor.txt';
+    hint.setAttribute('style', 'margin:0 0 16px !important;font-size:13px !important;color:#666 !important;');
+    var input = document.createElement('input');
+    input.type = 'password';
+    input.placeholder = 'Password';
+    input.setAttribute('style', 'width:100% !important;padding:12px !important;border:2px solid #e5e7eb !important;border-radius:10px !important;font-size:16px !important;box-sizing:border-box !important;outline:none !important;background:#fff !important;color:#111 !important;');
+    var msg = document.createElement('p');
+    msg.setAttribute('style', 'margin:8px 0 0 !important;font-size:12px !important;color:#ef4444 !important;min-height:18px !important;');
+    var btnRow = document.createElement('div');
+    btnRow.setAttribute('style', 'display:flex !important;gap:8px !important;margin-top:16px !important;');
+    var cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.setAttribute('style', 'flex:1 !important;padding:10px !important;border:1px solid #d1d5db !important;border-radius:10px !important;background:#fff !important;color:#374151 !important;font-size:14px !important;cursor:pointer !important;');
+    var submitBtn = document.createElement('button');
+    submitBtn.textContent = 'Unlock';
+    submitBtn.setAttribute('style', 'flex:1 !important;padding:10px !important;border:none !important;border-radius:10px !important;background:#6366f1 !important;color:#fff !important;font-size:14px !important;font-weight:600 !important;cursor:pointer !important;');
+    box.appendChild(title);
+    box.appendChild(hint);
+    box.appendChild(input);
+    box.appendChild(msg);
+    btnRow.appendChild(cancelBtn);
+    btnRow.appendChild(submitBtn);
+    box.appendChild(btnRow);
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+    setTimeout(function() { input.focus(); }, 100);
+
+    function closeModal() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }
+    cancelBtn.addEventListener('click', closeModal);
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) closeModal(); });
+
+    function tryLogin() {
+      var pwd = input.value;
+      if (!pwd) return;
+      if (pwd === 'RESET') {
+        localStorage.removeItem(CUSTOM_PASS_KEY);
+        sessionStorage.setItem(PASS_KEY, 'true');
+        closeModal();
+        location.reload();
+        return;
+      }
+      var expected = getPassword();
+      var trimmedPwd = pwd.trim();
+      if (trimmedPwd === expected || pwd === expected) {
+        sessionStorage.setItem(PASS_KEY, 'true');
+        closeModal();
+        location.reload();
+      } else {
+        msg.textContent = '❌ Wrong password. Hint: starts with "' + expected.substring(0,3) + '..."';
+        input.value = '';
+        input.focus();
+      }
     }
-    var expected = getPassword();
-    var trimmedPwd = pwd.trim();
-    if (trimmedPwd === expected || pwd === expected) {
-      sessionStorage.setItem(PASS_KEY, 'true');
-      alert('✅ Editor unlocked! Reloading...');
-      location.reload();
-    } else {
-      var source = hasCustom ? 'a CUSTOM password (not editor.txt)' : 'editor.txt';
-      alert('❌ Incorrect password.\nThe active password is from: ' + source + '\nHint: starts with "' + expected.substring(0,3) + '..."\nYou entered: "' + trimmedPwd.substring(0,3) + '..."\n\nType RESET to restore the original editor.txt password.');
-    }
+    submitBtn.addEventListener('click', tryLogin);
+    input.addEventListener('keydown', function(e) { if (e.key === 'Enter') tryLogin(); });
   }
 
   document.addEventListener('keydown', function(ev) {
