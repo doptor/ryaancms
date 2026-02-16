@@ -334,7 +334,7 @@ function generateEditorShortcutJS(password: string): string {
       ev.preventDefault();
       if (sessionStorage.getItem(PASS_KEY) === 'true') {
         if (window.__ryaanEditor) return;
-        alert('Editor session is active but toolbar failed to load. Try refreshing the page.');
+        location.reload();
         return;
       }
       if (window.__ryaanEditor && typeof window.__ryaanEditor.unlock === 'function') {
