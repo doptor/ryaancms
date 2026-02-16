@@ -331,7 +331,11 @@ function generateEditorShortcutJS(password: string): string {
         localStorage.removeItem(CUSTOM_PASS_KEY);
         setSession();
         closeModal();
-        location.reload();
+        if (window.__ryaanEditor && window.__ryaanEditor.activateEditor) {
+          window.__ryaanEditor.activateEditor();
+        } else {
+          location.reload();
+        }
         return;
       }
       var expected = getPassword();
@@ -339,7 +343,11 @@ function generateEditorShortcutJS(password: string): string {
       if (trimmedPwd === expected || pwd === expected) {
         setSession();
         closeModal();
-        location.reload();
+        if (window.__ryaanEditor && window.__ryaanEditor.activateEditor) {
+          window.__ryaanEditor.activateEditor();
+        } else {
+          location.reload();
+        }
       } else {
         msg.textContent = '❌ Wrong password. Hint: starts with "' + expected.substring(0,3) + '..."';
         input.value = '';
@@ -1109,6 +1117,18 @@ try {
       EDITOR_PASSWORD = newPass;
       localStorage.setItem(CUSTOM_PASS_KEY, newPass);
       alert('✅ Password changed successfully! Use your new password next time you unlock the editor.');
+    }
+    // Called by shortcut handler after login — no reload needed
+    activateEditor: function() {
+      if (isUnlocked) return;
+      isUnlocked = true;
+      setSession();
+      applyTheme();
+      applyEdits();
+      initEditor();
+      // Remove FAB
+      var fab = document.getElementById('ryaan-mobile-fab');
+      if (fab) fab.remove();
     }
   };
 
