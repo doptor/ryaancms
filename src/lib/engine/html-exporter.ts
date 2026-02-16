@@ -1080,18 +1080,36 @@ try {
 
   // Init — run immediately if DOM already loaded (scripts at bottom of body)
   function startEditor() {
-    applyTheme();
-    applyEdits();
-    if (isUnlocked) initEditor();
+    try {
+      applyTheme();
+      applyEdits();
+      if (isUnlocked) {
+        initEditor();
+      }
+    } catch(initErr) {
+      console.error('RyaanCMS startEditor error:', initErr);
+      // Show visible error so user knows what happened
+      var errBar = document.createElement('div');
+      errBar.setAttribute('style', 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#ef4444;color:#fff;padding:12px 16px;font-family:sans-serif;font-size:14px;text-align:center;');
+      errBar.innerHTML = '⚠️ Editor toolbar error: ' + (initErr.message || initErr) + ' — <button onclick="location.reload()" style="background:#fff;color:#ef4444;border:none;padding:4px 12px;border-radius:6px;cursor:pointer;font-weight:600;margin-left:8px;">Retry</button>';
+      document.body.prepend(errBar);
+    }
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', startEditor);
   } else {
-    startEditor();
+    // Small delay to ensure DOM is fully parsed and body is available
+    setTimeout(startEditor, 0);
   }
 })();
 } catch(editorErr) {
   console.error('RyaanCMS Editor failed to load:', editorErr);
+  // Ensure __ryaanEditor exists to prevent infinite reload loops
+  window.__ryaanEditor = window.__ryaanEditor || {};
+  var errBar = document.createElement('div');
+  errBar.setAttribute('style', 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#ef4444;color:#fff;padding:12px 16px;font-family:sans-serif;font-size:14px;text-align:center;');
+  errBar.innerHTML = '⚠️ Editor failed to load: ' + (editorErr.message || editorErr) + ' — <button onclick="location.reload()" style="background:#fff;color:#ef4444;border:none;padding:4px 12px;border-radius:6px;cursor:pointer;font-weight:600;margin-left:8px;">Retry</button>';
+  (document.body || document.documentElement).prepend(errBar);
 }
 `;
 }
