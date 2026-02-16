@@ -1078,12 +1078,17 @@ try {
     }
   });
 
-  // Init
-  document.addEventListener('DOMContentLoaded', function() {
+  // Init — run immediately if DOM already loaded (scripts at bottom of body)
+  function startEditor() {
     applyTheme();
     applyEdits();
     if (isUnlocked) initEditor();
-  });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startEditor);
+  } else {
+    startEditor();
+  }
 })();
 } catch(editorErr) {
   console.error('RyaanCMS Editor failed to load:', editorErr);
