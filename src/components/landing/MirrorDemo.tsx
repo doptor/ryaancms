@@ -69,7 +69,7 @@ const MirrorDemo = forwardRef<HTMLDivElement>(function MirrorDemo(_props, ref) {
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
+    <div ref={ref} className="rounded-xl border border-border bg-card overflow-hidden">
       {/* Toolbar */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
         <div className="flex items-center gap-2">
