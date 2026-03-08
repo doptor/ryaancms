@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RyaanCMS Accounting Plugin — Software Requirements Specification (SRS)</title>
+<style>
+  :root { --primary: #2563eb; --bg: #ffffff; --text: #1e293b; --muted: #64748b; --border: #e2e8f0; --code-bg: #f1f5f9; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; color: var(--text); line-height: 1.7; max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+  h1 { font-size: 2rem; margin-bottom: 8px; color: var(--primary); }
+  h2 { font-size: 1.5rem; margin: 40px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--primary); }
+  h3 { font-size: 1.15rem; margin: 24px 0 8px; }
+  h4 { font-size: 1rem; margin: 16px 0 4px; color: var(--muted); }
+  p, li { margin-bottom: 6px; }
+  ul, ol { padding-left: 24px; margin-bottom: 16px; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 24px; font-size: 0.92rem; }
+  th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+  th { background: var(--code-bg); font-weight: 600; }
+  code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+  pre { background: var(--code-bg); padding: 16px; border-radius: 8px; overflow-x: auto; margin: 12px 0 24px; font-size: 0.88rem; line-height: 1.5; }
+  .badge { display: inline-block; background: var(--primary); color: #fff; padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; margin-right: 4px; }
+  .meta { color: var(--muted); font-size: 0.9rem; margin-bottom: 32px; }
+  .toc { background: var(--code-bg); padding: 20px 24px; border-radius: 8px; margin: 24px 0 40px; }
+  .toc a { color: var(--primary); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .toc ol { margin-bottom: 0; }
+  .toc li { margin-bottom: 4px; }
+  .note { background: #eff6ff; border-left: 4px solid var(--primary); padding: 12px 16px; border-radius: 4px; margin: 12px 0; }
+  @media print { body { max-width: 100%; padding: 20px; } h2 { page-break-before: always; } }
+</style>
+</head>
+<body>
+
+<h1>📊 RyaanCMS Accounting Plugin</h1>
+<p class="meta">Software Requirements Specification (SRS) v1.0<br>
+<strong>Date:</strong> March 2026 &nbsp;|&nbsp; <strong>Platform:</strong> Laravel 11 + MySQL/PostgreSQL &nbsp;|&nbsp; <strong>Architecture:</strong> SaaS Multi-Tenant</p>
+
+<div class="toc">
+<strong>📋 Table of Contents</strong>
+<ol>
+<li><a href="#intro">Introduction</a></li>
+<li><a href="#arch">System Architecture</a></li>
+<li><a href="#db">Database Schema (Laravel Migrations)</a></li>
+<li><a href="#func">Functional Requirements</a></li>
+<li><a href="#roles">User Roles & Permissions</a></li>
+<li><a href="#api">API Endpoints</a></li>
+<li><a href="#ai">AI Financial Assistant</a></li>
+<li><a href="#saas">SaaS & Multi-Tenant</a></li>
+<li><a href="#security">Security Requirements</a></li>
+<li><a href="#perf">Performance Requirements</a></li>
+<li><a href="#integration">Integration Requirements</a></li>
+<li><a href="#ui">UI Menu Structure</a></li>
+<li><a href="#future">Future Enhancements</a></li>
+</ol>
+</div>
+
+<!-- 1. INTRODUCTION -->
+<h2 id="intro">1. Introduction</h2>
+
+<h3>1.1 Purpose</h3>
+<p>The Accounting Plugin provides a complete financial management system within RyaanCMS, covering income, expenses, invoices, payments, taxes, financial reports, payroll, bank accounts, and multi-currency transactions. It is modular, scalable, AI-assisted, and compatible with SaaS multi-tenant architecture.</p>
+
+<h3>1.2 Scope</h3>
+<ul>
+<li>Track financial transactions</li>
+<li>Manage invoices and billing</li>
+<li>Record expenses with approval workflow</li>
+<li>Maintain chart of accounts</li>
+<li>Generate financial reports (P&L, Balance Sheet, Cash Flow)</li>
+<li>Manage taxes (VAT, GST, Custom)</li>
+<li>Track payments (online + offline)</li>
+<li>Integrate with CRM, HRM, Marketplace, Projects plugins</li>
+<li>Support multi-company, multi-currency, multi-branch, multi-user roles</li>
+<li>SaaS subscription billing support</li>
+</ul>
+
+<h3>1.3 Target Users</h3>
+<table>
+<tr><th>User</th><th>Role</th></tr>
+<tr><td>Business Owner</td><td>Financial overview, approvals</td></tr>
+<tr><td>Accountant</td><td>Manage accounts, entries, reconciliation</td></tr>
+<tr><td>Finance Manager</td><td>Reporting & analysis</td></tr>
+<tr><td>Admin</td><td>System configuration</td></tr>
+<tr><td>Employee</td><td>Expense submission</td></tr>
+<tr><td>Client</td><td>Invoice viewing & online payments</td></tr>
+</table>
+
+<!-- 2. ARCHITECTURE -->
+<h2 id="arch">2. System Architecture</h2>
+
+<h3>2.1 Technology Stack</h3>
+<table>
+<tr><th>Layer</th><th>Technology</th></tr>
+<tr><td>Backend</td><td>Laravel 11 (PHP 8.2+)</td></tr>
+<tr><td>Database</td><td>MySQL 8+ / PostgreSQL 15+</td></tr>
+<tr><td>Frontend</td><td>Blade + Inertia.js (React/Vue) or Livewire</td></tr>
+<tr><td>API</td><td>RESTful API (Laravel Resource Controllers)</td></tr>
+<tr><td>Authentication</td><td>Laravel Sanctum (API tokens + SPA auth)</td></tr>
+<tr><td>Queue</td><td>Redis / Database queue driver</td></tr>
+<tr><td>AI</td><td>OpenAI API / Local AI (via RyaanCMS AI Engine)</td></tr>
+<tr><td>Reports/Charts</td><td>Chart.js / ApexCharts</td></tr>
+<tr><td>PDF Generation</td><td>DomPDF / Snappy</td></tr>
+<tr><td>Excel Export</td><td>Laravel Excel (Maatwebsite)</td></tr>
+</table>
+
+<h3>2.2 Plugin Directory Structure</h3>
+<pre>
+plugins/accounting/
+├── src/
+│   ├── Controllers/
+│   │   ├── DashboardController.php
+│   │   ├── AccountController.php
+│   │   ├── IncomeController.php
+│   │   ├── ExpenseController.php
+│   │   ├── InvoiceController.php
+│   │   ├── PaymentController.php
+│   │   ├── BankAccountController.php
+│   │   ├── TaxController.php
+│   │   ├── ReportController.php
+│   │   ├── VendorController.php
+│   │   ├── CustomerController.php
+│   │   ├── PayrollController.php
+│   │   └── SettingsController.php
+│   ├── Models/
+│   │   ├── Account.php
+│   │   ├── Transaction.php
+│   │   ├── Invoice.php
+│   │   ├── InvoiceItem.php
+│   │   ├── Expense.php
+│   │   ├── Payment.php
+│   │   ├── BankAccount.php
+│   │   ├── TaxRate.php
+│   │   ├── Vendor.php
+│   │   ├── Customer.php
+│   │   ├── RecurringTemplate.php
+│   │   ├── Currency.php
+│   │   └── Company.php
+│   ├── Services/
+│   │   ├── AccountingService.php
+│   │   ├── InvoiceService.php
+│   │   ├── ReportService.php
+│   │   ├── TaxService.php
+│   │   ├── CurrencyService.php
+│   │   ├── RecurringService.php
+│   │   └── AIFinanceService.php
+│   ├── Repositories/
+│   │   ├── AccountRepository.php
+│   │   ├── TransactionRepository.php
+│   │   └── InvoiceRepository.php
+│   ├── Policies/
+│   │   ├── AccountPolicy.php
+│   │   ├── InvoicePolicy.php
+│   │   ├── ExpensePolicy.php
+│   │   └── PaymentPolicy.php
+│   ├── Events/
+│   │   ├── InvoicePaid.php
+│   │   ├── ExpenseApproved.php
+│   │   └── PaymentReceived.php
+│   ├── Listeners/
+│   │   ├── UpdateAccountBalance.php
+│   │   ├── SendInvoiceNotification.php
+│   │   └── RecordTransaction.php
+│   ├── Jobs/
+│   │   ├── ProcessRecurringTransactions.php
+│   │   ├── GenerateMonthlyReport.php
+│   │   └── SyncBankTransactions.php
+│   ├── Middleware/
+│   │   └── EnsureAccountingAccess.php
+│   └── Requests/
+│       ├── StoreInvoiceRequest.php
+│       ├── StoreExpenseRequest.php
+│       └── StoreAccountRequest.php
+├── database/
+│   └── migrations/
+│       ├── 2026_01_01_000001_create_companies_table.php
+│       ├── 2026_01_01_000002_create_currencies_table.php
+│       ├── 2026_01_01_000003_create_accounts_table.php
+│       ├── 2026_01_01_000004_create_customers_table.php
+│       ├── 2026_01_01_000005_create_vendors_table.php
+│       ├── 2026_01_01_000006_create_transactions_table.php
+│       ├── 2026_01_01_000007_create_invoices_table.php
+│       ├── 2026_01_01_000008_create_invoice_items_table.php
+│       ├── 2026_01_01_000009_create_expenses_table.php
+│       ├── 2026_01_01_000010_create_payments_table.php
+│       ├── 2026_01_01_000011_create_bank_accounts_table.php
+│       ├── 2026_01_01_000012_create_tax_rates_table.php
+│       ├── 2026_01_01_000013_create_recurring_templates_table.php
+│       └── 2026_01_01_000014_create_accounting_settings_table.php
+├── resources/
+│   └── views/
+│       ├── dashboard.blade.php
+│       ├── accounts/
+│       ├── invoices/
+│       ├── expenses/
+│       ├── payments/
+│       ├── reports/
+│       └── settings/
+├── routes/
+│   ├── web.php
+│   └── api.php
+├── config/
+│   └── accounting.php
+├── plugin.json
+└── AccountingServiceProvider.php
+</pre>
+
+<!-- 3. DATABASE SCHEMA -->
+<h2 id="db">3. Database Schema (Laravel Migrations)</h2>
+
+<div class="note">All tables include <code>tenant_id</code> for SaaS multi-tenant isolation. Timestamps use <code>$table->timestamps()</code>.</div>
+
+<h3>3.1 companies</h3>
+<pre>
+Schema::create('companies', function (Blueprint $table) {
+    $table->uuid('id')->primary();
+    $table->uuid('tenant_id')->index();
+    $table->string('name');
+    $table->string('email')->nullable();
+    $table->string('phone')->nullable();
+    $table->text('address')->nullable();
+    $table->string('tax_number')->nullable();
+    $table->string('currency_code', 3)->default('USD');
+    $table->string('fiscal_year_start', 5)->default('01-01'); // MM-DD
+    $table->string('logo')->nullable();
+    $table->boolean('is_active')->default(true);
+    $table->timestamps();
+});
+</pre>
+
+<h3>3.2 currencies</h3>
+<pre>
+Schema::create('currencies', function (Blueprint $table) {
+    $table->uuid('id')->primary();
+    $table->string('code', 3)->unique(); // USD, BDT, EUR
+    $table->string('name');
+    $table->string('symbol', 5);
+    $table->decimal('exchange_rate', 15, 6)->default(1.000000);
+    $table->boolean('is_default')->default(false);
+    $table->boolean('is_active')->default(true);
+    $table->timestamps();
+});
+</pre>
+
+<h3>3.3 accounts (Chart of Accounts)</h3>
+<pre>
+Schema::create('accounts', function (Blueprint $table) {
+    $table->uuid('id')->primary();
+    $table->uuid('tenant_id')->index();
+    $table->uuid('company_id')->index();
+    $table->uuid('parent_id')->nullable();
+    $table->string('code', 20); // e.g., 1000, 2000
+    $table->string('name');
+    $table->enum('type', ['asset', 'liability', 'equity', 'revenue', 'expense']);
+    $table->string('category')->nullable(); // sub-category
+    $table->decimal('opening_balance', 15, 2)->default(0);
+    $table->decimal('current_balance', 15, 2)->default(0);
+    $table->string('currency_code', 3)->default('USD');
+    $table->text('description')->nullable();
+    $table->boolean('is_active')->default(true);
+    $table->boolean('is_system')->default(false); // system accounts can't be deleted
+    $table->timestamps();
+    $table->softDeletes();
+
+    $table->foreign('company_id')->references('id')->on('companies')->cascadeOnDelete();
+    $table->foreign('parent_id')->references('id')->on('accounts')->nullOnDelete();
+    $table->unique(['company_id', 'code']);
+});
+</pre>
+
+<h3>3.4 customers</h3>
+<pre>
+Schema::create('customers', function (Blueprint $table) {
+    $table->uuid('id')->primary();
+    $table->uuid('tenant_id')->index();
+    $table->uuid('company_id')->index();
+    $table->string('name');
+    $table->string('email')->nullable();
+    $table->string('phone')->nullable();
+    $table->text('address')->nullable();
+    $table->string('tax_number')->nullable();
+    $table->string('currency_code', 3)->default('USD');
+    $table->decimal('outstanding_balance', 15, 2)->default(0);
+    $table->boolean('is_active')->default(true);
+    $table->timestamps();
+    $table->softDeletes();
+
+    $table->foreign('company_id')->references('id')->on('companies')->cascadeOnDelete();
+});
+</pre>
+
+<h3>3.5 vendors</h3>
+<pre>
+Schema::create('vendors', function (Blueprint $table) {
+    $table->uuid('id')->primary();
+    $table->uuid('tenant_id')->index();
+    $table->uuid('company_id')->index();
+    $table->string('name');
+    $table->string('email')->nullable();
+    $table->string('phone')->nullable();
+    $table->text('address')->nullable();
+    $table->string('tax_number')->nullable();
+    $table->string('currency_code', 3)->default('USD');
+    $table->decimal('outstanding_balance', 15, 2)->default(0);
+    $table->boolean('is_active')->default(true);
+    $table->timestamps();
+    $table->softDeletes();
+
+    $table->foreign('company_id')->references('id')->on('companies')->cascadeOnDelete();
+});
+</pre>
+
+<h3>3.6 transactions (General Ledger)</h3>
+<pre>
+Schema::create('transactions', function (Blueprint $table) {
+    $table->uuid('id')->primary();
+    $table->uuid('tenant_id')->index();
+    $table->uuid('company_id')->index();
+    $table->uuid('account_id');
+    $table->enum('type', ['income', 'expense', 'transfer', 'journal']);
+    $table->decimal('amount', 15, 2);
+    $table->enum('entry_type', ['debit', 'credit']);
+    $table->string('currency_code', 3)->default('USD');
+    $table->decimal('exchange_rate', 15, 6)->default(1);
+    $table->text('description')->nullable();
+    $table->string('reference')->nullable(); // invoice number, receipt etc.
+    $table->string('reference_type')->nullable(); // invoice, expense, payment
+    $table->uuid('reference_id')->nullable();
+    $table->uuid('category_id')->nullable();
+    $table->date('transaction_date');
+    $table->uuid('created_by');
+    $table->boolean('is_reconciled')->default(false);
+    $table->timestamps();
+
+    $table->foreign('company_id')->references('id')->on('companies')->cascadeOnDelete();
+    $table->foreign('account_id')->references('id')->on('accounts');
+    $table->index(['reference_type', 'reference_id']);
+    $table->index('transaction_date');
+});
+</pre>
+
+<h3>3.7 invoices</h3>
+<pre>
+Schema::create('invoices', function (Blueprint $table) {
+    $table->uuid('id')->primary();
+    $table->uuid('tenant_id')->index();
+    $table->uuid('company_id')->index();
+    $table->uuid('customer_id');
+    $table->string('invoice_number')->unique();
+    $table->enum('status', ['draft', 'sent', 'paid', 'partial', 'overdue', 'cancelled'])->default('draft');
+    $table->date('issue_date');
+    $table->date('due_date');
+    $table->decimal('subtotal', 15, 2)->default(0);
+    $table->decimal('tax_amount', 15, 2)->default(0);
+    $table->decimal('discount_amount', 15, 2)->default(0);
+    $table->enum('discount_type', ['fixed', 'percentage'])->default('fixed');
+    $table->decimal('total_amount', 15, 2)->default(0);
+    $table->decimal('amount_paid', 15, 2)->default(0);
+    $table->decimal('amount_due', 15, 2)->default(0);
+    $table->string('currency_code', 3)->default('USD');
+    $table->decimal('exchange_rate', 15, 6)->default(1);
+    $table->text('notes')->nullable();
+    $table->text('terms')->nullable();
+    $table->string('template', 50)->default('default');
+    $table->boolean('is_recurring')->default(false);
+    $table->uuid('recurring_template_id')->nullable();
+    $table->decimal('late_fee', 15, 2)->default(0);
+    $table->uuid('created_by');
+    $table->timestamp('sent_at')->nullable();
+    $table->timestamp('paid_at')->nullable();
+    $table->timestamps();
+    $table->softDeletes();
+
+    $table->foreign('company_id')->references('id')->on('companies')->cascadeOnDelete();
+    $table->foreign('customer_id')->references('id')->on('customers');
+});
+</pre>
+
+<h3>3.8 invoice_items</h3>
+<pre>
+Schema::create('invoice_items', function (Blueprint $table) {
+    $table->uuid('id')->primary();
+    $table->uuid('invoice_id');
+    $table->string('description');
+    $table->decimal('quantity', 10, 2)->default(1);
+    $table->decimal('unit_price', 15, 2);
+    $table->decimal('tax_rate', 5, 2)->default(0);
+    $table->decimal('tax_amount', 15, 2)->default(0);
+    $table->decimal('discount', 15, 2)->default(0);
+    $table->decimal('total', 15, 2);
+    $table->uuid('account_id')->nullable();
+    $table->integer('sort_order')->default(0);
+    $table->timestamps();
+
+    $table->foreign('invoice_id')->references('id')->on('invoices')->cascadeOnDelete();
+    $table->foreign('account_id')->references('id')->on('accounts')->nullOnDelete();
+});
+</pre>
+
+<h3>3.9 expenses</h3>
+<pre>
+Schema::create('expenses', function (Blueprint $table) {
+    $table->uuid('id')->primary();
+    $table->uuid('tenant_id')->index();
+    $table->uuid('company_id')->index();
+    $table->uuid('vendor_id')->nullable();
+    $table->uuid('account_id');
+    $table->uuid('category_id')->nullable();
+    $table->decimal('amount', 15, 2);
+    $table->string('currency_code', 3)->default('USD');
+    $table->decimal('exchange_rate', 15, 6)->default(1);
+    $table->decimal('tax_amount', 15, 2)->default(0);
+    $table->uuid('tax_rate_id')->nullable();
+    $table->date('expense_date');
+    $table->string('payment_method')->nullable(); // cash, card, bank
+    $table->text('description')->nullable();
+    $table->string('reference')->nullable();
+    $table->string('receipt_path')->nullable(); // uploaded receipt
+    $table->boolean('is_billable')->default(false);
+    $table->boolean('is_recurring')->default(false);
+    $table->uuid('recurring_template_id')->nullable();
+    $table->enum('approval_status', ['pending', 'approved', 'rejected'])->default('approved');
+    $table->uuid('approved_by')->nullable();
+    $table->uuid('submitted_by');
+    $table->uuid('created_by');
+    $table->timestamps();
+    $table->softDeletes();
+
+    $table->foreign('company_id')->references('id')->on('companies')->cascadeOnDelete();
+    $table->foreign('vendor_id')->references('id')->on('vendors')->nullOnDelete();
+    $table->foreign('account_id')->references('id')->on('accounts');
+});
+</pre>
+
+<h3>3.10 payments</h3>
+<pre>
+Schema::create('payments', function (Blueprint $table) {
+    $table->uuid('id')->primary();
+    $table->uuid('tenant_id')->index();
+    $table->uuid('company_id')->index();
+    $table->uuid('invoice_id')->nullable();
+    $table->uuid('customer_id')->nullable();
+    $table->uuid('account_id'); // bank/cash account
+    $table->decimal('amount', 15, 2);
+    $table->string('currency_code', 3)->default('USD');
+    $table->decimal('exchange_rate', 15, 6)->default(1);
+    $table->string('payment_method'); // stripe, paypal, cash, bank_transfer
+    $table->string('transaction_reference')->nullable();
+    $table->enum('status', ['pending', 'completed', 'failed', 'refunded'])->default('completed');
+    $table->enum('type', ['received', 'sent', 'refund'])->default('received');
+    $table->date('payment_date');
+    $table->text('notes')->nullable();
+    $table->uuid('created_by');
+    $table->timestamps();
+
+    $table->foreign('company_id')->references('id')->on('companies')->cascadeOnDelete();
+    $table->foreign('invoice_id')->references('id')->on('invoices')->nullOnDelete();
+    $table->foreign('customer_id')->references('id')->on('customers')->nullOnDelete();
+    $table->foreign('account_id')->references('id')->on('accounts');
+});
+</pre>
+
+<h3>3.11 bank_accounts</h3>
+<pre>
+Schema::create('bank_accounts', function (Blueprint $table) {
+    $table->uuid('id')->primary();
+    $table->uuid('tenant_id')->index();
+    $table->uuid('company_id')->index();
+    $table->uuid('account_id'); // linked chart of accounts entry
+    $table->string('bank_name');
+    $table->string('account_number');
+    $table->string('account_holder')->nullable();
+    $table->string('routing_number')->nullable();
+    $table->string('swift_code')->nullable();
+    $table->string('iban')->nullable();
+    $table->enum('type', ['checking', 'savings', 'credit_card', 'cash'])->default('checking');
+    $table->string('currency_code', 3)->default('USD');
+    $table->decimal('current_balance', 15, 2)->default(0);
+    $table->decimal('opening_balance', 15, 2)->default(0);
+    $table->boolean('is_active')->default(true);
+    $table->boolean('is_default')->default(false);
+    $table->timestamps();
+
+    $table->foreign('company_id')->references('id')->on('companies')->cascadeOnDelete();
+    $table->foreign('account_id')->references('id')->on('accounts');
+});
+</pre>
+
+<h3>3.12 tax_rates</h3>
+<pre>
+Schema::create('tax_rates', function (Blueprint $table) {
+    $table->uuid('id')->primary();
+    $table->uuid('tenant_id')->index();
+    $table->uuid('company_id')->index();
+    $table->string('name'); // VAT 15%, GST 5%
+    $table->decimal('rate', 5, 2); // 15.00
+    $table->enum('type', ['inclusive', 'exclusive'])->default('exclusive');
+    $table->boolean('is_compound')->default(false);
+    $table->boolean('is_active')->default(true);
+    $table->timestamps();
+
+    $table->foreign('company_id')->references('id')->on('companies')->cascadeOnDelete();
+});
+</pre>
+
+<h3>3.13 recurring_templates</h3>
+<pre>
+Schema::create('recurring_templates', function (Blueprint $table) {
+    $table->uuid('id')->primary();
+    $table->uuid('tenant_id')->index();
+    $table->uuid('company_id')->index();
+    $table->enum('type', ['income', 'expense', 'invoice']);
+    $table->string('name');
+    $table->enum('frequency', ['daily', 'weekly', 'monthly', 'quarterly', 'yearly']);
+    $table->date('start_date');
+    $table->date('end_date')->nullable();
+    $table->date('next_run')->nullable();
+    $table->json('template_data'); // stores the full record template
+    $table->boolean('is_active')->default(true);
+    $table->integer('run_count')->default(0);
+    $table->uuid('created_by');
+    $table->timestamps();
+
+    $table->foreign('company_id')->references('id')->on('companies')->cascadeOnDelete();
+});
+</pre>
+
+<h3>3.14 accounting_settings</h3>
+<pre>
+Schema::create('accounting_settings', function (Blueprint $table) {
+    $table->uuid('id')->primary();
+    $table->uuid('tenant_id')->index();
+    $table->uuid('company_id')->index();
+    $table->string('key');
+    $table->json('value');
+    $table->timestamps();
+
+    $table->foreign('company_id')->references('id')->on('companies')->cascadeOnDelete();
+    $table->unique(['company_id', 'key']);
+});
+</pre>
+
+<h3>3.15 Entity Relationship Diagram</h3>
+<pre>
+┌──────────┐    ┌─────────────┐    ┌───────────┐
+│ companies│───▶│   accounts  │◀───│bank_accts │
+└──────────┘    └──────┬──────┘    └───────────┘
+                       │
+              ┌────────┼────────┐
+              ▼        ▼        ▼
+        ┌──────────┐ ┌─────┐ ┌────────┐
+        │transactions│ │taxes│ │expenses│
+        └──────────┘ └─────┘ └────────┘
+                                  │
+┌──────────┐    ┌──────────┐      │
+│ customers│───▶│ invoices │      │
+└──────────┘    └────┬─────┘      │
+                     │        ┌───┴────┐
+                     ▼        │vendors │
+              ┌────────────┐  └────────┘
+              │invoice_items│
+              └────────────┘
+                     │
+                     ▼
+              ┌──────────┐
+              │ payments  │
+              └──────────┘
+</pre>
+
+<!-- 4. FUNCTIONAL REQUIREMENTS -->
+<h2 id="func">4. Functional Requirements</h2>
+
+<h3>4.1 Dashboard</h3>
+<p>Financial overview with real-time data.</p>
+<table>
+<tr><th>Widget</th><th>Description</th></tr>
+<tr><td>Total Revenue</td><td>Sum of all completed income</td></tr>
+<tr><td>Total Expenses</td><td>Sum of all approved expenses</td></tr>
+<tr><td>Net Profit</td><td>Revenue - Expenses</td></tr>
+<tr><td>Cash Flow</td><td>Monthly cash in/out chart</td></tr>
+<tr><td>Outstanding Invoices</td><td>Count and total of unpaid invoices</td></tr>
+<tr><td>Income vs Expense</td><td>Bar/line chart comparison</td></tr>
+<tr><td>Top Customers</td><td>By revenue</td></tr>
+<tr><td>Pending Payments</td><td>Awaiting payment</td></tr>
+<tr><td>Bank Balance</td><td>Total across all bank accounts</td></tr>
+<tr><td>Recent Transactions</td><td>Last 10 entries</td></tr>
+</table>
+
+<h3>4.2 Chart of Accounts</h3>
+<table>
+<tr><th>Feature</th><th>Details</th></tr>
+<tr><td>Account Types</td><td>Assets, Liabilities, Equity, Revenue, Expenses</td></tr>
+<tr><td>Hierarchy</td><td>Parent/child accounts (tree structure)</td></tr>
+<tr><td>Account Code</td><td>Unique per company (e.g., 1000, 2000)</td></tr>
+<tr><td>Default Accounts</td><td>Seeded on company creation (Accounts Receivable, Payable, Cash, etc.)</td></tr>
+<tr><td>Operations</td><td>Add, Edit, Deactivate (soft delete)</td></tr>
+</table>
+
+<h3>4.3 Income Management</h3>
+<ul>
+<li>Record income with customer, category, payment method, tax</li>
+<li>Attach files/receipts</li>
+<li>Set up recurring income</li>
+<li>Auto-create transaction entry on save</li>
+</ul>
+
+<h3>4.4 Expense Management</h3>
+<ul>
+<li>Expense categories (customizable)</li>
+<li>Vendor association</li>
+<li>Receipt upload (image/PDF)</li>
+<li>Recurring expenses</li>
+<li>Approval workflow (submit → approve/reject)</li>
+<li>Employee expense claims</li>
+</ul>
+
+<h3>4.5 Invoice Management</h3>
+<h4>Invoice Lifecycle</h4>
+<pre>
+Draft → Sent → Paid/Partial/Overdue → Cancelled
+</pre>
+<h4>Features</h4>
+<ul>
+<li>Create/edit invoices with line items</li>
+<li>Multiple invoice templates</li>
+<li>Recurring invoices (auto-generate from template)</li>
+<li>Due dates with automatic overdue detection (cron job)</li>
+<li>Late fees (configurable)</li>
+<li>Partial payment support</li>
+<li>PDF generation and email sending</li>
+<li>Client portal: view, download PDF, pay online</li>
+<li>Unique invoice number generation (configurable prefix)</li>
+</ul>
+
+<h3>4.6 Payment Management</h3>
+<ul>
+<li>Online payments (Stripe, PayPal, SSLCommerz, etc.)</li>
+<li>Offline/manual payment recording</li>
+<li>Payment linked to invoice</li>
+<li>Payment history per customer</li>
+<li>Refund management</li>
+<li>Payment receipts</li>
+</ul>
+
+<h3>4.7 Bank & Cash Management</h3>
+<ul>
+<li>Multiple bank accounts per company</li>
+<li>Cash accounts</li>
+<li>Inter-account transfers</li>
+<li>Bank reconciliation (match transactions)</li>
+<li>Bank statement import (CSV)</li>
+</ul>
+
+<h3>4.8 Tax Management</h3>
+<ul>
+<li>VAT, GST, custom tax rates</li>
+<li>Tax inclusive/exclusive</li>
+<li>Compound taxes</li>
+<li>Tax reports (by period)</li>
+<li>Auto-calculate on invoices and expenses</li>
+</ul>
+
+<h3>4.9 Payroll Accounting</h3>
+<ul>
+<li>Integration with HRM plugin</li>
+<li>Salary expense entries</li>
+<li>Tax deduction entries</li>
+<li>Employee payment records</li>
+<li>Payslip generation</li>
+</ul>
+
+<h3>4.10 Financial Reports</h3>
+<table>
+<tr><th>Report</th><th>Description</th></tr>
+<tr><td>Profit & Loss</td><td>Revenue vs expenses for a period</td></tr>
+<tr><td>Balance Sheet</td><td>Assets, Liabilities, Equity snapshot</td></tr>
+<tr><td>Cash Flow</td><td>Money in/out over time</td></tr>
+<tr><td>Income Report</td><td>Detailed income breakdown</td></tr>
+<tr><td>Expense Report</td><td>Detailed expense breakdown</td></tr>
+<tr><td>Tax Report</td><td>Tax collected/paid summary</td></tr>
+<tr><td>Invoice Aging</td><td>Outstanding invoices by age</td></tr>
+<tr><td>Customer Report</td><td>Revenue per customer</td></tr>
+<tr><td>Vendor Report</td><td>Payments per vendor</td></tr>
+</table>
+<p><strong>Export:</strong> PDF, Excel, CSV &nbsp;|&nbsp; <strong>Filters:</strong> Date range, Company, Currency, Account type</p>
+
+<h3>4.11 Multi-Currency</h3>
+<ul>
+<li>Currency management (code, symbol, exchange rate)</li>
+<li>Auto-conversion to base currency</li>
+<li>Exchange rate updates (manual or API)</li>
+<li>Currency-specific reports</li>
+</ul>
+
+<h3>4.12 Multi-Company</h3>
+<ul>
+<li>Separate accounting books per company</li>
+<li>Company-specific reports and settings</li>
+<li>Company switcher in UI</li>
+<li>Company-level permissions</li>
+</ul>
+
+<h3>4.13 Recurring Transactions</h3>
+<ul>
+<li>Template-based automation (daily/weekly/monthly/quarterly/yearly)</li>
+<li>Applies to: income, expenses, invoices</li>
+<li>Managed via Laravel scheduler (<code>ProcessRecurringTransactions</code> job)</li>
+</ul>
+
+<!-- 5. ROLES -->
+<h2 id="roles">5. User Roles & Permissions</h2>
+
+<table>
+<tr><th>Role</th><th>Permissions</th></tr>
+<tr><td>Admin</td><td>Full system access, settings, user management</td></tr>
+<tr><td>Accountant</td><td>Manage all accounts, transactions, invoices, reports</td></tr>
+<tr><td>Manager</td><td>View reports, approve expenses, view dashboards</td></tr>
+<tr><td>Employee</td><td>Submit expenses, view own submissions</td></tr>
+<tr><td>Client</td><td>View own invoices, make payments (client portal)</td></tr>
+</table>
+
+<h4>Laravel Policy Example</h4>
+<pre>
+// app/Plugins/Accounting/Policies/ExpensePolicy.php
+
+class ExpensePolicy
+{
+    public function viewAny(User $user): bool
+    {
+        return $user->hasPermission('accounting.expenses.view');
+    }
+
+    public function create(User $user): bool
+    {
+        return $user->hasPermission('accounting.expenses.create');
+    }
+
+    public function approve(User $user, Expense $expense): bool
+    {
+        return $user->hasPermission('accounting.expenses.approve')
+            && $expense->approval_status === 'pending';
+    }
+
+    public function update(User $user, Expense $expense): bool
+    {
+        return $user->hasPermission('accounting.expenses.edit')
+            || ($expense->submitted_by === $user->id && $expense->approval_status === 'pending');
+    }
+}
+</pre>
+
+<!-- 6. API -->
+<h2 id="api">6. API Endpoints</h2>
+
+<div class="note">All endpoints are prefixed with <code>/api/v1/accounting</code> and require Sanctum authentication.</div>
+
+<h3>Dashboard</h3>
+<table>
+<tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+<tr><td>GET</td><td>/dashboard</td><td>Overview stats</td></tr>
+<tr><td>GET</td><td>/dashboard/charts</td><td>Chart data (income vs expense)</td></tr>
+</table>
+
+<h3>Accounts</h3>
+<table>
+<tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+<tr><td>GET</td><td>/accounts</td><td>List all accounts</td></tr>
+<tr><td>POST</td><td>/accounts</td><td>Create account</td></tr>
+<tr><td>GET</td><td>/accounts/{id}</td><td>Get account details</td></tr>
+<tr><td>PUT</td><td>/accounts/{id}</td><td>Update account</td></tr>
+<tr><td>DELETE</td><td>/accounts/{id}</td><td>Soft delete account</td></tr>
+<tr><td>GET</td><td>/accounts/{id}/transactions</td><td>Account ledger</td></tr>
+</table>
+
+<h3>Invoices</h3>
+<table>
+<tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+<tr><td>GET</td><td>/invoices</td><td>List invoices (filterable)</td></tr>
+<tr><td>POST</td><td>/invoices</td><td>Create invoice</td></tr>
+<tr><td>GET</td><td>/invoices/{id}</td><td>Invoice details</td></tr>
+<tr><td>PUT</td><td>/invoices/{id}</td><td>Update invoice</td></tr>
+<tr><td>DELETE</td><td>/invoices/{id}</td><td>Soft delete</td></tr>
+<tr><td>POST</td><td>/invoices/{id}/send</td><td>Send via email</td></tr>
+<tr><td>GET</td><td>/invoices/{id}/pdf</td><td>Download PDF</td></tr>
+<tr><td>POST</td><td>/invoices/{id}/payment</td><td>Record payment</td></tr>
+</table>
+
+<h3>Expenses</h3>
+<table>
+<tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+<tr><td>GET</td><td>/expenses</td><td>List expenses</td></tr>
+<tr><td>POST</td><td>/expenses</td><td>Create expense</td></tr>
+<tr><td>GET</td><td>/expenses/{id}</td><td>Expense details</td></tr>
+<tr><td>PUT</td><td>/expenses/{id}</td><td>Update expense</td></tr>
+<tr><td>DELETE</td><td>/expenses/{id}</td><td>Delete expense</td></tr>
+<tr><td>POST</td><td>/expenses/{id}/approve</td><td>Approve expense</td></tr>
+<tr><td>POST</td><td>/expenses/{id}/reject</td><td>Reject expense</td></tr>
+</table>
+
+<h3>Payments</h3>
+<table>
+<tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+<tr><td>GET</td><td>/payments</td><td>List payments</td></tr>
+<tr><td>POST</td><td>/payments</td><td>Record payment</td></tr>
+<tr><td>POST</td><td>/payments/{id}/refund</td><td>Process refund</td></tr>
+</table>
+
+<h3>Reports</h3>
+<table>
+<tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+<tr><td>GET</td><td>/reports/profit-loss</td><td>P&L report</td></tr>
+<tr><td>GET</td><td>/reports/balance-sheet</td><td>Balance sheet</td></tr>
+<tr><td>GET</td><td>/reports/cash-flow</td><td>Cash flow</td></tr>
+<tr><td>GET</td><td>/reports/tax</td><td>Tax summary</td></tr>
+<tr><td>GET</td><td>/reports/income</td><td>Income breakdown</td></tr>
+<tr><td>GET</td><td>/reports/expense</td><td>Expense breakdown</td></tr>
+<tr><td>GET</td><td>/reports/invoice-aging</td><td>Invoice aging</td></tr>
+</table>
+
+<h3>Other</h3>
+<table>
+<tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+<tr><td>GET/POST</td><td>/customers</td><td>CRUD customers</td></tr>
+<tr><td>GET/POST</td><td>/vendors</td><td>CRUD vendors</td></tr>
+<tr><td>GET/POST</td><td>/bank-accounts</td><td>CRUD bank accounts</td></tr>
+<tr><td>GET/POST</td><td>/tax-rates</td><td>CRUD tax rates</td></tr>
+<tr><td>GET/POST</td><td>/currencies</td><td>CRUD currencies</td></tr>
+<tr><td>GET/PUT</td><td>/settings</td><td>Accounting settings</td></tr>
+<tr><td>POST</td><td>/bank-accounts/{id}/reconcile</td><td>Bank reconciliation</td></tr>
+</table>
+
+<!-- 7. AI -->
+<h2 id="ai">7. AI Financial Assistant</h2>
+
+<table>
+<tr><th>Feature</th><th>Description</th><th>Implementation</th></tr>
+<tr><td>Expense Categorization</td><td>Auto-categorize expenses based on description</td><td>GPT classification prompt</td></tr>
+<tr><td>Smart Invoice Generation</td><td>Generate invoice from natural language</td><td>"Invoice client X for 5 hours at $100/hr"</td></tr>
+<tr><td>Financial Insights</td><td>Analyze spending patterns</td><td>Monthly trend analysis</td></tr>
+<tr><td>Profit Prediction</td><td>Forecast next month revenue</td><td>Historical data + AI regression</td></tr>
+<tr><td>Fraud Detection</td><td>Flag unusual transactions</td><td>Anomaly detection on amount/frequency</td></tr>
+<tr><td>Tax Suggestions</td><td>Recommend tax-saving strategies</td><td>Based on expense categories</td></tr>
+</table>
+
+<h4>Example Interaction</h4>
+<pre>
+User: "Show me why expenses increased this month"
+
+AI Response:
+✅ Marketing spend increased 40% ($2,400 → $3,360)
+✅ Office rent increased by $200
+✅ 3 new software subscriptions added ($89/mo total)
+⚠️ One-time equipment purchase: $1,500
+
+Recommendation: Review marketing ROI and consolidate software tools.
+</pre>
+
+<!-- 8. SAAS -->
+<h2 id="saas">8. SaaS & Multi-Tenant</h2>
+
+<ul>
+<li><strong>Tenant isolation:</strong> All tables include <code>tenant_id</code>; global scope applied via middleware</li>
+<li><strong>Subscription billing:</strong> Integration with Laravel Cashier (Stripe) or custom billing</li>
+<li><strong>Feature gating:</strong> Free tier (1 company, basic reports), Pro (unlimited companies, AI insights), Enterprise (API access, custom integrations)</li>
+<li><strong>Data isolation:</strong> Each tenant's data is completely separated; tested via automated checks</li>
+</ul>
+
+<h4>Tenant Middleware</h4>
+<pre>
+// Middleware: EnsureTenantScope.php
+class EnsureTenantScope
+{
+    public function handle($request, Closure $next)
+    {
+        $tenantId = auth()->user()->tenant_id;
+
+        // Apply global scope to all accounting models
+        Account::addGlobalScope('tenant', fn($q) => $q->where('tenant_id', $tenantId));
+        Transaction::addGlobalScope('tenant', fn($q) => $q->where('tenant_id', $tenantId));
+        Invoice::addGlobalScope('tenant', fn($q) => $q->where('tenant_id', $tenantId));
+        // ... apply to all models
+
+        return $next($request);
+    }
+}
+</pre>
+
+<!-- 9. SECURITY -->
+<h2 id="security">9. Security Requirements</h2>
+
+<table>
+<tr><th>Requirement</th><th>Implementation</th></tr>
+<tr><td>Role-Based Access Control</td><td>Laravel Policies + Spatie Permissions</td></tr>
+<tr><td>Financial Data Encryption</td><td>Encrypted at rest (AES-256), in transit (TLS 1.3)</td></tr>
+<tr><td>Audit Logs</td><td>Every create/update/delete logged with user, timestamp, old/new values</td></tr>
+<tr><td>Activity Logs</td><td>User login, page visits, report downloads</td></tr>
+<tr><td>API Authentication</td><td>Laravel Sanctum tokens with rate limiting</td></tr>
+<tr><td>Input Validation</td><td>Laravel Form Requests on all endpoints</td></tr>
+<tr><td>XSS/CSRF Protection</td><td>Laravel built-in middleware</td></tr>
+<tr><td>SQL Injection</td><td>Eloquent ORM (no raw queries)</td></tr>
+</table>
+
+<!-- 10. PERFORMANCE -->
+<h2 id="perf">10. Performance Requirements</h2>
+
+<table>
+<tr><th>Metric</th><th>Target</th></tr>
+<tr><td>Transaction processing</td><td>&lt; 500ms</td></tr>
+<tr><td>Invoice creation</td><td>&lt; 1 second</td></tr>
+<tr><td>Report generation</td><td>&lt; 3 seconds</td></tr>
+<tr><td>Dashboard load</td><td>&lt; 2 seconds</td></tr>
+<tr><td>Concurrent users</td><td>1000+ per tenant</td></tr>
+<tr><td>Transaction volume</td><td>1M+ records</td></tr>
+</table>
+
+<h4>Optimization Strategies</h4>
+<ul>
+<li>Database indexing on <code>tenant_id</code>, <code>company_id</code>, <code>transaction_date</code></li>
+<li>Redis caching for dashboard widgets</li>
+<li>Queue-based report generation for large datasets</li>
+<li>Eager loading relationships (N+1 prevention)</li>
+<li>Pagination on all list endpoints</li>
+</ul>
+
+<!-- 11. INTEGRATION -->
+<h2 id="integration">11. Integration Requirements</h2>
+
+<h3>Internal (RyaanCMS Plugins)</h3>
+<table>
+<tr><th>Plugin</th><th>Integration</th></tr>
+<tr><td>CRM</td><td>Shared customers, auto-invoice from deals</td></tr>
+<tr><td>HRM</td><td>Payroll accounting, employee expenses</td></tr>
+<tr><td>Inventory</td><td>COGS tracking, purchase orders</td></tr>
+<tr><td>Project Management</td><td>Billable hours → invoices</td></tr>
+<tr><td>SaaS Billing</td><td>Subscription revenue tracking</td></tr>
+</table>
+
+<h3>External Services</h3>
+<table>
+<tr><th>Service</th><th>Purpose</th></tr>
+<tr><td>Stripe/PayPal/SSLCommerz</td><td>Online payment processing</td></tr>
+<tr><td>Bank APIs (Plaid, etc.)</td><td>Bank statement sync</td></tr>
+<tr><td>Tax APIs</td><td>Auto tax rate lookup by region</td></tr>
+<tr><td>Exchange Rate APIs</td><td>Currency conversion rates</td></tr>
+</table>
+
+<!-- 12. UI -->
+<h2 id="ui">12. UI Menu Structure</h2>
+<pre>
+Accounting
+ ├── 📊 Dashboard
+ ├── 📒 Chart of Accounts
+ ├── 💰 Income
+ │    ├── All Income
+ │    └── Recurring Income
+ ├── 💸 Expenses
+ │    ├── All Expenses
+ │    ├── Expense Claims
+ │    └── Categories
+ ├── 📄 Invoices
+ │    ├── All Invoices
+ │    ├── Recurring
+ │    └── Templates
+ ├── 💳 Payments
+ │    ├── Received
+ │    ├── Sent
+ │    └── Refunds
+ ├── 🏦 Bank Accounts
+ │    ├── Accounts
+ │    ├── Transfers
+ │    └── Reconciliation
+ ├── 👤 Customers
+ ├── 🏢 Vendors
+ ├── 📈 Reports
+ │    ├── Profit & Loss
+ │    ├── Balance Sheet
+ │    ├── Cash Flow
+ │    ├── Tax Report
+ │    ├── Invoice Aging
+ │    └── Custom Reports
+ ├── 🏷️ Taxes
+ ├── 💼 Payroll
+ └── ⚙️ Settings
+      ├── General
+      ├── Currencies
+      ├── Payment Gateways
+      ├── Invoice Settings
+      └── Fiscal Year
+</pre>
+
+<!-- 13. FUTURE -->
+<h2 id="future">13. Future Enhancements</h2>
+<ul>
+<li>🤖 AI bookkeeping (auto-entry from receipts via OCR)</li>
+<li>🏦 Bank auto-sync (Plaid / Open Banking)</li>
+<li>⛓️ Blockchain accounting (immutable ledger)</li>
+<li>📊 Budget management & forecasting</li>
+<li>📦 Inventory accounting integration</li>
+<li>🖥️ POS integration</li>
+<li>📱 Mobile app (Flutter/React Native)</li>
+<li>🧾 Multi-language invoices</li>
+</ul>
+
+<hr style="margin: 48px 0 24px;">
+<p style="text-align: center; color: var(--muted); font-size: 0.85rem;">
+  RyaanCMS Accounting Plugin SRS v1.0 &nbsp;|&nbsp; Generated from RyaanCMS Builder &nbsp;|&nbsp; March 2026<br>
+  This document serves as a complete specification for Laravel developers to build the production-ready Accounting Plugin.
+</p>
+
+</body>
+</html>
