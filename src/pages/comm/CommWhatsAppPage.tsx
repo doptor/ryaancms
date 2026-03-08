@@ -43,9 +43,22 @@ export default function CommWhatsAppPage() {
     mutationFn: async () => {
       const conv = (conversations ?? []).find(c => c.id === selectedConv);
       if (!conv) throw new Error("No conversation selected");
-      const { error } = await supabase.from("comm_whatsapp_messages").insert({ contact_id: conv.contact_id, direction: "outbound", content: newMsg, status: "sent", user_id: user!.id });
-      if (error) throw error;
-      await supabase.from("comm_conversations").update({ last_message: newMsg, last_message_at: new Date().toISOString() }).eq("id", selectedConv);
+      const contact = (contacts ?? []).find(ct => ct.id === conv.contact_id);
+      const waNumber = contact?.whatsapp_number;
+
+      if (waNumber) {
+        // Send via WhatsApp Business API edge function
+        const { data, error } = await supabase.functions.invoke("comm-whatsapp", {
+          body: { action: "send-message", to: waNumber, message: newMsg, contact_id: conv.contact_id },
+        });
+        if (error) throw error;
+        if (!data?.success) throw new Error(data?.error || "Send failed");
+      } else {
+        // Fallback: save locally only
+        const { error } = await supabase.from("comm_whatsapp_messages").insert({ contact_id: conv.contact_id, direction: "outbound", content: newMsg, status: "sent", user_id: user!.id });
+        if (error) throw error;
+        await supabase.from("comm_conversations").update({ last_message: newMsg, last_message_at: new Date().toISOString() }).eq("id", selectedConv);
+      }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["comm_wa_msgs"] }); qc.invalidateQueries({ queryKey: ["comm_conversations"] }); setNewMsg(""); },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),

@@ -34,14 +34,22 @@ export default function CommCallsPage() {
   const createCall = useMutation({
     mutationFn: async () => {
       const contact = (contacts ?? []).find(c => c.id === form.contact_id);
-      const { error } = await supabase.from("comm_calls").insert({
-        contact_id: form.contact_id || null, direction: form.direction, call_type: form.call_type,
-        to_number: form.to_number || contact?.phone || null, status: "initiated",
-        notes: form.notes || null, user_id: user!.id, started_at: new Date().toISOString(),
+      const toNumber = form.to_number || contact?.phone;
+      if (!toNumber) throw new Error("Phone number is required");
+
+      // Call the Twilio edge function for real calls
+      const { data, error } = await supabase.functions.invoke("comm-voice-call", {
+        body: {
+          action: "start-call",
+          to_number: toNumber,
+          contact_id: form.contact_id || null,
+          call_type: form.call_type === "ai" ? "ai_automated" : form.call_type,
+        },
       });
       if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "Call failed");
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["comm_calls"] }); toast({ title: "Call initiated" }); setOpen(false); setForm(emptyForm); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["comm_calls"] }); toast({ title: "Call initiated via Twilio" }); setOpen(false); setForm(emptyForm); },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
