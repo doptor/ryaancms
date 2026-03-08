@@ -59,6 +59,10 @@ import HRHolidaysPage from "./pages/hr/HRHolidaysPage";
 import HRPayrollPage from "./pages/hr/HRPayrollPage";
 import HRRecruitmentPage from "./pages/hr/HRRecruitmentPage";
 import HRApplicantsPage from "./pages/hr/HRApplicantsPage";
+import HRPerformancePage from "./pages/hr/HRPerformancePage";
+import HRTrainingPage from "./pages/hr/HRTrainingPage";
+import HRShiftsPage from "./pages/hr/HRShiftsPage";
+import HROnboardingPage from "./pages/hr/HROnboardingPage";
 
 const queryClient = new QueryClient();
 
