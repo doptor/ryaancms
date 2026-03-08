@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Users, CalendarDays, DollarSign, Briefcase, ArrowRight, UserPlus, Clock, FileText, Calendar } from "lucide-react";
+import { Users, CalendarDays, DollarSign, Briefcase, ArrowRight, UserPlus, Clock, FileText, Calendar, Award, GraduationCap, CalendarRange, ClipboardList } from "lucide-react";
 import { BarChart, Bar, PieChart as RPieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from "recharts";
 
 const CHART_COLORS = ["#3b82f6", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
@@ -37,6 +37,15 @@ const navSections = [
     items: [
       { label: "Job Postings", path: "/dashboard/hr/recruitment", icon: FileText, color: "text-cyan-600" },
       { label: "Applicants", path: "/dashboard/hr/applicants", icon: UserPlus, color: "text-indigo-600" },
+    ],
+  },
+  {
+    title: "Advanced",
+    items: [
+      { label: "Performance Reviews", path: "/dashboard/hr/performance", icon: Award, color: "text-amber-600" },
+      { label: "Training", path: "/dashboard/hr/training", icon: GraduationCap, color: "text-teal-600" },
+      { label: "Shift Scheduling", path: "/dashboard/hr/shifts", icon: CalendarRange, color: "text-violet-600" },
+      { label: "Onboarding", path: "/dashboard/hr/onboarding", icon: ClipboardList, color: "text-rose-600" },
     ],
   },
 ];

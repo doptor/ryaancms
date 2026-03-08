@@ -59,6 +59,10 @@ import HRHolidaysPage from "./pages/hr/HRHolidaysPage";
 import HRPayrollPage from "./pages/hr/HRPayrollPage";
 import HRRecruitmentPage from "./pages/hr/HRRecruitmentPage";
 import HRApplicantsPage from "./pages/hr/HRApplicantsPage";
+import HRPerformancePage from "./pages/hr/HRPerformancePage";
+import HRTrainingPage from "./pages/hr/HRTrainingPage";
+import HRShiftsPage from "./pages/hr/HRShiftsPage";
+import HROnboardingPage from "./pages/hr/HROnboardingPage";
 
 const queryClient = new QueryClient();
 
@@ -117,6 +121,10 @@ const AppContent = () => {
         <Route path="/dashboard/hr/payroll" element={<ProtectedRoute><HRPayrollPage /></ProtectedRoute>} />
         <Route path="/dashboard/hr/recruitment" element={<ProtectedRoute><HRRecruitmentPage /></ProtectedRoute>} />
         <Route path="/dashboard/hr/applicants" element={<ProtectedRoute><HRApplicantsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/hr/performance" element={<ProtectedRoute><HRPerformancePage /></ProtectedRoute>} />
+        <Route path="/dashboard/hr/training" element={<ProtectedRoute><HRTrainingPage /></ProtectedRoute>} />
+        <Route path="/dashboard/hr/shifts" element={<ProtectedRoute><HRShiftsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/hr/onboarding" element={<ProtectedRoute><HROnboardingPage /></ProtectedRoute>} />
         <Route path="/preview" element={<PreviewPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
