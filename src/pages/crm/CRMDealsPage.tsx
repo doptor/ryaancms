@@ -210,6 +210,7 @@ export default function CRMDealsPage() {
                 <div className="flex items-center gap-3 shrink-0">
                   <span className="font-bold">{fmt(Number(d.value ?? 0))}</span>
                   <Badge variant="outline" className={statusColor[d.status ?? "open"]}>{d.status}</Badge>
+                  {d.status === "won" && <Button size="sm" variant="outline" onClick={() => generateInvoice.mutate(d)} title="Generate Invoice"><FileText className="w-3.5 h-3.5 mr-1" />Invoice</Button>}
                   <Button size="icon" variant="ghost" onClick={() => openEdit(d)}><Pencil className="w-4 h-4" /></Button>
                   <Button size="icon" variant="ghost" onClick={() => deleteMutation.mutate(d.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
                 </div>
