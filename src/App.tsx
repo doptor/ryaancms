@@ -75,6 +75,18 @@ import CommReportsPage from "./pages/comm/CommReportsPage";
 import CommSettingsPage from "./pages/comm/CommSettingsPage";
 import CommIVRPage from "./pages/comm/CommIVRPage";
 import CommNotificationsPage from "./pages/comm/CommNotificationsPage";
+import EducaDashboardPage from "./pages/educa/EducaDashboardPage";
+import EducaStudentsPage from "./pages/educa/EducaStudentsPage";
+import EducaAgentsPage from "./pages/educa/EducaAgentsPage";
+import EducaCounsellorsPage from "./pages/educa/EducaCounsellorsPage";
+import EducaUniversitiesPage from "./pages/educa/EducaUniversitiesPage";
+import EducaCoursesPage from "./pages/educa/EducaCoursesPage";
+import EducaApplicationsPage from "./pages/educa/EducaApplicationsPage";
+import EducaVisaPage from "./pages/educa/EducaVisaPage";
+import EducaCommissionsPage from "./pages/educa/EducaCommissionsPage";
+import EducaScholarshipsPage from "./pages/educa/EducaScholarshipsPage";
+import EducaLeadsPage from "./pages/educa/EducaLeadsPage";
+import EducaReportsPage from "./pages/educa/EducaReportsPage";
 const queryClient = new QueryClient();
 
 const AppContent = () => {
