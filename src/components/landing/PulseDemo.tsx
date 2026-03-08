@@ -45,7 +45,7 @@ const endpoints = [
   { method: "DELETE", path: "/api/blog-posts/:id", latency: "32ms", cached: false },
 ];
 
-export default function PulseDemo() {
+const PulseDemo = forwardRef<HTMLDivElement>(function PulseDemo(_props, ref) {
   const [tab, setTab] = useState<ApiTab>("rest");
   const [copied, setCopied] = useState(false);
 
