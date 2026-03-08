@@ -482,6 +482,263 @@ export type Database = {
           },
         ]
       }
+      ac_invoice_items: {
+        Row: {
+          account_id: string | null
+          created_at: string
+          description: string
+          discount: number | null
+          id: string
+          invoice_id: string
+          quantity: number | null
+          sort_order: number | null
+          tax_amount: number | null
+          tax_rate: number | null
+          total: number
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          account_id?: string | null
+          created_at?: string
+          description: string
+          discount?: number | null
+          id?: string
+          invoice_id: string
+          quantity?: number | null
+          sort_order?: number | null
+          tax_amount?: number | null
+          tax_rate?: number | null
+          total: number
+          unit_price: number
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string | null
+          created_at?: string
+          description?: string
+          discount?: number | null
+          id?: string
+          invoice_id?: string
+          quantity?: number | null
+          sort_order?: number | null
+          tax_amount?: number | null
+          tax_rate?: number | null
+          total?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ac_invoice_items_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "ac_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ac_invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "ac_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ac_invoices: {
+        Row: {
+          amount_due: number | null
+          amount_paid: number | null
+          company_id: string | null
+          created_at: string
+          currency_code: string | null
+          customer_id: string | null
+          discount_amount: number | null
+          discount_type: string | null
+          due_date: string
+          exchange_rate: number | null
+          id: string
+          invoice_number: string
+          is_recurring: boolean | null
+          issue_date: string
+          late_fee: number | null
+          notes: string | null
+          paid_at: string | null
+          recurring_frequency: string | null
+          sent_at: string | null
+          status: string | null
+          subtotal: number | null
+          tax_amount: number | null
+          template: string | null
+          terms: string | null
+          total_amount: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_due?: number | null
+          amount_paid?: number | null
+          company_id?: string | null
+          created_at?: string
+          currency_code?: string | null
+          customer_id?: string | null
+          discount_amount?: number | null
+          discount_type?: string | null
+          due_date: string
+          exchange_rate?: number | null
+          id?: string
+          invoice_number: string
+          is_recurring?: boolean | null
+          issue_date: string
+          late_fee?: number | null
+          notes?: string | null
+          paid_at?: string | null
+          recurring_frequency?: string | null
+          sent_at?: string | null
+          status?: string | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          template?: string | null
+          terms?: string | null
+          total_amount?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_due?: number | null
+          amount_paid?: number | null
+          company_id?: string | null
+          created_at?: string
+          currency_code?: string | null
+          customer_id?: string | null
+          discount_amount?: number | null
+          discount_type?: string | null
+          due_date?: string
+          exchange_rate?: number | null
+          id?: string
+          invoice_number?: string
+          is_recurring?: boolean | null
+          issue_date?: string
+          late_fee?: number | null
+          notes?: string | null
+          paid_at?: string | null
+          recurring_frequency?: string | null
+          sent_at?: string | null
+          status?: string | null
+          subtotal?: number | null
+          tax_amount?: number | null
+          template?: string | null
+          terms?: string | null
+          total_amount?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ac_invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "ac_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ac_invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "ac_customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ac_payments: {
+        Row: {
+          account_id: string
+          amount: number
+          company_id: string | null
+          created_at: string
+          currency_code: string | null
+          customer_id: string | null
+          exchange_rate: number | null
+          id: string
+          invoice_id: string | null
+          notes: string | null
+          payment_date: string
+          payment_method: string
+          status: string | null
+          transaction_reference: string | null
+          type: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          amount: number
+          company_id?: string | null
+          created_at?: string
+          currency_code?: string | null
+          customer_id?: string | null
+          exchange_rate?: number | null
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          payment_date: string
+          payment_method: string
+          status?: string | null
+          transaction_reference?: string | null
+          type?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          company_id?: string | null
+          created_at?: string
+          currency_code?: string | null
+          customer_id?: string | null
+          exchange_rate?: number | null
+          id?: string
+          invoice_id?: string | null
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string
+          status?: string | null
+          transaction_reference?: string | null
+          type?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ac_payments_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "ac_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ac_payments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "ac_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ac_payments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "ac_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ac_payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "ac_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ac_tax_rates: {
         Row: {
           company_id: string | null
