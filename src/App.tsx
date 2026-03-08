@@ -29,6 +29,8 @@ import DeveloperKeysPage from "./pages/DeveloperKeysPage";
 import AccountingSRSPage from "./pages/AccountingSRSPage";
 import AccountingDashboardPage from "./pages/accounting/AccountingDashboardPage";
 import ChartOfAccountsPage from "./pages/accounting/ChartOfAccountsPage";
+import IncomeListPage from "./pages/accounting/IncomeListPage";
+import ExpenseListPage from "./pages/accounting/ExpenseListPage";
 
 const queryClient = new QueryClient();
 
