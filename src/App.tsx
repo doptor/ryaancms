@@ -121,6 +121,10 @@ const AppContent = () => {
         <Route path="/dashboard/hr/payroll" element={<ProtectedRoute><HRPayrollPage /></ProtectedRoute>} />
         <Route path="/dashboard/hr/recruitment" element={<ProtectedRoute><HRRecruitmentPage /></ProtectedRoute>} />
         <Route path="/dashboard/hr/applicants" element={<ProtectedRoute><HRApplicantsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/hr/performance" element={<ProtectedRoute><HRPerformancePage /></ProtectedRoute>} />
+        <Route path="/dashboard/hr/training" element={<ProtectedRoute><HRTrainingPage /></ProtectedRoute>} />
+        <Route path="/dashboard/hr/shifts" element={<ProtectedRoute><HRShiftsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/hr/onboarding" element={<ProtectedRoute><HROnboardingPage /></ProtectedRoute>} />
         <Route path="/preview" element={<PreviewPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
