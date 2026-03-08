@@ -39,6 +39,15 @@ const navSections = [
       { label: "Applicants", path: "/dashboard/hr/applicants", icon: UserPlus, color: "text-indigo-600" },
     ],
   },
+  {
+    title: "Advanced",
+    items: [
+      { label: "Performance Reviews", path: "/dashboard/hr/performance", icon: Award, color: "text-amber-600" },
+      { label: "Training", path: "/dashboard/hr/training", icon: GraduationCap, color: "text-teal-600" },
+      { label: "Shift Scheduling", path: "/dashboard/hr/shifts", icon: CalendarRange, color: "text-violet-600" },
+      { label: "Onboarding", path: "/dashboard/hr/onboarding", icon: ClipboardList, color: "text-rose-600" },
+    ],
+  },
 ];
 
 export default function HRDashboardPage() {
