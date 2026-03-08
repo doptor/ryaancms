@@ -63,6 +63,16 @@ import HRPerformancePage from "./pages/hr/HRPerformancePage";
 import HRTrainingPage from "./pages/hr/HRTrainingPage";
 import HRShiftsPage from "./pages/hr/HRShiftsPage";
 import HROnboardingPage from "./pages/hr/HROnboardingPage";
+import CommDashboardPage from "./pages/comm/CommDashboardPage";
+import CommContactsPage from "./pages/comm/CommContactsPage";
+import CommCallsPage from "./pages/comm/CommCallsPage";
+import CommWhatsAppPage from "./pages/comm/CommWhatsAppPage";
+import CommCampaignsPage from "./pages/comm/CommCampaignsPage";
+import CommScriptsPage from "./pages/comm/CommScriptsPage";
+import CommCallCenterPage from "./pages/comm/CommCallCenterPage";
+import CommAgentsPage from "./pages/comm/CommAgentsPage";
+import CommReportsPage from "./pages/comm/CommReportsPage";
+import CommSettingsPage from "./pages/comm/CommSettingsPage";
 
 const queryClient = new QueryClient();
 
