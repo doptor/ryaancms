@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, forwardRef } from "react";
 import { Monitor, Tablet, Smartphone, Move, MousePointer2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import { Zap, Copy, Check, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
