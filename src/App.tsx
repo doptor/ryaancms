@@ -31,6 +31,8 @@ import AccountingDashboardPage from "./pages/accounting/AccountingDashboardPage"
 import ChartOfAccountsPage from "./pages/accounting/ChartOfAccountsPage";
 import IncomeListPage from "./pages/accounting/IncomeListPage";
 import ExpenseListPage from "./pages/accounting/ExpenseListPage";
+import InvoiceListPage from "./pages/accounting/InvoiceListPage";
+import PaymentListPage from "./pages/accounting/PaymentListPage";
 
 const queryClient = new QueryClient();
 
