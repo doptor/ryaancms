@@ -26,3 +26,15 @@ verify_jwt = false
 
 [functions.ai-chat-qa]
 verify_jwt = false
+
+[functions.comm-voice-call]
+verify_jwt = false
+
+[functions.comm-whatsapp]
+verify_jwt = false
+
+[functions.comm-campaign]
+verify_jwt = false
+
+[functions.comm-ai-voice]
+verify_jwt = false
