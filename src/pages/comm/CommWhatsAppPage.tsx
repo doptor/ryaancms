@@ -26,7 +26,7 @@ export default function CommWhatsAppPage() {
   const [composeForm, setComposeForm] = useState({ contact_id: "", message: "" });
 
   const { data: conversations, isLoading } = useQuery({
-    queryKey: ["comm_conversations"], queryFn: async () => { const { data, error } = await supabase.from("comm_conversations").select("*, comm_contacts(name, whatsapp_number, avatar_url)").eq("channel", "whatsapp").order("last_message_at", { ascending: false }); if (error) throw error; return data ?? []; }, enabled: !!user,
+    queryKey: ["comm_conversations"], queryFn: async () => { const { data, error } = await supabase.from("comm_conversations").select("*, comm_contacts(name, whatsapp_number)").eq("channel", "whatsapp").order("last_message_at", { ascending: false }); if (error) throw error; return data ?? []; }, enabled: !!user,
   });
   const { data: contacts } = useQuery({ queryKey: ["comm_contacts_wa"], queryFn: async () => { const { data } = await supabase.from("comm_contacts").select("id, name, whatsapp_number").not("whatsapp_number", "is", null); return data ?? []; }, enabled: !!user });
   const { data: messages } = useQuery({

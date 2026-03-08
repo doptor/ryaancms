@@ -135,6 +135,16 @@ const AppContent = () => {
         <Route path="/dashboard/hr/training" element={<ProtectedRoute><HRTrainingPage /></ProtectedRoute>} />
         <Route path="/dashboard/hr/shifts" element={<ProtectedRoute><HRShiftsPage /></ProtectedRoute>} />
         <Route path="/dashboard/hr/onboarding" element={<ProtectedRoute><HROnboardingPage /></ProtectedRoute>} />
+        <Route path="/dashboard/comm" element={<ProtectedRoute><CommDashboardPage /></ProtectedRoute>} />
+        <Route path="/dashboard/comm/contacts" element={<ProtectedRoute><CommContactsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/comm/calls" element={<ProtectedRoute><CommCallsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/comm/whatsapp" element={<ProtectedRoute><CommWhatsAppPage /></ProtectedRoute>} />
+        <Route path="/dashboard/comm/campaigns" element={<ProtectedRoute><CommCampaignsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/comm/scripts" element={<ProtectedRoute><CommScriptsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/comm/call-center" element={<ProtectedRoute><CommCallCenterPage /></ProtectedRoute>} />
+        <Route path="/dashboard/comm/agents" element={<ProtectedRoute><CommAgentsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/comm/reports" element={<ProtectedRoute><CommReportsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/comm/settings" element={<ProtectedRoute><CommSettingsPage /></ProtectedRoute>} />
         <Route path="/preview" element={<PreviewPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
