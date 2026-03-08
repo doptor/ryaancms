@@ -7,17 +7,21 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import {
   Users, UserPlus, Briefcase, Target, Phone, Mail, BarChart3,
-  Ticket, Megaphone, ArrowRight, Plus, TrendingUp, DollarSign, CheckCircle
+  Ticket, Megaphone, ArrowRight, Plus, TrendingUp, DollarSign, CheckCircle,
+  Columns3, Bot
 } from "lucide-react";
 
 const crmNav = [
   { label: "Leads", path: "/dashboard/crm/leads", icon: UserPlus, color: "text-blue-600", desc: "Manage prospects" },
   { label: "Contacts", path: "/dashboard/crm/contacts", icon: Users, color: "text-green-600", desc: "People directory" },
   { label: "Companies", path: "/dashboard/crm/companies", icon: Briefcase, color: "text-purple-600", desc: "Organizations" },
-  { label: "Deals", path: "/dashboard/crm/deals", icon: Target, color: "text-amber-600", desc: "Sales pipeline" },
+  { label: "Deals", path: "/dashboard/crm/deals", icon: Target, color: "text-amber-600", desc: "Deal list view" },
+  { label: "Pipeline", path: "/dashboard/crm/pipeline", icon: Columns3, color: "text-cyan-600", desc: "Drag & drop Kanban" },
   { label: "Activities", path: "/dashboard/crm/activities", icon: Phone, color: "text-teal-600", desc: "Tasks & follow-ups" },
+  { label: "Emails", path: "/dashboard/crm/emails", icon: Mail, color: "text-orange-600", desc: "Email tracking" },
   { label: "Campaigns", path: "/dashboard/crm/campaigns", icon: Megaphone, color: "text-pink-600", desc: "Marketing campaigns" },
   { label: "Tickets", path: "/dashboard/crm/tickets", icon: Ticket, color: "text-red-600", desc: "Customer support" },
+  { label: "AI Assistant", path: "/dashboard/crm/ai-assistant", icon: Bot, color: "text-violet-600", desc: "AI sales insights" },
   { label: "Reports", path: "/dashboard/crm/reports", icon: BarChart3, color: "text-indigo-600", desc: "Analytics & insights" },
 ];
 
