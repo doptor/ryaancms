@@ -36,6 +36,8 @@ import PaymentListPage from "./pages/accounting/PaymentListPage";
 import ProfitLossPage from "./pages/accounting/ProfitLossPage";
 import BalanceSheetPage from "./pages/accounting/BalanceSheetPage";
 import CashFlowPage from "./pages/accounting/CashFlowPage";
+import VendorListPage from "./pages/accounting/VendorListPage";
+import CustomerListPage from "./pages/accounting/CustomerListPage";
 import CRMDashboardPage from "./pages/crm/CRMDashboardPage";
 import CRMLeadsPage from "./pages/crm/CRMLeadsPage";
 import CRMContactsPage from "./pages/crm/CRMContactsPage";
@@ -83,6 +85,8 @@ const AppContent = () => {
         <Route path="/dashboard/accounting/profit-loss" element={<ProtectedRoute><ProfitLossPage /></ProtectedRoute>} />
         <Route path="/dashboard/accounting/balance-sheet" element={<ProtectedRoute><BalanceSheetPage /></ProtectedRoute>} />
         <Route path="/dashboard/accounting/cash-flow" element={<ProtectedRoute><CashFlowPage /></ProtectedRoute>} />
+        <Route path="/dashboard/accounting/vendors" element={<ProtectedRoute><VendorListPage /></ProtectedRoute>} />
+        <Route path="/dashboard/accounting/customers" element={<ProtectedRoute><CustomerListPage /></ProtectedRoute>} />
         <Route path="/dashboard/crm" element={<ProtectedRoute><CRMDashboardPage /></ProtectedRoute>} />
         <Route path="/dashboard/crm/leads" element={<ProtectedRoute><CRMLeadsPage /></ProtectedRoute>} />
         <Route path="/dashboard/crm/contacts" element={<ProtectedRoute><CRMContactsPage /></ProtectedRoute>} />

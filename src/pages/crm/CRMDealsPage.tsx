@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { Target, Plus, DollarSign, Pencil, Trash2, Search } from "lucide-react";
+import { Target, Plus, DollarSign, Pencil, Trash2, Search, FileText } from "lucide-react";
+import { format } from "date-fns";
 
 const STATUSES = ["open", "won", "lost"];
 const statusColor: Record<string, string> = { open: "bg-blue-100 text-blue-700", won: "bg-green-100 text-green-700", lost: "bg-red-100 text-red-700" };
@@ -75,6 +76,27 @@ export default function CRMDealsPage() {
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => { const { error } = await supabase.from("crm_deals").delete().eq("id", id); if (error) throw error; },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["crm-deals"] }); toast({ title: "Deal deleted" }); },
+  });
+
+  const generateInvoice = useMutation({
+    mutationFn: async (deal: any) => {
+      const invNum = `INV-DEAL-${Date.now().toString(36).toUpperCase()}`;
+      const { error } = await supabase.from("ac_invoices").insert({
+        invoice_number: invNum,
+        issue_date: format(new Date(), "yyyy-MM-dd"),
+        due_date: format(new Date(Date.now() + 30 * 86400000), "yyyy-MM-dd"),
+        subtotal: Number(deal.value ?? 0),
+        total_amount: Number(deal.value ?? 0),
+        amount_due: Number(deal.value ?? 0),
+        amount_paid: 0,
+        status: "draft",
+        notes: `Auto-generated from Deal: ${deal.title}`,
+        user_id: user!.id,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => { toast({ title: "Invoice generated from deal", description: "Check Accounting → Invoices" }); },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const resetForm = () => { setForm(emptyForm); setEditId(null); setOpen(false); };
@@ -188,6 +210,7 @@ export default function CRMDealsPage() {
                 <div className="flex items-center gap-3 shrink-0">
                   <span className="font-bold">{fmt(Number(d.value ?? 0))}</span>
                   <Badge variant="outline" className={statusColor[d.status ?? "open"]}>{d.status}</Badge>
+                  {d.status === "won" && <Button size="sm" variant="outline" onClick={() => generateInvoice.mutate(d)} title="Generate Invoice"><FileText className="w-3.5 h-3.5 mr-1" />Invoice</Button>}
                   <Button size="icon" variant="ghost" onClick={() => openEdit(d)}><Pencil className="w-4 h-4" /></Button>
                   <Button size="icon" variant="ghost" onClick={() => deleteMutation.mutate(d.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
                 </div>
