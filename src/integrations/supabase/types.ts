@@ -1231,6 +1231,82 @@ export type Database = {
           },
         ]
       }
+      crm_emails: {
+        Row: {
+          body: string | null
+          contact_id: string | null
+          created_at: string
+          deal_id: string | null
+          direction: string
+          from_email: string | null
+          id: string
+          lead_id: string | null
+          opened_at: string | null
+          replied_at: string | null
+          status: string | null
+          subject: string
+          to_email: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          contact_id?: string | null
+          created_at?: string
+          deal_id?: string | null
+          direction?: string
+          from_email?: string | null
+          id?: string
+          lead_id?: string | null
+          opened_at?: string | null
+          replied_at?: string | null
+          status?: string | null
+          subject: string
+          to_email?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          contact_id?: string | null
+          created_at?: string
+          deal_id?: string | null
+          direction?: string
+          from_email?: string | null
+          id?: string
+          lead_id?: string | null
+          opened_at?: string | null
+          replied_at?: string | null
+          status?: string | null
+          subject?: string
+          to_email?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_emails_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "crm_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_emails_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "crm_deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_emails_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "crm_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_leads: {
         Row: {
           address: string | null

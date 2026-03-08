@@ -45,6 +45,9 @@ import CRMActivitiesPage from "./pages/crm/CRMActivitiesPage";
 import CRMCampaignsPage from "./pages/crm/CRMCampaignsPage";
 import CRMTicketsPage from "./pages/crm/CRMTicketsPage";
 import CRMReportsPage from "./pages/crm/CRMReportsPage";
+import CRMPipelinePage from "./pages/crm/CRMPipelinePage";
+import CRMAIAssistantPage from "./pages/crm/CRMAIAssistantPage";
+import CRMEmailsPage from "./pages/crm/CRMEmailsPage";
 
 const queryClient = new QueryClient();
 
@@ -89,6 +92,9 @@ const AppContent = () => {
         <Route path="/dashboard/crm/campaigns" element={<ProtectedRoute><CRMCampaignsPage /></ProtectedRoute>} />
         <Route path="/dashboard/crm/tickets" element={<ProtectedRoute><CRMTicketsPage /></ProtectedRoute>} />
         <Route path="/dashboard/crm/reports" element={<ProtectedRoute><CRMReportsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/crm/pipeline" element={<ProtectedRoute><CRMPipelinePage /></ProtectedRoute>} />
+        <Route path="/dashboard/crm/ai-assistant" element={<ProtectedRoute><CRMAIAssistantPage /></ProtectedRoute>} />
+        <Route path="/dashboard/crm/emails" element={<ProtectedRoute><CRMEmailsPage /></ProtectedRoute>} />
         <Route path="/preview" element={<PreviewPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
