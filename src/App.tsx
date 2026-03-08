@@ -33,6 +33,9 @@ import IncomeListPage from "./pages/accounting/IncomeListPage";
 import ExpenseListPage from "./pages/accounting/ExpenseListPage";
 import InvoiceListPage from "./pages/accounting/InvoiceListPage";
 import PaymentListPage from "./pages/accounting/PaymentListPage";
+import ProfitLossPage from "./pages/accounting/ProfitLossPage";
+import BalanceSheetPage from "./pages/accounting/BalanceSheetPage";
+import CashFlowPage from "./pages/accounting/CashFlowPage";
 
 const queryClient = new QueryClient();
 
@@ -65,6 +68,9 @@ const AppContent = () => {
         <Route path="/dashboard/accounting/expenses" element={<ProtectedRoute><ExpenseListPage /></ProtectedRoute>} />
         <Route path="/dashboard/accounting/invoices" element={<ProtectedRoute><InvoiceListPage /></ProtectedRoute>} />
         <Route path="/dashboard/accounting/payments" element={<ProtectedRoute><PaymentListPage /></ProtectedRoute>} />
+        <Route path="/dashboard/accounting/profit-loss" element={<ProtectedRoute><ProfitLossPage /></ProtectedRoute>} />
+        <Route path="/dashboard/accounting/balance-sheet" element={<ProtectedRoute><BalanceSheetPage /></ProtectedRoute>} />
+        <Route path="/dashboard/accounting/cash-flow" element={<ProtectedRoute><CashFlowPage /></ProtectedRoute>} />
         <Route path="/preview" element={<PreviewPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
