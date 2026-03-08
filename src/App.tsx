@@ -146,6 +146,8 @@ const AppContent = () => {
         <Route path="/dashboard/comm/agents" element={<ProtectedRoute><CommAgentsPage /></ProtectedRoute>} />
         <Route path="/dashboard/comm/reports" element={<ProtectedRoute><CommReportsPage /></ProtectedRoute>} />
         <Route path="/dashboard/comm/settings" element={<ProtectedRoute><CommSettingsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/comm/ivr" element={<ProtectedRoute><CommIVRPage /></ProtectedRoute>} />
+        <Route path="/dashboard/comm/notifications" element={<ProtectedRoute><CommNotificationsPage /></ProtectedRoute>} />
         <Route path="/preview" element={<PreviewPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
