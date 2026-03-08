@@ -13,11 +13,22 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Plus, FileText, Search, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Plus, FileText, Pencil, Trash2, Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import EducaAdvancedSearch, { FilterField } from "@/components/educa/EducaAdvancedSearch";
 
 const APP_STATUSES = ["new", "submitted", "processing", "offer_received", "accepted", "rejected", "visa_processing", "enrolled"];
 const statusColors: Record<string, string> = { new: "outline", submitted: "secondary", processing: "secondary", offer_received: "default", accepted: "default", rejected: "destructive", visa_processing: "secondary", enrolled: "default" };
+
+const FILTER_FIELDS: FilterField[] = [
+  { key: "status", label: "Status", type: "select", options: APP_STATUSES.map(s => ({ value: s, label: s.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) })) },
+  { key: "priority", label: "Priority", type: "select", options: [{ value: "low", label: "Low" }, { value: "medium", label: "Medium" }, { value: "high", label: "High" }, { value: "urgent", label: "Urgent" }] },
+  { key: "intake", label: "Intake", type: "text", placeholder: "e.g. Sep 2026" },
+  { key: "date_from", label: "Applied After", type: "date" },
+  { key: "date_to", label: "Applied Before", type: "date" },
+  { key: "min_fee", label: "Min Tuition", type: "number", placeholder: "0" },
+  { key: "max_fee", label: "Max Tuition", type: "number", placeholder: "100000" },
+];
 
 export default function EducaApplicationsPage() {
   const { user } = useAuth();
@@ -25,7 +36,7 @@ export default function EducaApplicationsPage() {
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [filters, setFilters] = useState<Record<string, string>>({});
   const [form, setForm] = useState({ student_id: "", course_id: "", status: "new", intake: "", tuition_fee: "0", scholarship_amount: "0", notes: "", priority: "medium" });
 
   const { data: applications, isLoading } = useQuery({
@@ -56,38 +67,43 @@ export default function EducaApplicationsPage() {
 
   const filtered = (applications ?? []).filter(a => {
     const q = search.toLowerCase();
-    const matchSearch = !q || (a as any).educa_students?.name?.toLowerCase().includes(q) || (a as any).educa_courses?.course_name?.toLowerCase().includes(q);
-    const matchStatus = statusFilter === "all" || a.status === statusFilter;
-    return matchSearch && matchStatus;
+    if (q && !(a as any).educa_students?.name?.toLowerCase().includes(q) && !(a as any).educa_courses?.course_name?.toLowerCase().includes(q)) return false;
+    if (filters.status && filters.status !== "all" && a.status !== filters.status) return false;
+    if (filters.priority && filters.priority !== "all" && a.priority !== filters.priority) return false;
+    if (filters.intake && !(a.intake || "").toLowerCase().includes(filters.intake.toLowerCase())) return false;
+    if (filters.date_from && a.application_date && new Date(a.application_date) < new Date(filters.date_from)) return false;
+    if (filters.date_to && a.application_date && new Date(a.application_date) > new Date(filters.date_to)) return false;
+    if (filters.min_fee && (a.tuition_fee || 0) < parseFloat(filters.min_fee)) return false;
+    if (filters.max_fee && (a.tuition_fee || 0) > parseFloat(filters.max_fee)) return false;
+    return true;
   });
 
   return (
     <DashboardLayout>
       <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div><h1 className="text-2xl font-bold flex items-center gap-2"><FileText className="w-6 h-6 text-primary" /> Applications</h1><p className="text-muted-foreground">Track student applications</p></div>
-          <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
-            <div className="relative flex-1 sm:flex-initial"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 w-full sm:w-48" /></div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger className="w-40"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All Status</SelectItem>{APP_STATUSES.map(s => <SelectItem key={s} value={s}>{s.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</SelectItem>)}</SelectContent></Select>
-            <Dialog open={open} onOpenChange={v => { if (!v) closeDialog(); else setOpen(true); }}>
-              <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-1" />New Application</Button></DialogTrigger>
-              <DialogContent className="max-w-lg">
-                <DialogHeader><DialogTitle>{editId ? "Edit Application" : "New Application"}</DialogTitle></DialogHeader>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div><Label>Student *</Label><Select value={form.student_id} onValueChange={v => setForm(p => ({ ...p, student_id: v }))}><SelectTrigger><SelectValue placeholder="Select student..." /></SelectTrigger><SelectContent>{(students ?? []).map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select></div>
-                  <div><Label>Course *</Label><Select value={form.course_id} onValueChange={v => setForm(p => ({ ...p, course_id: v }))}><SelectTrigger><SelectValue placeholder="Select course..." /></SelectTrigger><SelectContent>{(courses ?? []).map(c => <SelectItem key={c.id} value={c.id}>{c.course_name} – {(c as any).educa_universities?.name}</SelectItem>)}</SelectContent></Select></div>
-                  <div><Label>Status</Label><Select value={form.status} onValueChange={v => setForm(p => ({ ...p, status: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{APP_STATUSES.map(s => <SelectItem key={s} value={s}>{s.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</SelectItem>)}</SelectContent></Select></div>
-                  <div><Label>Priority</Label><Select value={form.priority} onValueChange={v => setForm(p => ({ ...p, priority: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="low">Low</SelectItem><SelectItem value="medium">Medium</SelectItem><SelectItem value="high">High</SelectItem><SelectItem value="urgent">Urgent</SelectItem></SelectContent></Select></div>
-                  <div><Label>Intake</Label><Input value={form.intake} onChange={e => setForm(p => ({ ...p, intake: e.target.value }))} placeholder="e.g. Sep 2026" /></div>
-                  <div><Label>Tuition Fee</Label><Input type="number" value={form.tuition_fee} onChange={e => setForm(p => ({ ...p, tuition_fee: e.target.value }))} /></div>
-                  <div><Label>Scholarship</Label><Input type="number" value={form.scholarship_amount} onChange={e => setForm(p => ({ ...p, scholarship_amount: e.target.value }))} /></div>
-                  <div className="sm:col-span-2"><Label>Notes</Label><Textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} /></div>
-                </div>
-                <div className="flex justify-end gap-2 mt-4"><Button variant="outline" onClick={closeDialog}>Cancel</Button><Button onClick={() => upsert.mutate()} disabled={upsert.isPending}>{editId ? "Update" : "Create"}</Button></div>
-              </DialogContent>
-            </Dialog>
-          </div>
+          <div><h1 className="text-2xl font-bold flex items-center gap-2"><FileText className="w-6 h-6 text-primary" /> Applications</h1><p className="text-muted-foreground">Track student applications · {filtered.length} results</p></div>
+          <Dialog open={open} onOpenChange={v => { if (!v) closeDialog(); else setOpen(true); }}>
+            <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-1" />New Application</Button></DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader><DialogTitle>{editId ? "Edit Application" : "New Application"}</DialogTitle></DialogHeader>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div><Label>Student *</Label><Select value={form.student_id} onValueChange={v => setForm(p => ({ ...p, student_id: v }))}><SelectTrigger><SelectValue placeholder="Select student..." /></SelectTrigger><SelectContent>{(students ?? []).map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select></div>
+                <div><Label>Course *</Label><Select value={form.course_id} onValueChange={v => setForm(p => ({ ...p, course_id: v }))}><SelectTrigger><SelectValue placeholder="Select course..." /></SelectTrigger><SelectContent>{(courses ?? []).map(c => <SelectItem key={c.id} value={c.id}>{c.course_name} – {(c as any).educa_universities?.name}</SelectItem>)}</SelectContent></Select></div>
+                <div><Label>Status</Label><Select value={form.status} onValueChange={v => setForm(p => ({ ...p, status: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{APP_STATUSES.map(s => <SelectItem key={s} value={s}>{s.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</SelectItem>)}</SelectContent></Select></div>
+                <div><Label>Priority</Label><Select value={form.priority} onValueChange={v => setForm(p => ({ ...p, priority: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="low">Low</SelectItem><SelectItem value="medium">Medium</SelectItem><SelectItem value="high">High</SelectItem><SelectItem value="urgent">Urgent</SelectItem></SelectContent></Select></div>
+                <div><Label>Intake</Label><Input value={form.intake} onChange={e => setForm(p => ({ ...p, intake: e.target.value }))} placeholder="e.g. Sep 2026" /></div>
+                <div><Label>Tuition Fee</Label><Input type="number" value={form.tuition_fee} onChange={e => setForm(p => ({ ...p, tuition_fee: e.target.value }))} /></div>
+                <div><Label>Scholarship</Label><Input type="number" value={form.scholarship_amount} onChange={e => setForm(p => ({ ...p, scholarship_amount: e.target.value }))} /></div>
+                <div className="sm:col-span-2"><Label>Notes</Label><Textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} /></div>
+              </div>
+              <div className="flex justify-end gap-2 mt-4"><Button variant="outline" onClick={closeDialog}>Cancel</Button><Button onClick={() => upsert.mutate()} disabled={upsert.isPending}>{editId ? "Update" : "Create"}</Button></div>
+            </DialogContent>
+          </Dialog>
         </div>
+
+        <EducaAdvancedSearch module="applications" fields={FILTER_FIELDS} filters={filters} onFiltersChange={setFilters} search={search} onSearchChange={setSearch} />
+
         <Card><CardContent className="p-0">
           {isLoading ? <div className="p-8 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div> : filtered.length === 0 ? <div className="p-8 text-center text-muted-foreground">No applications found</div> : (
             <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Student</TableHead><TableHead>Course</TableHead><TableHead>University</TableHead><TableHead>Intake</TableHead><TableHead>Status</TableHead><TableHead>Priority</TableHead><TableHead>Date</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>

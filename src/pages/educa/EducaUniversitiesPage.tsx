@@ -13,9 +13,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Building2, Search, Pencil, Trash2, Loader2, Globe } from "lucide-react";
+import { Plus, Building2, Pencil, Trash2, Loader2 } from "lucide-react";
+import EducaAdvancedSearch, { FilterField } from "@/components/educa/EducaAdvancedSearch";
 
 const emptyForm = { name: "", country: "", city: "", website: "", contact_person: "", contact_email: "", contact_phone: "", commission_rate: "15", ranking: "", type: "public", partnership_status: "active", notes: "" };
+
+const FILTER_FIELDS: FilterField[] = [
+  { key: "partnership_status", label: "Partnership", type: "select", options: [{ value: "active", label: "Active" }, { value: "pending", label: "Pending" }, { value: "inactive", label: "Inactive" }] },
+  { key: "type", label: "Type", type: "select", options: [{ value: "public", label: "Public" }, { value: "private", label: "Private" }, { value: "college", label: "College" }] },
+  { key: "country", label: "Country", type: "text", placeholder: "e.g. Australia" },
+  { key: "min_commission", label: "Min Commission %", type: "number", placeholder: "0" },
+];
 
 export default function EducaUniversitiesPage() {
   const { user } = useAuth();
@@ -23,6 +31,7 @@ export default function EducaUniversitiesPage() {
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [filters, setFilters] = useState<Record<string, string>>({});
   const [form, setForm] = useState(emptyForm);
 
   const { data: universities, isLoading } = useQuery({
@@ -47,38 +56,46 @@ export default function EducaUniversitiesPage() {
   const closeDialog = () => { setOpen(false); setEditId(null); setForm(emptyForm); };
   const openEdit = (u: any) => { setEditId(u.id); setForm({ name: u.name, country: u.country || "", city: u.city || "", website: u.website || "", contact_person: u.contact_person || "", contact_email: u.contact_email || "", contact_phone: u.contact_phone || "", commission_rate: u.commission_rate?.toString() || "15", ranking: u.ranking?.toString() || "", type: u.type || "public", partnership_status: u.partnership_status || "active", notes: u.notes || "" }); setOpen(true); };
 
-  const filtered = (universities ?? []).filter(u => { const q = search.toLowerCase(); return !q || u.name.toLowerCase().includes(q) || (u.country || "").toLowerCase().includes(q) || (u.city || "").toLowerCase().includes(q); });
+  const filtered = (universities ?? []).filter(u => {
+    const q = search.toLowerCase();
+    if (q && !u.name.toLowerCase().includes(q) && !(u.country || "").toLowerCase().includes(q) && !(u.city || "").toLowerCase().includes(q)) return false;
+    if (filters.partnership_status && filters.partnership_status !== "all" && u.partnership_status !== filters.partnership_status) return false;
+    if (filters.type && filters.type !== "all" && u.type !== filters.type) return false;
+    if (filters.country && !(u.country || "").toLowerCase().includes(filters.country.toLowerCase())) return false;
+    if (filters.min_commission && (u.commission_rate || 0) < parseFloat(filters.min_commission)) return false;
+    return true;
+  });
 
   return (
     <DashboardLayout>
       <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div><h1 className="text-2xl font-bold flex items-center gap-2"><Building2 className="w-6 h-6 text-primary" /> Universities</h1><p className="text-muted-foreground">Manage partner institutions</p></div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <div className="relative flex-1 sm:flex-initial"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 w-full sm:w-64" /></div>
-            <Dialog open={open} onOpenChange={v => { if (!v) closeDialog(); else setOpen(true); }}>
-              <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-1" />Add University</Button></DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-                <DialogHeader><DialogTitle>{editId ? "Edit University" : "Add University"}</DialogTitle></DialogHeader>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} /></div>
-                  <div><Label>Country</Label><Input value={form.country} onChange={e => setForm(p => ({ ...p, country: e.target.value }))} /></div>
-                  <div><Label>City</Label><Input value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} /></div>
-                  <div><Label>Website</Label><Input value={form.website} onChange={e => setForm(p => ({ ...p, website: e.target.value }))} placeholder="https://..." /></div>
-                  <div><Label>Contact Person</Label><Input value={form.contact_person} onChange={e => setForm(p => ({ ...p, contact_person: e.target.value }))} /></div>
-                  <div><Label>Contact Email</Label><Input type="email" value={form.contact_email} onChange={e => setForm(p => ({ ...p, contact_email: e.target.value }))} /></div>
-                  <div><Label>Contact Phone</Label><Input value={form.contact_phone} onChange={e => setForm(p => ({ ...p, contact_phone: e.target.value }))} /></div>
-                  <div><Label>Commission Rate (%)</Label><Input type="number" value={form.commission_rate} onChange={e => setForm(p => ({ ...p, commission_rate: e.target.value }))} /></div>
-                  <div><Label>Ranking</Label><Input type="number" value={form.ranking} onChange={e => setForm(p => ({ ...p, ranking: e.target.value }))} /></div>
-                  <div><Label>Type</Label><Select value={form.type} onValueChange={v => setForm(p => ({ ...p, type: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="public">Public</SelectItem><SelectItem value="private">Private</SelectItem><SelectItem value="college">College</SelectItem></SelectContent></Select></div>
-                  <div><Label>Partnership</Label><Select value={form.partnership_status} onValueChange={v => setForm(p => ({ ...p, partnership_status: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="pending">Pending</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select></div>
-                  <div className="sm:col-span-2"><Label>Notes</Label><Textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} /></div>
-                </div>
-                <div className="flex justify-end gap-2 mt-4"><Button variant="outline" onClick={closeDialog}>Cancel</Button><Button onClick={() => upsert.mutate()} disabled={!form.name || upsert.isPending}>{editId ? "Update" : "Add"}</Button></div>
-              </DialogContent>
-            </Dialog>
-          </div>
+          <div><h1 className="text-2xl font-bold flex items-center gap-2"><Building2 className="w-6 h-6 text-primary" /> Universities</h1><p className="text-muted-foreground">Manage partner institutions · {filtered.length} results</p></div>
+          <Dialog open={open} onOpenChange={v => { if (!v) closeDialog(); else setOpen(true); }}>
+            <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-1" />Add University</Button></DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+              <DialogHeader><DialogTitle>{editId ? "Edit University" : "Add University"}</DialogTitle></DialogHeader>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} /></div>
+                <div><Label>Country</Label><Input value={form.country} onChange={e => setForm(p => ({ ...p, country: e.target.value }))} /></div>
+                <div><Label>City</Label><Input value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} /></div>
+                <div><Label>Website</Label><Input value={form.website} onChange={e => setForm(p => ({ ...p, website: e.target.value }))} placeholder="https://..." /></div>
+                <div><Label>Contact Person</Label><Input value={form.contact_person} onChange={e => setForm(p => ({ ...p, contact_person: e.target.value }))} /></div>
+                <div><Label>Contact Email</Label><Input type="email" value={form.contact_email} onChange={e => setForm(p => ({ ...p, contact_email: e.target.value }))} /></div>
+                <div><Label>Contact Phone</Label><Input value={form.contact_phone} onChange={e => setForm(p => ({ ...p, contact_phone: e.target.value }))} /></div>
+                <div><Label>Commission Rate (%)</Label><Input type="number" value={form.commission_rate} onChange={e => setForm(p => ({ ...p, commission_rate: e.target.value }))} /></div>
+                <div><Label>Ranking</Label><Input type="number" value={form.ranking} onChange={e => setForm(p => ({ ...p, ranking: e.target.value }))} /></div>
+                <div><Label>Type</Label><Select value={form.type} onValueChange={v => setForm(p => ({ ...p, type: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="public">Public</SelectItem><SelectItem value="private">Private</SelectItem><SelectItem value="college">College</SelectItem></SelectContent></Select></div>
+                <div><Label>Partnership</Label><Select value={form.partnership_status} onValueChange={v => setForm(p => ({ ...p, partnership_status: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="pending">Pending</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select></div>
+                <div className="sm:col-span-2"><Label>Notes</Label><Textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} /></div>
+              </div>
+              <div className="flex justify-end gap-2 mt-4"><Button variant="outline" onClick={closeDialog}>Cancel</Button><Button onClick={() => upsert.mutate()} disabled={!form.name || upsert.isPending}>{editId ? "Update" : "Add"}</Button></div>
+            </DialogContent>
+          </Dialog>
         </div>
+
+        <EducaAdvancedSearch module="universities" fields={FILTER_FIELDS} filters={filters} onFiltersChange={setFilters} search={search} onSearchChange={setSearch} />
+
         <Card><CardContent className="p-0">
           {isLoading ? <div className="p-8 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div> : filtered.length === 0 ? <div className="p-8 text-center text-muted-foreground">No universities found</div> : (
             <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Country</TableHead><TableHead>City</TableHead><TableHead>Type</TableHead><TableHead>Commission</TableHead><TableHead>Ranking</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>

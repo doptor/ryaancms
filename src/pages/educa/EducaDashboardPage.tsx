@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -6,9 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { GraduationCap, Users, Building2, BookOpen, FileText, Plane, DollarSign, TrendingUp, UserPlus, Award, Globe, BarChart3, FolderOpen, Settings, ArrowRight, Clock, CheckCircle, AlertTriangle } from "lucide-react";
+import { GraduationCap, Users, Building2, BookOpen, FileText, Plane, DollarSign, TrendingUp, UserPlus, Award, Globe, BarChart3, FolderOpen, Settings, ArrowRight, Clock, CheckCircle, AlertTriangle, Search } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
 import { format, subDays, isAfter } from "date-fns";
+import EducaGlobalSearch from "@/components/educa/EducaGlobalSearch";
 
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4", "#84cc16"];
 
