@@ -78,6 +78,27 @@ export default function CRMDealsPage() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["crm-deals"] }); toast({ title: "Deal deleted" }); },
   });
 
+  const generateInvoice = useMutation({
+    mutationFn: async (deal: any) => {
+      const invNum = `INV-DEAL-${Date.now().toString(36).toUpperCase()}`;
+      const { error } = await supabase.from("ac_invoices").insert({
+        invoice_number: invNum,
+        issue_date: format(new Date(), "yyyy-MM-dd"),
+        due_date: format(new Date(Date.now() + 30 * 86400000), "yyyy-MM-dd"),
+        subtotal: Number(deal.value ?? 0),
+        total_amount: Number(deal.value ?? 0),
+        amount_due: Number(deal.value ?? 0),
+        amount_paid: 0,
+        status: "draft",
+        notes: `Auto-generated from Deal: ${deal.title}`,
+        user_id: user!.id,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => { toast({ title: "Invoice generated from deal", description: "Check Accounting → Invoices" }); },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
   const resetForm = () => { setForm(emptyForm); setEditId(null); setOpen(false); };
 
   const openEdit = (d: any) => {
