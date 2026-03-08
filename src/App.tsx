@@ -87,6 +87,8 @@ import EducaCommissionsPage from "./pages/educa/EducaCommissionsPage";
 import EducaScholarshipsPage from "./pages/educa/EducaScholarshipsPage";
 import EducaLeadsPage from "./pages/educa/EducaLeadsPage";
 import EducaReportsPage from "./pages/educa/EducaReportsPage";
+import EducaDocumentsPage from "./pages/educa/EducaDocumentsPage";
+import EducaSettingsPage from "./pages/educa/EducaSettingsPage";
 const queryClient = new QueryClient();
 
 const AppContent = () => {
