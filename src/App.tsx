@@ -36,6 +36,15 @@ import PaymentListPage from "./pages/accounting/PaymentListPage";
 import ProfitLossPage from "./pages/accounting/ProfitLossPage";
 import BalanceSheetPage from "./pages/accounting/BalanceSheetPage";
 import CashFlowPage from "./pages/accounting/CashFlowPage";
+import CRMDashboardPage from "./pages/crm/CRMDashboardPage";
+import CRMLeadsPage from "./pages/crm/CRMLeadsPage";
+import CRMContactsPage from "./pages/crm/CRMContactsPage";
+import CRMCompaniesPage from "./pages/crm/CRMCompaniesPage";
+import CRMDealsPage from "./pages/crm/CRMDealsPage";
+import CRMActivitiesPage from "./pages/crm/CRMActivitiesPage";
+import CRMCampaignsPage from "./pages/crm/CRMCampaignsPage";
+import CRMTicketsPage from "./pages/crm/CRMTicketsPage";
+import CRMReportsPage from "./pages/crm/CRMReportsPage";
 
 const queryClient = new QueryClient();
 
