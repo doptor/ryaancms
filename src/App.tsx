@@ -63,6 +63,8 @@ const AppContent = () => {
         <Route path="/dashboard/accounting/accounts" element={<ProtectedRoute><ChartOfAccountsPage /></ProtectedRoute>} />
         <Route path="/dashboard/accounting/income" element={<ProtectedRoute><IncomeListPage /></ProtectedRoute>} />
         <Route path="/dashboard/accounting/expenses" element={<ProtectedRoute><ExpenseListPage /></ProtectedRoute>} />
+        <Route path="/dashboard/accounting/invoices" element={<ProtectedRoute><InvoiceListPage /></ProtectedRoute>} />
+        <Route path="/dashboard/accounting/payments" element={<ProtectedRoute><PaymentListPage /></ProtectedRoute>} />
         <Route path="/preview" element={<PreviewPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
