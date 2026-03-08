@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Users, CalendarDays, DollarSign, Briefcase, ArrowRight, UserPlus, Clock, FileText, Calendar } from "lucide-react";
+import { Users, CalendarDays, DollarSign, Briefcase, ArrowRight, UserPlus, Clock, FileText, Calendar, Award, GraduationCap, CalendarRange, ClipboardList } from "lucide-react";
 import { BarChart, Bar, PieChart as RPieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from "recharts";
 
 const CHART_COLORS = ["#3b82f6", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
