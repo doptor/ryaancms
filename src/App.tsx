@@ -80,6 +80,15 @@ const AppContent = () => {
         <Route path="/dashboard/accounting/profit-loss" element={<ProtectedRoute><ProfitLossPage /></ProtectedRoute>} />
         <Route path="/dashboard/accounting/balance-sheet" element={<ProtectedRoute><BalanceSheetPage /></ProtectedRoute>} />
         <Route path="/dashboard/accounting/cash-flow" element={<ProtectedRoute><CashFlowPage /></ProtectedRoute>} />
+        <Route path="/dashboard/crm" element={<ProtectedRoute><CRMDashboardPage /></ProtectedRoute>} />
+        <Route path="/dashboard/crm/leads" element={<ProtectedRoute><CRMLeadsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/crm/contacts" element={<ProtectedRoute><CRMContactsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/crm/companies" element={<ProtectedRoute><CRMCompaniesPage /></ProtectedRoute>} />
+        <Route path="/dashboard/crm/deals" element={<ProtectedRoute><CRMDealsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/crm/activities" element={<ProtectedRoute><CRMActivitiesPage /></ProtectedRoute>} />
+        <Route path="/dashboard/crm/campaigns" element={<ProtectedRoute><CRMCampaignsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/crm/tickets" element={<ProtectedRoute><CRMTicketsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/crm/reports" element={<ProtectedRoute><CRMReportsPage /></ProtectedRoute>} />
         <Route path="/preview" element={<PreviewPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
