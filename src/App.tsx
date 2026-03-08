@@ -36,6 +36,8 @@ import PaymentListPage from "./pages/accounting/PaymentListPage";
 import ProfitLossPage from "./pages/accounting/ProfitLossPage";
 import BalanceSheetPage from "./pages/accounting/BalanceSheetPage";
 import CashFlowPage from "./pages/accounting/CashFlowPage";
+import VendorListPage from "./pages/accounting/VendorListPage";
+import CustomerListPage from "./pages/accounting/CustomerListPage";
 import CRMDashboardPage from "./pages/crm/CRMDashboardPage";
 import CRMLeadsPage from "./pages/crm/CRMLeadsPage";
 import CRMContactsPage from "./pages/crm/CRMContactsPage";
