@@ -14,6 +14,321 @@ export type Database = {
   }
   public: {
     Tables: {
+      ac_accounts: {
+        Row: {
+          category: string | null
+          code: string
+          company_id: string | null
+          created_at: string
+          currency_code: string | null
+          current_balance: number | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          is_system: boolean | null
+          name: string
+          opening_balance: number | null
+          parent_id: string | null
+          type: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          code: string
+          company_id?: string | null
+          created_at?: string
+          currency_code?: string | null
+          current_balance?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_system?: boolean | null
+          name: string
+          opening_balance?: number | null
+          parent_id?: string | null
+          type?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          code?: string
+          company_id?: string | null
+          created_at?: string
+          currency_code?: string | null
+          current_balance?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_system?: boolean | null
+          name?: string
+          opening_balance?: number | null
+          parent_id?: string | null
+          type?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ac_accounts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "ac_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ac_accounts_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "ac_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ac_companies: {
+        Row: {
+          address: string | null
+          created_at: string
+          currency_code: string | null
+          email: string | null
+          fiscal_year_start: string | null
+          id: string
+          is_active: boolean | null
+          logo: string | null
+          name: string
+          phone: string | null
+          tax_number: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          currency_code?: string | null
+          email?: string | null
+          fiscal_year_start?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo?: string | null
+          name: string
+          phone?: string | null
+          tax_number?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          currency_code?: string | null
+          email?: string | null
+          fiscal_year_start?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo?: string | null
+          name?: string
+          phone?: string | null
+          tax_number?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      ac_currencies: {
+        Row: {
+          code: string
+          created_at: string
+          exchange_rate: number | null
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          name: string
+          symbol: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          exchange_rate?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          name: string
+          symbol: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          exchange_rate?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          name?: string
+          symbol?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ac_customers: {
+        Row: {
+          address: string | null
+          company_id: string | null
+          created_at: string
+          currency_code: string | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          outstanding_balance: number | null
+          phone: string | null
+          tax_number: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          company_id?: string | null
+          created_at?: string
+          currency_code?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          outstanding_balance?: number | null
+          phone?: string | null
+          tax_number?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          company_id?: string | null
+          created_at?: string
+          currency_code?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          outstanding_balance?: number | null
+          phone?: string | null
+          tax_number?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ac_customers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "ac_companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ac_tax_rates: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          is_compound: boolean | null
+          name: string
+          rate: number
+          type: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          is_compound?: boolean | null
+          name: string
+          rate: number
+          type?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          is_compound?: boolean | null
+          name?: string
+          rate?: number
+          type?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ac_tax_rates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "ac_companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ac_vendors: {
+        Row: {
+          address: string | null
+          company_id: string | null
+          created_at: string
+          currency_code: string | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          outstanding_balance: number | null
+          phone: string | null
+          tax_number: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          company_id?: string | null
+          created_at?: string
+          currency_code?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          outstanding_balance?: number | null
+          phone?: string | null
+          tax_number?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          company_id?: string | null
+          created_at?: string
+          currency_code?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          outstanding_balance?: number | null
+          phone?: string | null
+          tax_number?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ac_vendors_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "ac_companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       build_analytics: {
         Row: {
           collection_count: number | null
