@@ -85,6 +85,8 @@ const AppContent = () => {
         <Route path="/dashboard/accounting/profit-loss" element={<ProtectedRoute><ProfitLossPage /></ProtectedRoute>} />
         <Route path="/dashboard/accounting/balance-sheet" element={<ProtectedRoute><BalanceSheetPage /></ProtectedRoute>} />
         <Route path="/dashboard/accounting/cash-flow" element={<ProtectedRoute><CashFlowPage /></ProtectedRoute>} />
+        <Route path="/dashboard/accounting/vendors" element={<ProtectedRoute><VendorListPage /></ProtectedRoute>} />
+        <Route path="/dashboard/accounting/customers" element={<ProtectedRoute><CustomerListPage /></ProtectedRoute>} />
         <Route path="/dashboard/crm" element={<ProtectedRoute><CRMDashboardPage /></ProtectedRoute>} />
         <Route path="/dashboard/crm/leads" element={<ProtectedRoute><CRMLeadsPage /></ProtectedRoute>} />
         <Route path="/dashboard/crm/contacts" element={<ProtectedRoute><CRMContactsPage /></ProtectedRoute>} />
