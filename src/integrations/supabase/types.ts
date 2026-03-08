@@ -226,6 +226,262 @@ export type Database = {
           },
         ]
       }
+      ac_expense_categories: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ac_expense_categories_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "ac_companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ac_expenses: {
+        Row: {
+          account_id: string | null
+          amount: number
+          approval_status: string | null
+          approved_at: string | null
+          approved_by: string | null
+          category_id: string | null
+          company_id: string | null
+          created_at: string
+          currency_code: string | null
+          description: string | null
+          expense_date: string
+          id: string
+          is_billable: boolean | null
+          is_recurring: boolean | null
+          payment_method: string | null
+          receipt_path: string | null
+          recurring_frequency: string | null
+          reference: string | null
+          rejection_reason: string | null
+          submitted_by: string
+          tax_amount: number | null
+          tax_rate_id: string | null
+          updated_at: string
+          user_id: string
+          vendor_id: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          category_id?: string | null
+          company_id?: string | null
+          created_at?: string
+          currency_code?: string | null
+          description?: string | null
+          expense_date: string
+          id?: string
+          is_billable?: boolean | null
+          is_recurring?: boolean | null
+          payment_method?: string | null
+          receipt_path?: string | null
+          recurring_frequency?: string | null
+          reference?: string | null
+          rejection_reason?: string | null
+          submitted_by: string
+          tax_amount?: number | null
+          tax_rate_id?: string | null
+          updated_at?: string
+          user_id: string
+          vendor_id?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          category_id?: string | null
+          company_id?: string | null
+          created_at?: string
+          currency_code?: string | null
+          description?: string | null
+          expense_date?: string
+          id?: string
+          is_billable?: boolean | null
+          is_recurring?: boolean | null
+          payment_method?: string | null
+          receipt_path?: string | null
+          recurring_frequency?: string | null
+          reference?: string | null
+          rejection_reason?: string | null
+          submitted_by?: string
+          tax_amount?: number | null
+          tax_rate_id?: string | null
+          updated_at?: string
+          user_id?: string
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ac_expenses_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "ac_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ac_expenses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "ac_expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ac_expenses_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "ac_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ac_expenses_tax_rate_id_fkey"
+            columns: ["tax_rate_id"]
+            isOneToOne: false
+            referencedRelation: "ac_tax_rates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ac_expenses_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "ac_vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ac_income: {
+        Row: {
+          account_id: string | null
+          amount: number
+          attachment: string | null
+          category: string | null
+          company_id: string | null
+          created_at: string
+          currency_code: string | null
+          customer_id: string | null
+          description: string | null
+          id: string
+          income_date: string
+          is_recurring: boolean | null
+          payment_method: string | null
+          recurring_frequency: string | null
+          reference: string | null
+          tax_amount: number | null
+          tax_rate_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          attachment?: string | null
+          category?: string | null
+          company_id?: string | null
+          created_at?: string
+          currency_code?: string | null
+          customer_id?: string | null
+          description?: string | null
+          id?: string
+          income_date: string
+          is_recurring?: boolean | null
+          payment_method?: string | null
+          recurring_frequency?: string | null
+          reference?: string | null
+          tax_amount?: number | null
+          tax_rate_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          attachment?: string | null
+          category?: string | null
+          company_id?: string | null
+          created_at?: string
+          currency_code?: string | null
+          customer_id?: string | null
+          description?: string | null
+          id?: string
+          income_date?: string
+          is_recurring?: boolean | null
+          payment_method?: string | null
+          recurring_frequency?: string | null
+          reference?: string | null
+          tax_amount?: number | null
+          tax_rate_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ac_income_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "ac_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ac_income_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "ac_companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ac_income_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "ac_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ac_income_tax_rate_id_fkey"
+            columns: ["tax_rate_id"]
+            isOneToOne: false
+            referencedRelation: "ac_tax_rates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ac_tax_rates: {
         Row: {
           company_id: string | null
