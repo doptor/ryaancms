@@ -45,13 +45,26 @@ export default function CommCampaignsPage() {
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      if (status === "active") {
+        // Launch campaign via edge function
+        const { data, error } = await supabase.functions.invoke("comm-campaign", {
+          body: { action: "start-campaign", campaign_id: id },
+        });
+        if (error) throw error;
+        if (!data?.success) throw new Error(data?.error || "Campaign launch failed");
+        return;
+      }
+      if (status === "paused") {
+        await supabase.functions.invoke("comm-campaign", { body: { action: "pause-campaign", campaign_id: id } });
+        return;
+      }
       const updates: any = { status };
-      if (status === "active") updates.started_at = new Date().toISOString();
       if (status === "completed") updates.completed_at = new Date().toISOString();
       const { error } = await supabase.from("comm_campaigns").update(updates).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["comm_campaigns"] }); toast({ title: "Campaign status updated" }); },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const deleteMut = useMutation({
