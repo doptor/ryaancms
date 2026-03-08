@@ -26,6 +26,7 @@ import PreviewPage from "./pages/PreviewPage";
 import PluginApprovalsPage from "./pages/PluginApprovalsPage";
 import FinanceDashboardPage from "./pages/FinanceDashboardPage";
 import DeveloperKeysPage from "./pages/DeveloperKeysPage";
+import AccountingSRSPage from "./pages/AccountingSRSPage";
 
 const queryClient = new QueryClient();
 
