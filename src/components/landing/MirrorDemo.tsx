@@ -144,4 +144,6 @@ const MirrorDemo = forwardRef<HTMLDivElement>(function MirrorDemo(_props, ref) {
       </div>
     </div>
   );
-}
+});
+
+export default MirrorDemo;

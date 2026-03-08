@@ -140,4 +140,6 @@ const PulseDemo = forwardRef<HTMLDivElement>(function PulseDemo(_props, ref) {
       </div>
     </div>
   );
-}
+});
+
+export default PulseDemo;

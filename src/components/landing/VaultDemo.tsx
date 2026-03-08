@@ -141,4 +141,6 @@ const VaultDemo = forwardRef<HTMLDivElement>(function VaultDemo(_props, ref) {
       </div>
     </div>
   );
-}
+});
+
+export default VaultDemo;
