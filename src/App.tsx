@@ -36,6 +36,15 @@ import PaymentListPage from "./pages/accounting/PaymentListPage";
 import ProfitLossPage from "./pages/accounting/ProfitLossPage";
 import BalanceSheetPage from "./pages/accounting/BalanceSheetPage";
 import CashFlowPage from "./pages/accounting/CashFlowPage";
+import CRMDashboardPage from "./pages/crm/CRMDashboardPage";
+import CRMLeadsPage from "./pages/crm/CRMLeadsPage";
+import CRMContactsPage from "./pages/crm/CRMContactsPage";
+import CRMCompaniesPage from "./pages/crm/CRMCompaniesPage";
+import CRMDealsPage from "./pages/crm/CRMDealsPage";
+import CRMActivitiesPage from "./pages/crm/CRMActivitiesPage";
+import CRMCampaignsPage from "./pages/crm/CRMCampaignsPage";
+import CRMTicketsPage from "./pages/crm/CRMTicketsPage";
+import CRMReportsPage from "./pages/crm/CRMReportsPage";
 
 const queryClient = new QueryClient();
 
@@ -71,6 +80,15 @@ const AppContent = () => {
         <Route path="/dashboard/accounting/profit-loss" element={<ProtectedRoute><ProfitLossPage /></ProtectedRoute>} />
         <Route path="/dashboard/accounting/balance-sheet" element={<ProtectedRoute><BalanceSheetPage /></ProtectedRoute>} />
         <Route path="/dashboard/accounting/cash-flow" element={<ProtectedRoute><CashFlowPage /></ProtectedRoute>} />
+        <Route path="/dashboard/crm" element={<ProtectedRoute><CRMDashboardPage /></ProtectedRoute>} />
+        <Route path="/dashboard/crm/leads" element={<ProtectedRoute><CRMLeadsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/crm/contacts" element={<ProtectedRoute><CRMContactsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/crm/companies" element={<ProtectedRoute><CRMCompaniesPage /></ProtectedRoute>} />
+        <Route path="/dashboard/crm/deals" element={<ProtectedRoute><CRMDealsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/crm/activities" element={<ProtectedRoute><CRMActivitiesPage /></ProtectedRoute>} />
+        <Route path="/dashboard/crm/campaigns" element={<ProtectedRoute><CRMCampaignsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/crm/tickets" element={<ProtectedRoute><CRMTicketsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/crm/reports" element={<ProtectedRoute><CRMReportsPage /></ProtectedRoute>} />
         <Route path="/preview" element={<PreviewPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
