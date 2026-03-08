@@ -87,6 +87,8 @@ import EducaCommissionsPage from "./pages/educa/EducaCommissionsPage";
 import EducaScholarshipsPage from "./pages/educa/EducaScholarshipsPage";
 import EducaLeadsPage from "./pages/educa/EducaLeadsPage";
 import EducaReportsPage from "./pages/educa/EducaReportsPage";
+import EducaDocumentsPage from "./pages/educa/EducaDocumentsPage";
+import EducaSettingsPage from "./pages/educa/EducaSettingsPage";
 const queryClient = new QueryClient();
 
 const AppContent = () => {
@@ -172,6 +174,8 @@ const AppContent = () => {
         <Route path="/dashboard/educa/scholarships" element={<ProtectedRoute><EducaScholarshipsPage /></ProtectedRoute>} />
         <Route path="/dashboard/educa/leads" element={<ProtectedRoute><EducaLeadsPage /></ProtectedRoute>} />
         <Route path="/dashboard/educa/reports" element={<ProtectedRoute><EducaReportsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/educa/documents" element={<ProtectedRoute><EducaDocumentsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/educa/settings" element={<ProtectedRoute><EducaSettingsPage /></ProtectedRoute>} />
         <Route path="/preview" element={<PreviewPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
