@@ -311,7 +311,7 @@ export default function CommIVRPage() {
 
               <Dialog open={addNodeOpen} onOpenChange={setAddNodeOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="dashed" className="w-full border-dashed border-2">
+                  <Button variant="outline" className="w-full border-dashed border-2">
                     <Plus className="w-4 h-4 mr-2" />Add Node
                   </Button>
                 </DialogTrigger>
