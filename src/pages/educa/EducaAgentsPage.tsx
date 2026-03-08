@@ -13,10 +13,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Users, Search, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Plus, Users, Pencil, Trash2, Loader2 } from "lucide-react";
+import EducaAdvancedSearch, { FilterField } from "@/components/educa/EducaAdvancedSearch";
 
 const STATUSES = ["pending", "approved", "suspended", "terminated"];
 const emptyForm = { name: "", company: "", email: "", phone: "", country: "", commission_rate: "10", status: "pending", contract_start: "", contract_end: "", notes: "" };
+
+const FILTER_FIELDS: FilterField[] = [
+  { key: "status", label: "Status", type: "select", options: STATUSES.map(s => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) })) },
+  { key: "country", label: "Country", type: "text", placeholder: "e.g. India" },
+  { key: "min_commission", label: "Min Commission %", type: "number", placeholder: "0" },
+  { key: "date_from", label: "Joined After", type: "date" },
+];
 
 export default function EducaAgentsPage() {
   const { user } = useAuth();
@@ -24,6 +32,7 @@ export default function EducaAgentsPage() {
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [filters, setFilters] = useState<Record<string, string>>({});
   const [form, setForm] = useState(emptyForm);
 
   const { data: agents, isLoading } = useQuery({
@@ -48,7 +57,15 @@ export default function EducaAgentsPage() {
   const closeDialog = () => { setOpen(false); setEditId(null); setForm(emptyForm); };
   const openEdit = (a: any) => { setEditId(a.id); setForm({ name: a.name, company: a.company || "", email: a.email || "", phone: a.phone || "", country: a.country || "", commission_rate: a.commission_rate?.toString() || "10", status: a.status || "pending", contract_start: a.contract_start || "", contract_end: a.contract_end || "", notes: a.notes || "" }); setOpen(true); };
 
-  const filtered = (agents ?? []).filter(a => { const q = search.toLowerCase(); return !q || a.name.toLowerCase().includes(q) || (a.company || "").toLowerCase().includes(q) || (a.country || "").toLowerCase().includes(q); });
+  const filtered = (agents ?? []).filter(a => {
+    const q = search.toLowerCase();
+    if (q && !a.name.toLowerCase().includes(q) && !(a.company || "").toLowerCase().includes(q) && !(a.country || "").toLowerCase().includes(q)) return false;
+    if (filters.status && filters.status !== "all" && a.status !== filters.status) return false;
+    if (filters.country && !(a.country || "").toLowerCase().includes(filters.country.toLowerCase())) return false;
+    if (filters.min_commission && (a.commission_rate || 0) < parseFloat(filters.min_commission)) return false;
+    if (filters.date_from && new Date(a.created_at) < new Date(filters.date_from)) return false;
+    return true;
+  });
 
   const statusColor = (s: string) => s === "approved" ? "secondary" : s === "pending" ? "outline" : "destructive";
 
@@ -56,30 +73,30 @@ export default function EducaAgentsPage() {
     <DashboardLayout>
       <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div><h1 className="text-2xl font-bold flex items-center gap-2"><Users className="w-6 h-6 text-primary" /> Agents</h1><p className="text-muted-foreground">Manage recruitment agents</p></div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <div className="relative flex-1 sm:flex-initial"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 w-full sm:w-64" /></div>
-            <Dialog open={open} onOpenChange={v => { if (!v) closeDialog(); else setOpen(true); }}>
-              <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-1" />Add Agent</Button></DialogTrigger>
-              <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-                <DialogHeader><DialogTitle>{editId ? "Edit Agent" : "Add Agent"}</DialogTitle></DialogHeader>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} /></div>
-                  <div><Label>Company</Label><Input value={form.company} onChange={e => setForm(p => ({ ...p, company: e.target.value }))} /></div>
-                  <div><Label>Email</Label><Input type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} /></div>
-                  <div><Label>Phone</Label><Input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
-                  <div><Label>Country</Label><Input value={form.country} onChange={e => setForm(p => ({ ...p, country: e.target.value }))} /></div>
-                  <div><Label>Commission Rate (%)</Label><Input type="number" value={form.commission_rate} onChange={e => setForm(p => ({ ...p, commission_rate: e.target.value }))} /></div>
-                  <div><Label>Status</Label><Select value={form.status} onValueChange={v => setForm(p => ({ ...p, status: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>)}</SelectContent></Select></div>
-                  <div><Label>Contract Start</Label><Input type="date" value={form.contract_start} onChange={e => setForm(p => ({ ...p, contract_start: e.target.value }))} /></div>
-                  <div><Label>Contract End</Label><Input type="date" value={form.contract_end} onChange={e => setForm(p => ({ ...p, contract_end: e.target.value }))} /></div>
-                  <div className="sm:col-span-2"><Label>Notes</Label><Textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} /></div>
-                </div>
-                <div className="flex justify-end gap-2 mt-4"><Button variant="outline" onClick={closeDialog}>Cancel</Button><Button onClick={() => upsert.mutate()} disabled={!form.name || upsert.isPending}>{editId ? "Update" : "Add"}</Button></div>
-              </DialogContent>
-            </Dialog>
-          </div>
+          <div><h1 className="text-2xl font-bold flex items-center gap-2"><Users className="w-6 h-6 text-primary" /> Agents</h1><p className="text-muted-foreground">Manage recruitment agents · {filtered.length} results</p></div>
+          <Dialog open={open} onOpenChange={v => { if (!v) closeDialog(); else setOpen(true); }}>
+            <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-1" />Add Agent</Button></DialogTrigger>
+            <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+              <DialogHeader><DialogTitle>{editId ? "Edit Agent" : "Add Agent"}</DialogTitle></DialogHeader>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div><Label>Name *</Label><Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} /></div>
+                <div><Label>Company</Label><Input value={form.company} onChange={e => setForm(p => ({ ...p, company: e.target.value }))} /></div>
+                <div><Label>Email</Label><Input type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} /></div>
+                <div><Label>Phone</Label><Input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
+                <div><Label>Country</Label><Input value={form.country} onChange={e => setForm(p => ({ ...p, country: e.target.value }))} /></div>
+                <div><Label>Commission Rate (%)</Label><Input type="number" value={form.commission_rate} onChange={e => setForm(p => ({ ...p, commission_rate: e.target.value }))} /></div>
+                <div><Label>Status</Label><Select value={form.status} onValueChange={v => setForm(p => ({ ...p, status: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>)}</SelectContent></Select></div>
+                <div><Label>Contract Start</Label><Input type="date" value={form.contract_start} onChange={e => setForm(p => ({ ...p, contract_start: e.target.value }))} /></div>
+                <div><Label>Contract End</Label><Input type="date" value={form.contract_end} onChange={e => setForm(p => ({ ...p, contract_end: e.target.value }))} /></div>
+                <div className="sm:col-span-2"><Label>Notes</Label><Textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} /></div>
+              </div>
+              <div className="flex justify-end gap-2 mt-4"><Button variant="outline" onClick={closeDialog}>Cancel</Button><Button onClick={() => upsert.mutate()} disabled={!form.name || upsert.isPending}>{editId ? "Update" : "Add"}</Button></div>
+            </DialogContent>
+          </Dialog>
         </div>
+
+        <EducaAdvancedSearch module="agents" fields={FILTER_FIELDS} filters={filters} onFiltersChange={setFilters} search={search} onSearchChange={setSearch} />
+
         <Card><CardContent className="p-0">
           {isLoading ? <div className="p-8 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div> : filtered.length === 0 ? <div className="p-8 text-center text-muted-foreground">No agents found</div> : (
             <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Company</TableHead><TableHead>Country</TableHead><TableHead>Commission</TableHead><TableHead>Students</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
