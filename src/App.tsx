@@ -45,6 +45,9 @@ import CRMActivitiesPage from "./pages/crm/CRMActivitiesPage";
 import CRMCampaignsPage from "./pages/crm/CRMCampaignsPage";
 import CRMTicketsPage from "./pages/crm/CRMTicketsPage";
 import CRMReportsPage from "./pages/crm/CRMReportsPage";
+import CRMPipelinePage from "./pages/crm/CRMPipelinePage";
+import CRMAIAssistantPage from "./pages/crm/CRMAIAssistantPage";
+import CRMEmailsPage from "./pages/crm/CRMEmailsPage";
 
 const queryClient = new QueryClient();
 
