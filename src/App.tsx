@@ -50,6 +50,15 @@ import CRMReportsPage from "./pages/crm/CRMReportsPage";
 import CRMPipelinePage from "./pages/crm/CRMPipelinePage";
 import CRMAIAssistantPage from "./pages/crm/CRMAIAssistantPage";
 import CRMEmailsPage from "./pages/crm/CRMEmailsPage";
+import HRDashboardPage from "./pages/hr/HRDashboardPage";
+import HREmployeesPage from "./pages/hr/HREmployeesPage";
+import HRDepartmentsPage from "./pages/hr/HRDepartmentsPage";
+import HRAttendancePage from "./pages/hr/HRAttendancePage";
+import HRLeavePage from "./pages/hr/HRLeavePage";
+import HRHolidaysPage from "./pages/hr/HRHolidaysPage";
+import HRPayrollPage from "./pages/hr/HRPayrollPage";
+import HRRecruitmentPage from "./pages/hr/HRRecruitmentPage";
+import HRApplicantsPage from "./pages/hr/HRApplicantsPage";
 
 const queryClient = new QueryClient();
 
@@ -99,6 +108,15 @@ const AppContent = () => {
         <Route path="/dashboard/crm/pipeline" element={<ProtectedRoute><CRMPipelinePage /></ProtectedRoute>} />
         <Route path="/dashboard/crm/ai-assistant" element={<ProtectedRoute><CRMAIAssistantPage /></ProtectedRoute>} />
         <Route path="/dashboard/crm/emails" element={<ProtectedRoute><CRMEmailsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/hr" element={<ProtectedRoute><HRDashboardPage /></ProtectedRoute>} />
+        <Route path="/dashboard/hr/employees" element={<ProtectedRoute><HREmployeesPage /></ProtectedRoute>} />
+        <Route path="/dashboard/hr/departments" element={<ProtectedRoute><HRDepartmentsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/hr/attendance" element={<ProtectedRoute><HRAttendancePage /></ProtectedRoute>} />
+        <Route path="/dashboard/hr/leave" element={<ProtectedRoute><HRLeavePage /></ProtectedRoute>} />
+        <Route path="/dashboard/hr/holidays" element={<ProtectedRoute><HRHolidaysPage /></ProtectedRoute>} />
+        <Route path="/dashboard/hr/payroll" element={<ProtectedRoute><HRPayrollPage /></ProtectedRoute>} />
+        <Route path="/dashboard/hr/recruitment" element={<ProtectedRoute><HRRecruitmentPage /></ProtectedRoute>} />
+        <Route path="/dashboard/hr/applicants" element={<ProtectedRoute><HRApplicantsPage /></ProtectedRoute>} />
         <Route path="/preview" element={<PreviewPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
