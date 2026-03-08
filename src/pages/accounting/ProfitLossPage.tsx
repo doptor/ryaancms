@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { TrendingUp, TrendingDown, DollarSign, Calendar } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, Calendar, Download } from "lucide-react";
+import { exportToPdf, fmtCurrency } from "@/lib/accounting/pdf-export";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 
 const ProfitLossPage = () => {
