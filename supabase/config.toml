@@ -38,3 +38,9 @@ verify_jwt = false
 
 [functions.comm-ai-voice]
 verify_jwt = false
+
+[functions.comm-whatsapp-webhook]
+verify_jwt = false
+
+[functions.comm-call-webhook]
+verify_jwt = false

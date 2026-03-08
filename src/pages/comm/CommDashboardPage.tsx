@@ -6,7 +6,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Phone, MessageSquare, Users, BarChart3, ArrowRight, PhoneCall, PhoneIncoming, PhoneOutgoing, Bot, Megaphone, UserCog, FileText, Settings, Headphones, ClipboardList } from "lucide-react";
+import { Phone, MessageSquare, Users, BarChart3, ArrowRight, PhoneCall, PhoneIncoming, PhoneOutgoing, Bot, Megaphone, UserCog, FileText, Settings, Headphones, ClipboardList, GitBranch, Bell } from "lucide-react";
 
 const NAV_SECTIONS = [
   {
@@ -16,6 +16,7 @@ const NAV_SECTIONS = [
       { label: "Voice Calls", path: "/dashboard/comm/calls", icon: Phone, color: "text-green-600" },
       { label: "WhatsApp Chats", path: "/dashboard/comm/whatsapp", icon: MessageSquare, color: "text-emerald-600" },
       { label: "Call Center", path: "/dashboard/comm/call-center", icon: Headphones, color: "text-purple-600" },
+      { label: "Notifications", path: "/dashboard/comm/notifications", icon: Bell, color: "text-rose-600" },
     ],
   },
   {
@@ -23,6 +24,7 @@ const NAV_SECTIONS = [
     items: [
       { label: "Campaigns", path: "/dashboard/comm/campaigns", icon: Megaphone, color: "text-orange-600" },
       { label: "AI Scripts", path: "/dashboard/comm/scripts", icon: Bot, color: "text-cyan-600" },
+      { label: "IVR Builder", path: "/dashboard/comm/ivr", icon: GitBranch, color: "text-teal-600" },
       { label: "Agents", path: "/dashboard/comm/agents", icon: UserCog, color: "text-indigo-600" },
     ],
   },
