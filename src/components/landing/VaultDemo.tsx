@@ -45,7 +45,7 @@ const typeColors: Record<string, string> = {
   plugin: "bg-accent text-accent-foreground",
 };
 
-export default function VaultDemo() {
+const VaultDemo = forwardRef<HTMLDivElement>(function VaultDemo(_props, ref) {
   const [selected, setSelected] = useState<string>("v6");
   const [rolledBack, setRolledBack] = useState(false);
 
