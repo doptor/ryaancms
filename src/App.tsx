@@ -174,6 +174,8 @@ const AppContent = () => {
         <Route path="/dashboard/educa/scholarships" element={<ProtectedRoute><EducaScholarshipsPage /></ProtectedRoute>} />
         <Route path="/dashboard/educa/leads" element={<ProtectedRoute><EducaLeadsPage /></ProtectedRoute>} />
         <Route path="/dashboard/educa/reports" element={<ProtectedRoute><EducaReportsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/educa/documents" element={<ProtectedRoute><EducaDocumentsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/educa/settings" element={<ProtectedRoute><EducaSettingsPage /></ProtectedRoute>} />
         <Route path="/preview" element={<PreviewPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
