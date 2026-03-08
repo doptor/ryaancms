@@ -31,6 +31,8 @@ import AccountingDashboardPage from "./pages/accounting/AccountingDashboardPage"
 import ChartOfAccountsPage from "./pages/accounting/ChartOfAccountsPage";
 import IncomeListPage from "./pages/accounting/IncomeListPage";
 import ExpenseListPage from "./pages/accounting/ExpenseListPage";
+import InvoiceListPage from "./pages/accounting/InvoiceListPage";
+import PaymentListPage from "./pages/accounting/PaymentListPage";
 
 const queryClient = new QueryClient();
 
@@ -61,6 +63,8 @@ const AppContent = () => {
         <Route path="/dashboard/accounting/accounts" element={<ProtectedRoute><ChartOfAccountsPage /></ProtectedRoute>} />
         <Route path="/dashboard/accounting/income" element={<ProtectedRoute><IncomeListPage /></ProtectedRoute>} />
         <Route path="/dashboard/accounting/expenses" element={<ProtectedRoute><ExpenseListPage /></ProtectedRoute>} />
+        <Route path="/dashboard/accounting/invoices" element={<ProtectedRoute><InvoiceListPage /></ProtectedRoute>} />
+        <Route path="/dashboard/accounting/payments" element={<ProtectedRoute><PaymentListPage /></ProtectedRoute>} />
         <Route path="/preview" element={<PreviewPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
