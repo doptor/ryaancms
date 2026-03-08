@@ -922,6 +922,517 @@ export type Database = {
           },
         ]
       }
+      comm_agents: {
+        Row: {
+          avatar_url: string | null
+          avg_handle_time: number | null
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean | null
+          max_concurrent_calls: number | null
+          name: string
+          phone: string | null
+          role: string | null
+          satisfaction_score: number | null
+          skills: string[] | null
+          status: string | null
+          total_calls: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          avg_handle_time?: number | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_concurrent_calls?: number | null
+          name: string
+          phone?: string | null
+          role?: string | null
+          satisfaction_score?: number | null
+          skills?: string[] | null
+          status?: string | null
+          total_calls?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          avg_handle_time?: number | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_concurrent_calls?: number | null
+          name?: string
+          phone?: string | null
+          role?: string | null
+          satisfaction_score?: number | null
+          skills?: string[] | null
+          status?: string | null
+          total_calls?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      comm_calls: {
+        Row: {
+          agent_id: string | null
+          ai_summary: string | null
+          answered_at: string | null
+          call_type: string | null
+          campaign_id: string | null
+          contact_id: string | null
+          cost: number | null
+          created_at: string
+          direction: string | null
+          duration: number | null
+          ended_at: string | null
+          from_number: string | null
+          id: string
+          notes: string | null
+          provider: string | null
+          provider_call_id: string | null
+          recording_url: string | null
+          script_id: string | null
+          sentiment: string | null
+          started_at: string | null
+          status: string | null
+          to_number: string | null
+          transcription: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          ai_summary?: string | null
+          answered_at?: string | null
+          call_type?: string | null
+          campaign_id?: string | null
+          contact_id?: string | null
+          cost?: number | null
+          created_at?: string
+          direction?: string | null
+          duration?: number | null
+          ended_at?: string | null
+          from_number?: string | null
+          id?: string
+          notes?: string | null
+          provider?: string | null
+          provider_call_id?: string | null
+          recording_url?: string | null
+          script_id?: string | null
+          sentiment?: string | null
+          started_at?: string | null
+          status?: string | null
+          to_number?: string | null
+          transcription?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          ai_summary?: string | null
+          answered_at?: string | null
+          call_type?: string | null
+          campaign_id?: string | null
+          contact_id?: string | null
+          cost?: number | null
+          created_at?: string
+          direction?: string | null
+          duration?: number | null
+          ended_at?: string | null
+          from_number?: string | null
+          id?: string
+          notes?: string | null
+          provider?: string | null
+          provider_call_id?: string | null
+          recording_url?: string | null
+          script_id?: string | null
+          sentiment?: string | null
+          started_at?: string | null
+          status?: string | null
+          to_number?: string | null
+          transcription?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comm_calls_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "comm_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comm_calls_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "comm_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comm_calls_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "comm_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comm_calls_script_id_fkey"
+            columns: ["script_id"]
+            isOneToOne: false
+            referencedRelation: "comm_scripts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comm_campaigns: {
+        Row: {
+          completed_at: string | null
+          contact_filter: Json | null
+          contacted: number | null
+          created_at: string
+          description: string | null
+          failed: number | null
+          id: string
+          name: string
+          scheduled_at: string | null
+          script_id: string | null
+          started_at: string | null
+          status: string | null
+          successful: number | null
+          total_contacts: number | null
+          type: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          contact_filter?: Json | null
+          contacted?: number | null
+          created_at?: string
+          description?: string | null
+          failed?: number | null
+          id?: string
+          name: string
+          scheduled_at?: string | null
+          script_id?: string | null
+          started_at?: string | null
+          status?: string | null
+          successful?: number | null
+          total_contacts?: number | null
+          type?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          contact_filter?: Json | null
+          contacted?: number | null
+          created_at?: string
+          description?: string | null
+          failed?: number | null
+          id?: string
+          name?: string
+          scheduled_at?: string | null
+          script_id?: string | null
+          started_at?: string | null
+          status?: string | null
+          successful?: number | null
+          total_contacts?: number | null
+          type?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comm_campaigns_script_id_fkey"
+            columns: ["script_id"]
+            isOneToOne: false
+            referencedRelation: "comm_scripts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comm_contacts: {
+        Row: {
+          company: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean | null
+          last_contacted_at: string | null
+          name: string
+          notes: string | null
+          phone: string | null
+          source: string | null
+          tags: string[] | null
+          total_calls: number | null
+          total_messages: number | null
+          updated_at: string
+          user_id: string
+          whatsapp_number: string | null
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_contacted_at?: string | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          source?: string | null
+          tags?: string[] | null
+          total_calls?: number | null
+          total_messages?: number | null
+          updated_at?: string
+          user_id: string
+          whatsapp_number?: string | null
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_contacted_at?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          source?: string | null
+          tags?: string[] | null
+          total_calls?: number | null
+          total_messages?: number | null
+          updated_at?: string
+          user_id?: string
+          whatsapp_number?: string | null
+        }
+        Relationships: []
+      }
+      comm_conversations: {
+        Row: {
+          assigned_agent_id: string | null
+          channel: string | null
+          contact_id: string | null
+          created_at: string
+          id: string
+          is_bot_active: boolean | null
+          last_message: string | null
+          last_message_at: string | null
+          status: string | null
+          tags: string[] | null
+          unread_count: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assigned_agent_id?: string | null
+          channel?: string | null
+          contact_id?: string | null
+          created_at?: string
+          id?: string
+          is_bot_active?: boolean | null
+          last_message?: string | null
+          last_message_at?: string | null
+          status?: string | null
+          tags?: string[] | null
+          unread_count?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assigned_agent_id?: string | null
+          channel?: string | null
+          contact_id?: string | null
+          created_at?: string
+          id?: string
+          is_bot_active?: boolean | null
+          last_message?: string | null
+          last_message_at?: string | null
+          status?: string | null
+          tags?: string[] | null
+          unread_count?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comm_conversations_assigned_agent_id_fkey"
+            columns: ["assigned_agent_id"]
+            isOneToOne: false
+            referencedRelation: "comm_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comm_conversations_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "comm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comm_scripts: {
+        Row: {
+          ai_model: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          language: string | null
+          name: string
+          steps: Json | null
+          type: string | null
+          updated_at: string
+          usage_count: number | null
+          user_id: string
+          voice_id: string | null
+        }
+        Insert: {
+          ai_model?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          language?: string | null
+          name: string
+          steps?: Json | null
+          type?: string | null
+          updated_at?: string
+          usage_count?: number | null
+          user_id: string
+          voice_id?: string | null
+        }
+        Update: {
+          ai_model?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          language?: string | null
+          name?: string
+          steps?: Json | null
+          type?: string | null
+          updated_at?: string
+          usage_count?: number | null
+          user_id?: string
+          voice_id?: string | null
+        }
+        Relationships: []
+      }
+      comm_settings: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          setting_key: string
+          setting_value: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          setting_key: string
+          setting_value?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          setting_key?: string
+          setting_value?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      comm_whatsapp_messages: {
+        Row: {
+          ai_generated: boolean | null
+          campaign_id: string | null
+          contact_id: string | null
+          content: string | null
+          created_at: string
+          delivered_at: string | null
+          direction: string | null
+          id: string
+          is_bot_response: boolean | null
+          media_url: string | null
+          message_type: string | null
+          provider_message_id: string | null
+          read_at: string | null
+          replied_at: string | null
+          status: string | null
+          template_name: string | null
+          user_id: string
+        }
+        Insert: {
+          ai_generated?: boolean | null
+          campaign_id?: string | null
+          contact_id?: string | null
+          content?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          direction?: string | null
+          id?: string
+          is_bot_response?: boolean | null
+          media_url?: string | null
+          message_type?: string | null
+          provider_message_id?: string | null
+          read_at?: string | null
+          replied_at?: string | null
+          status?: string | null
+          template_name?: string | null
+          user_id: string
+        }
+        Update: {
+          ai_generated?: boolean | null
+          campaign_id?: string | null
+          contact_id?: string | null
+          content?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          direction?: string | null
+          id?: string
+          is_bot_response?: boolean | null
+          media_url?: string | null
+          message_type?: string | null
+          provider_message_id?: string | null
+          read_at?: string | null
+          replied_at?: string | null
+          status?: string | null
+          template_name?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comm_whatsapp_messages_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "comm_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comm_whatsapp_messages_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "comm_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_activities: {
         Row: {
           assigned_to: string | null
