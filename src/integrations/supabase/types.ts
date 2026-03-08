@@ -2100,6 +2100,765 @@ export type Database = {
         }
         Relationships: []
       }
+      educa_agents: {
+        Row: {
+          commission_rate: number | null
+          company: string | null
+          contract_end: string | null
+          contract_start: string | null
+          country: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          notes: string | null
+          phone: string | null
+          status: string | null
+          total_commission: number | null
+          total_students: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          commission_rate?: number | null
+          company?: string | null
+          contract_end?: string | null
+          contract_start?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          status?: string | null
+          total_commission?: number | null
+          total_students?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          commission_rate?: number | null
+          company?: string | null
+          contract_end?: string | null
+          contract_start?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          status?: string | null
+          total_commission?: number | null
+          total_students?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      educa_applications: {
+        Row: {
+          accepted_at: string | null
+          agent_id: string | null
+          application_date: string | null
+          counsellor_id: string | null
+          course_id: string | null
+          created_at: string
+          id: string
+          intake: string | null
+          notes: string | null
+          offer_letter_url: string | null
+          offer_received_at: string | null
+          priority: string | null
+          rejected_reason: string | null
+          scholarship_amount: number | null
+          status: string | null
+          student_id: string | null
+          tuition_fee: number | null
+          university_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          agent_id?: string | null
+          application_date?: string | null
+          counsellor_id?: string | null
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          intake?: string | null
+          notes?: string | null
+          offer_letter_url?: string | null
+          offer_received_at?: string | null
+          priority?: string | null
+          rejected_reason?: string | null
+          scholarship_amount?: number | null
+          status?: string | null
+          student_id?: string | null
+          tuition_fee?: number | null
+          university_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          agent_id?: string | null
+          application_date?: string | null
+          counsellor_id?: string | null
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          intake?: string | null
+          notes?: string | null
+          offer_letter_url?: string | null
+          offer_received_at?: string | null
+          priority?: string | null
+          rejected_reason?: string | null
+          scholarship_amount?: number | null
+          status?: string | null
+          student_id?: string | null
+          tuition_fee?: number | null
+          university_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "educa_applications_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "educa_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "educa_applications_counsellor_id_fkey"
+            columns: ["counsellor_id"]
+            isOneToOne: false
+            referencedRelation: "educa_counsellors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "educa_applications_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "educa_courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "educa_applications_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "educa_students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "educa_applications_university_id_fkey"
+            columns: ["university_id"]
+            isOneToOne: false
+            referencedRelation: "educa_universities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      educa_commissions: {
+        Row: {
+          agent_id: string | null
+          amount: number | null
+          application_id: string | null
+          created_at: string
+          currency: string | null
+          due_date: string | null
+          id: string
+          invoice_number: string | null
+          notes: string | null
+          payment_date: string | null
+          status: string | null
+          student_id: string | null
+          type: string | null
+          university_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          amount?: number | null
+          application_id?: string | null
+          created_at?: string
+          currency?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_number?: string | null
+          notes?: string | null
+          payment_date?: string | null
+          status?: string | null
+          student_id?: string | null
+          type?: string | null
+          university_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          amount?: number | null
+          application_id?: string | null
+          created_at?: string
+          currency?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_number?: string | null
+          notes?: string | null
+          payment_date?: string | null
+          status?: string | null
+          student_id?: string | null
+          type?: string | null
+          university_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "educa_commissions_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "educa_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "educa_commissions_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "educa_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "educa_commissions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "educa_students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "educa_commissions_university_id_fkey"
+            columns: ["university_id"]
+            isOneToOne: false
+            referencedRelation: "educa_universities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      educa_counsellors: {
+        Row: {
+          assigned_students: number | null
+          created_at: string
+          email: string | null
+          id: string
+          max_students: number | null
+          name: string
+          notes: string | null
+          performance_score: number | null
+          phone: string | null
+          specialization: string | null
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assigned_students?: number | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          max_students?: number | null
+          name: string
+          notes?: string | null
+          performance_score?: number | null
+          phone?: string | null
+          specialization?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assigned_students?: number | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          max_students?: number | null
+          name?: string
+          notes?: string | null
+          performance_score?: number | null
+          phone?: string | null
+          specialization?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      educa_courses: {
+        Row: {
+          application_deadline: string | null
+          course_code: string | null
+          course_name: string
+          created_at: string
+          currency: string | null
+          description: string | null
+          duration: string | null
+          entry_requirements: string | null
+          id: string
+          ielts_requirement: number | null
+          intake: string | null
+          is_active: boolean | null
+          level: string | null
+          tuition_fee: number | null
+          university_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          application_deadline?: string | null
+          course_code?: string | null
+          course_name: string
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          duration?: string | null
+          entry_requirements?: string | null
+          id?: string
+          ielts_requirement?: number | null
+          intake?: string | null
+          is_active?: boolean | null
+          level?: string | null
+          tuition_fee?: number | null
+          university_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          application_deadline?: string | null
+          course_code?: string | null
+          course_name?: string
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          duration?: string | null
+          entry_requirements?: string | null
+          id?: string
+          ielts_requirement?: number | null
+          intake?: string | null
+          is_active?: boolean | null
+          level?: string | null
+          tuition_fee?: number | null
+          university_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "educa_courses_university_id_fkey"
+            columns: ["university_id"]
+            isOneToOne: false
+            referencedRelation: "educa_universities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      educa_documents: {
+        Row: {
+          application_id: string | null
+          created_at: string
+          file_size: number | null
+          file_url: string | null
+          id: string
+          name: string
+          notes: string | null
+          status: string | null
+          student_id: string | null
+          type: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          application_id?: string | null
+          created_at?: string
+          file_size?: number | null
+          file_url?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          status?: string | null
+          student_id?: string | null
+          type?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          application_id?: string | null
+          created_at?: string
+          file_size?: number | null
+          file_url?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          status?: string | null
+          student_id?: string | null
+          type?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "educa_documents_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "educa_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "educa_documents_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "educa_students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      educa_leads: {
+        Row: {
+          assigned_to: string | null
+          converted_at: string | null
+          converted_student_id: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          nationality: string | null
+          notes: string | null
+          phone: string | null
+          preferred_country: string | null
+          preferred_level: string | null
+          score: number | null
+          source: string | null
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          converted_at?: string | null
+          converted_student_id?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          nationality?: string | null
+          notes?: string | null
+          phone?: string | null
+          preferred_country?: string | null
+          preferred_level?: string | null
+          score?: number | null
+          source?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          converted_at?: string | null
+          converted_student_id?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          nationality?: string | null
+          notes?: string | null
+          phone?: string | null
+          preferred_country?: string | null
+          preferred_level?: string | null
+          score?: number | null
+          source?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      educa_scholarships: {
+        Row: {
+          amount: number | null
+          created_at: string
+          currency: string | null
+          deadline: string | null
+          description: string | null
+          eligibility: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          type: string | null
+          university_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          currency?: string | null
+          deadline?: string | null
+          description?: string | null
+          eligibility?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          type?: string | null
+          university_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          currency?: string | null
+          deadline?: string | null
+          description?: string | null
+          eligibility?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          type?: string | null
+          university_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "educa_scholarships_university_id_fkey"
+            columns: ["university_id"]
+            isOneToOne: false
+            referencedRelation: "educa_universities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      educa_students: {
+        Row: {
+          address: string | null
+          agent_id: string | null
+          city: string | null
+          counsellor_id: string | null
+          country: string | null
+          created_at: string
+          dob: string | null
+          education_level: string | null
+          email: string | null
+          id: string
+          ielts_score: number | null
+          name: string
+          nationality: string | null
+          notes: string | null
+          passport_number: string | null
+          phone: string | null
+          preferred_country: string | null
+          preferred_intake: string | null
+          pte_score: number | null
+          source: string | null
+          status: string | null
+          toefl_score: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          agent_id?: string | null
+          city?: string | null
+          counsellor_id?: string | null
+          country?: string | null
+          created_at?: string
+          dob?: string | null
+          education_level?: string | null
+          email?: string | null
+          id?: string
+          ielts_score?: number | null
+          name: string
+          nationality?: string | null
+          notes?: string | null
+          passport_number?: string | null
+          phone?: string | null
+          preferred_country?: string | null
+          preferred_intake?: string | null
+          pte_score?: number | null
+          source?: string | null
+          status?: string | null
+          toefl_score?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          agent_id?: string | null
+          city?: string | null
+          counsellor_id?: string | null
+          country?: string | null
+          created_at?: string
+          dob?: string | null
+          education_level?: string | null
+          email?: string | null
+          id?: string
+          ielts_score?: number | null
+          name?: string
+          nationality?: string | null
+          notes?: string | null
+          passport_number?: string | null
+          phone?: string | null
+          preferred_country?: string | null
+          preferred_intake?: string | null
+          pte_score?: number | null
+          source?: string | null
+          status?: string | null
+          toefl_score?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      educa_universities: {
+        Row: {
+          city: string | null
+          commission_rate: number | null
+          contact_email: string | null
+          contact_person: string | null
+          contact_phone: string | null
+          country: string | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          logo_url: string | null
+          name: string
+          notes: string | null
+          partnership_status: string | null
+          ranking: number | null
+          type: string | null
+          updated_at: string
+          user_id: string
+          website: string | null
+        }
+        Insert: {
+          city?: string | null
+          commission_rate?: number | null
+          contact_email?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name: string
+          notes?: string | null
+          partnership_status?: string | null
+          ranking?: number | null
+          type?: string | null
+          updated_at?: string
+          user_id: string
+          website?: string | null
+        }
+        Update: {
+          city?: string | null
+          commission_rate?: number | null
+          contact_email?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name?: string
+          notes?: string | null
+          partnership_status?: string | null
+          ranking?: number | null
+          type?: string | null
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
+      educa_visa: {
+        Row: {
+          application_id: string | null
+          country: string | null
+          created_at: string
+          decision_date: string | null
+          documents_complete: boolean | null
+          expiry_date: string | null
+          id: string
+          interview_date: string | null
+          notes: string | null
+          reference_number: string | null
+          status: string | null
+          student_id: string | null
+          submission_date: string | null
+          updated_at: string
+          user_id: string
+          visa_type: string | null
+        }
+        Insert: {
+          application_id?: string | null
+          country?: string | null
+          created_at?: string
+          decision_date?: string | null
+          documents_complete?: boolean | null
+          expiry_date?: string | null
+          id?: string
+          interview_date?: string | null
+          notes?: string | null
+          reference_number?: string | null
+          status?: string | null
+          student_id?: string | null
+          submission_date?: string | null
+          updated_at?: string
+          user_id: string
+          visa_type?: string | null
+        }
+        Update: {
+          application_id?: string | null
+          country?: string | null
+          created_at?: string
+          decision_date?: string | null
+          documents_complete?: boolean | null
+          expiry_date?: string | null
+          id?: string
+          interview_date?: string | null
+          notes?: string | null
+          reference_number?: string | null
+          status?: string | null
+          student_id?: string | null
+          submission_date?: string | null
+          updated_at?: string
+          user_id?: string
+          visa_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "educa_visa_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "educa_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "educa_visa_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "educa_students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hr_applicants: {
         Row: {
           cover_letter: string | null

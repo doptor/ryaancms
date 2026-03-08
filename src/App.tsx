@@ -75,6 +75,18 @@ import CommReportsPage from "./pages/comm/CommReportsPage";
 import CommSettingsPage from "./pages/comm/CommSettingsPage";
 import CommIVRPage from "./pages/comm/CommIVRPage";
 import CommNotificationsPage from "./pages/comm/CommNotificationsPage";
+import EducaDashboardPage from "./pages/educa/EducaDashboardPage";
+import EducaStudentsPage from "./pages/educa/EducaStudentsPage";
+import EducaAgentsPage from "./pages/educa/EducaAgentsPage";
+import EducaCounsellorsPage from "./pages/educa/EducaCounsellorsPage";
+import EducaUniversitiesPage from "./pages/educa/EducaUniversitiesPage";
+import EducaCoursesPage from "./pages/educa/EducaCoursesPage";
+import EducaApplicationsPage from "./pages/educa/EducaApplicationsPage";
+import EducaVisaPage from "./pages/educa/EducaVisaPage";
+import EducaCommissionsPage from "./pages/educa/EducaCommissionsPage";
+import EducaScholarshipsPage from "./pages/educa/EducaScholarshipsPage";
+import EducaLeadsPage from "./pages/educa/EducaLeadsPage";
+import EducaReportsPage from "./pages/educa/EducaReportsPage";
 const queryClient = new QueryClient();
 
 const AppContent = () => {
@@ -148,6 +160,18 @@ const AppContent = () => {
         <Route path="/dashboard/comm/settings" element={<ProtectedRoute><CommSettingsPage /></ProtectedRoute>} />
         <Route path="/dashboard/comm/ivr" element={<ProtectedRoute><CommIVRPage /></ProtectedRoute>} />
         <Route path="/dashboard/comm/notifications" element={<ProtectedRoute><CommNotificationsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/educa" element={<ProtectedRoute><EducaDashboardPage /></ProtectedRoute>} />
+        <Route path="/dashboard/educa/students" element={<ProtectedRoute><EducaStudentsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/educa/agents" element={<ProtectedRoute><EducaAgentsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/educa/counsellors" element={<ProtectedRoute><EducaCounsellorsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/educa/universities" element={<ProtectedRoute><EducaUniversitiesPage /></ProtectedRoute>} />
+        <Route path="/dashboard/educa/courses" element={<ProtectedRoute><EducaCoursesPage /></ProtectedRoute>} />
+        <Route path="/dashboard/educa/applications" element={<ProtectedRoute><EducaApplicationsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/educa/visa" element={<ProtectedRoute><EducaVisaPage /></ProtectedRoute>} />
+        <Route path="/dashboard/educa/commissions" element={<ProtectedRoute><EducaCommissionsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/educa/scholarships" element={<ProtectedRoute><EducaScholarshipsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/educa/leads" element={<ProtectedRoute><EducaLeadsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/educa/reports" element={<ProtectedRoute><EducaReportsPage /></ProtectedRoute>} />
         <Route path="/preview" element={<PreviewPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
