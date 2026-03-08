@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import { Zap, Copy, Check, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -45,7 +45,7 @@ const endpoints = [
   { method: "DELETE", path: "/api/blog-posts/:id", latency: "32ms", cached: false },
 ];
 
-export default function PulseDemo() {
+const PulseDemo = forwardRef<HTMLDivElement>(function PulseDemo(_props, ref) {
   const [tab, setTab] = useState<ApiTab>("rest");
   const [copied, setCopied] = useState(false);
 
@@ -57,7 +57,7 @@ export default function PulseDemo() {
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
+    <div ref={ref} className="rounded-xl border border-border bg-card overflow-hidden">
       {/* Tab bar */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
         <div className="flex items-center gap-2">
@@ -140,4 +140,6 @@ export default function PulseDemo() {
       </div>
     </div>
   );
-}
+});
+
+export default PulseDemo;

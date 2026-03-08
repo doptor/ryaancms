@@ -1,0 +1,1 @@
+ALTER TABLE public.comm_settings ADD CONSTRAINT comm_settings_user_id_setting_key_unique UNIQUE (user_id, setting_key);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import { History, RotateCcw, ChevronRight, Database, GitBranch, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -45,7 +45,7 @@ const typeColors: Record<string, string> = {
   plugin: "bg-accent text-accent-foreground",
 };
 
-export default function VaultDemo() {
+const VaultDemo = forwardRef<HTMLDivElement>(function VaultDemo(_props, ref) {
   const [selected, setSelected] = useState<string>("v6");
   const [rolledBack, setRolledBack] = useState(false);
 
@@ -57,7 +57,7 @@ export default function VaultDemo() {
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
+    <div ref={ref} className="rounded-xl border border-border bg-card overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
         <div className="flex items-center gap-2">
@@ -141,4 +141,6 @@ export default function VaultDemo() {
       </div>
     </div>
   );
-}
+});
+
+export default VaultDemo;

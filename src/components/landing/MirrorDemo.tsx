@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, forwardRef } from "react";
 import { Monitor, Tablet, Smartphone, Move, MousePointer2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -30,7 +30,7 @@ const cursors = [
   { name: "Sara", color: "hsl(var(--chart-2))", top: "55%", left: "30%" },
 ];
 
-export default function MirrorDemo() {
+const MirrorDemo = forwardRef<HTMLDivElement>(function MirrorDemo(_props, ref) {
   const [blocks, setBlocks] = useState<DemoBlock[]>(initialBlocks);
   const [device, setDevice] = useState<DeviceMode>("desktop");
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -69,7 +69,7 @@ export default function MirrorDemo() {
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
+    <div ref={ref} className="rounded-xl border border-border bg-card overflow-hidden">
       {/* Toolbar */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
         <div className="flex items-center gap-2">
@@ -144,4 +144,6 @@ export default function MirrorDemo() {
       </div>
     </div>
   );
-}
+});
+
+export default MirrorDemo;
