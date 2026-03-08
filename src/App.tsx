@@ -73,7 +73,8 @@ import CommCallCenterPage from "./pages/comm/CommCallCenterPage";
 import CommAgentsPage from "./pages/comm/CommAgentsPage";
 import CommReportsPage from "./pages/comm/CommReportsPage";
 import CommSettingsPage from "./pages/comm/CommSettingsPage";
-
+import CommIVRPage from "./pages/comm/CommIVRPage";
+import CommNotificationsPage from "./pages/comm/CommNotificationsPage";
 const queryClient = new QueryClient();
 
 const AppContent = () => {
