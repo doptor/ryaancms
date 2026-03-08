@@ -26,6 +26,7 @@ import PreviewPage from "./pages/PreviewPage";
 import PluginApprovalsPage from "./pages/PluginApprovalsPage";
 import FinanceDashboardPage from "./pages/FinanceDashboardPage";
 import DeveloperKeysPage from "./pages/DeveloperKeysPage";
+import AccountingSRSPage from "./pages/AccountingSRSPage";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +52,7 @@ const AppContent = () => {
         <Route path="/dashboard/plugin-approvals" element={<ProtectedRoute><PluginApprovalsPage /></ProtectedRoute>} />
         <Route path="/dashboard/finance" element={<ProtectedRoute><FinanceDashboardPage /></ProtectedRoute>} />
         <Route path="/dashboard/developer-keys" element={<ProtectedRoute><DeveloperKeysPage /></ProtectedRoute>} />
+        <Route path="/dashboard/accounting-srs" element={<ProtectedRoute><AccountingSRSPage /></ProtectedRoute>} />
         <Route path="/preview" element={<PreviewPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
