@@ -33,7 +33,7 @@ export default function HRShiftsPage() {
   const { data: assignments, isLoading } = useQuery({
     queryKey: ["hr_shift_assignments", filterDate], queryFn: async () => {
       const weekEnd = format(addDays(new Date(filterDate), 6), "yyyy-MM-dd");
-      const { data, error } = await supabase.from("hr_shift_assignments").select("*, hr_employees(name, employee_id), hr_shifts(name, start_time, end_time, color)").gte("assignment_date", filterDate).lte("assignment_date", weekEnd).order("assignment_date");
+      const { data, error } = await supabase.from("hr_shift_assignments").select("*, hr_employees!hr_shift_assignments_employee_id_fkey(name, employee_id), hr_shifts(name, start_time, end_time, color)").gte("assignment_date", filterDate).lte("assignment_date", weekEnd).order("assignment_date");
       if (error) throw error; return data ?? [];
     }, enabled: !!user,
   });
