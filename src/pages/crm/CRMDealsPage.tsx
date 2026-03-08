@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { Target, Plus, DollarSign, Pencil, Trash2, Search } from "lucide-react";
+import { Target, Plus, DollarSign, Pencil, Trash2, Search, FileText } from "lucide-react";
+import { format } from "date-fns";
 
 const STATUSES = ["open", "won", "lost"];
 const statusColor: Record<string, string> = { open: "bg-blue-100 text-blue-700", won: "bg-green-100 text-green-700", lost: "bg-red-100 text-red-700" };
