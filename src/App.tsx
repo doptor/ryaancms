@@ -92,6 +92,9 @@ const AppContent = () => {
         <Route path="/dashboard/crm/campaigns" element={<ProtectedRoute><CRMCampaignsPage /></ProtectedRoute>} />
         <Route path="/dashboard/crm/tickets" element={<ProtectedRoute><CRMTicketsPage /></ProtectedRoute>} />
         <Route path="/dashboard/crm/reports" element={<ProtectedRoute><CRMReportsPage /></ProtectedRoute>} />
+        <Route path="/dashboard/crm/pipeline" element={<ProtectedRoute><CRMPipelinePage /></ProtectedRoute>} />
+        <Route path="/dashboard/crm/ai-assistant" element={<ProtectedRoute><CRMAIAssistantPage /></ProtectedRoute>} />
+        <Route path="/dashboard/crm/emails" element={<ProtectedRoute><CRMEmailsPage /></ProtectedRoute>} />
         <Route path="/preview" element={<PreviewPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
