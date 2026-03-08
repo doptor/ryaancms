@@ -50,6 +50,15 @@ import CRMReportsPage from "./pages/crm/CRMReportsPage";
 import CRMPipelinePage from "./pages/crm/CRMPipelinePage";
 import CRMAIAssistantPage from "./pages/crm/CRMAIAssistantPage";
 import CRMEmailsPage from "./pages/crm/CRMEmailsPage";
+import HRDashboardPage from "./pages/hr/HRDashboardPage";
+import HREmployeesPage from "./pages/hr/HREmployeesPage";
+import HRDepartmentsPage from "./pages/hr/HRDepartmentsPage";
+import HRAttendancePage from "./pages/hr/HRAttendancePage";
+import HRLeavePage from "./pages/hr/HRLeavePage";
+import HRHolidaysPage from "./pages/hr/HRHolidaysPage";
+import HRPayrollPage from "./pages/hr/HRPayrollPage";
+import HRRecruitmentPage from "./pages/hr/HRRecruitmentPage";
+import HRApplicantsPage from "./pages/hr/HRApplicantsPage";
 
 const queryClient = new QueryClient();
 
