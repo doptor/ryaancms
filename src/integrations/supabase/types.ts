@@ -2587,6 +2587,39 @@ export type Database = {
         }
         Relationships: []
       }
+      educa_saved_searches: {
+        Row: {
+          created_at: string
+          filters: Json
+          id: string
+          is_default: boolean | null
+          module: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          filters?: Json
+          id?: string
+          is_default?: boolean | null
+          module: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          filters?: Json
+          id?: string
+          is_default?: boolean | null
+          module?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       educa_scholarships: {
         Row: {
           amount: number | null
