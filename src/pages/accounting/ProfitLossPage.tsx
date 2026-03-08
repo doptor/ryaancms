@@ -67,6 +67,29 @@ const ProfitLossPage = () => {
             <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-40" />
             <span className="text-muted-foreground">to</span>
             <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-40" />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const rows = [
+                  ...Object.entries(incomeByCategory).map(([cat, amt]) => ({ type: "Revenue", name: cat, amount: amt })),
+                  ...(expenseData ?? []).map((e) => ({ type: "Expense", name: e.description || "—", amount: Number(e.amount) })),
+                ];
+                exportToPdf({
+                  title: "Profit & Loss Statement",
+                  dateRange: { from: dateFrom, to: dateTo },
+                  columns: [
+                    { header: "Type", key: "type" },
+                    { header: "Description", key: "name" },
+                    { header: "Amount", key: "amount", align: "right", format: fmtCurrency },
+                  ],
+                  data: rows,
+                  totals: { type: "", name: "Net Profit", amount: fmtCurrency(netProfit) },
+                });
+              }}
+            >
+              <Download className="w-4 h-4 mr-1" /> PDF
+            </Button>
           </div>
         </div>
 
