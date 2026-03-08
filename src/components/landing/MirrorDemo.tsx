@@ -30,7 +30,7 @@ const cursors = [
   { name: "Sara", color: "hsl(var(--chart-2))", top: "55%", left: "30%" },
 ];
 
-export default function MirrorDemo() {
+const MirrorDemo = forwardRef<HTMLDivElement>(function MirrorDemo(_props, ref) {
   const [blocks, setBlocks] = useState<DemoBlock[]>(initialBlocks);
   const [device, setDevice] = useState<DeviceMode>("desktop");
   const [dragIndex, setDragIndex] = useState<number | null>(null);
